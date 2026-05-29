@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinh Phục Transformer & Self-Attention - Lộ Trình Tương Tác</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- MathJax for LaTeX equations -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #070510;
+            --sidebar-bg: rgba(14, 10, 28, 0.75);
+            --card-bg: rgba(22, 16, 45, 0.6);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #06b6d4 100%);
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-cyan: #06b6d4;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --glow-color: rgba(139, 92, 246, 0.35);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.18) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(6, 180, 212, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(7, 5, 16, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.6);
+        }
+
+        /* Sidebar */
+        aside {
+            width: 300px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--card-border);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo-icon {
+            background: var(--primary-gradient);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.85rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item a:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
+            padding-left: 1.25rem;
+        }
+
+        .nav-item.active a {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.3);
+            color: var(--text-main);
+            font-weight: 600;
+            box-shadow: inset 0 0 10px rgba(139, 92, 246, 0.1);
+        }
+
+        /* Main Area */
+        main {
+            margin-left: 300px;
+            padding: 3rem 4rem;
+            width: calc(100% - 300px);
+            max-width: 1200px;
+        }
+
+        header {
+            margin-bottom: 3.5rem;
+            position: relative;
+        }
+
+        .badge {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 0.4rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #ffffff, #c084fc, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .lead-text {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            line-height: 1.6;
+            max-width: 800px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2.25rem;
+            margin-bottom: 2.5rem;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(139, 92, 246, 0.25);
+            box-shadow: 0 15px 35px rgba(139, 92, 246, 0.05);
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #ffffff;
+        }
+
+        h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 1.75rem 0 1rem 0;
+            color: #c084fc;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 1.25rem;
+        }
+
+        /* Boxes */
+        .math-box {
+            background: rgba(6, 4, 12, 0.5);
+            border-left: 4px solid var(--accent-purple);
+            padding: 1.25rem 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .info-tip {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px dashed rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .info-tip i {
+            color: var(--accent-purple);
+            font-size: 1.2rem;
+            margin-top: 0.15rem;
+        }
+
+        .info-tip p {
+            margin-bottom: 0;
+            font-size: 0.95rem;
+            color: #d1d5db;
+        }
+
+        /* Interactive checklist */
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 1.5rem;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .check-item:hover {
+            background: rgba(139, 92, 246, 0.04);
+            border-color: rgba(139, 92, 246, 0.15);
+            transform: translateX(3px);
+        }
+
+        .check-checkbox {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .check-item.completed .check-checkbox {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+
+        .check-checkbox i {
+            color: white;
+            font-size: 0.75rem;
+            display: none;
+        }
+
+        .check-item.completed .check-checkbox i {
+            display: block;
+        }
+
+        .check-content {
+            flex-grow: 1;
+        }
+
+        .check-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 0.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .check-item.completed .check-title {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .check-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.75rem;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: var(--primary-gradient);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        /* Playgrounds */
+        .playground-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .playground-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-panel {
+            background: rgba(7, 5, 16, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .visual-panel {
+            background: rgba(7, 5, 16, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 280px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #c084fc;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-purple);
+            transition: transform 0.1s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .math-result {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            color: #a78bfa;
+            border: 1px solid rgba(167, 139, 250, 0.1);
+            text-align: center;
+        }
+
+        /* SVG and Dynamic graph styling */
+        .complexity-graph {
+            width: 100%;
+            height: 220px;
+        }
+
+        .graph-line-std {
+            fill: none;
+            stroke: #ef4444;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+        }
+
+        .graph-line-lin {
+            fill: none;
+            stroke: #10b981;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+        }
+
+        /* Interactive Sentence Selector */
+        .sentence-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+
+        .token {
+            padding: 0.35rem 0.6rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .token:hover {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .token.selected {
+            background: var(--accent-purple);
+            color: white;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+            font-weight: 600;
+        }
+
+        /* Attention bars */
+        .bars-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .bar-label {
+            width: 80px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            text-align: right;
+            color: #d1d5db;
+        }
+
+        .bar-outer {
+            flex-grow: 1;
+            height: 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-inner {
+            height: 100%;
+            width: 0;
+            background: var(--primary-gradient);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bar-value {
+            font-family: monospace;
+            font-size: 0.85rem;
+            width: 50px;
+            color: var(--accent-cyan);
+            text-align: left;
+        }
+
+        /* Code block */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f0b20;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px 12px 0 0;
+            border: 1px solid var(--card-border);
+            border-bottom: none;
+        }
+
+        .code-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #d1d5db;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-title span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f87171;
+            display: inline-block;
+        }
+        .code-title span:nth-child(2) { background: #fbbf24; }
+        .code-title span:nth-child(3) { background: #34d399; }
+
+        pre {
+            background: #04030a;
+            border: 1px solid var(--card-border);
+            border-radius: 0 0 12px 12px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        .keyword { color: #f472b6; }
+        .func { color: #a78bfa; }
+        .comment { color: #6b7280; font-style: italic; }
+        .string { color: #38bdf8; }
+        .number { color: #fbbf24; }
+
+        /* Responsive Mobile drawer */
+        .mobile-header {
+            display: none;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(7, 5, 16, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 99;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            transition: all 0.25s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.45);
+        }
+
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* iPhone 11 Mobile Responsive out-of-the-box */
+        @media (max-width: 968px) {
+            body {
+                flex-direction: column;
+            }
+
+            .mobile-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.85rem 1.25rem;
+                background: var(--sidebar-bg);
+                backdrop-filter: blur(20px);
+                border-bottom: 1px solid var(--card-border);
+                position: sticky;
+                top: 0;
+                z-index: 101;
+                width: 100%;
+            }
+
+            .menu-toggle-btn {
+                background: none;
+                border: none;
+                color: var(--text-main);
+                font-size: 1.5rem;
+                cursor: pointer;
+                padding: 0.25rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            aside {
+                left: -300px;
+                width: 280px;
+                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 102;
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+                border-right: 1px solid rgba(255, 255, 255, 0.05);
+                padding-top: 1.5rem;
+            }
+
+            aside.open {
+                left: 0;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 1.5rem 1rem;
+                width: 100%;
+            }
+
+            header {
+                margin-bottom: 2rem;
+            }
+
+            h1 {
+                font-size: 2.1rem;
+                line-height: 1.2;
+            }
+
+            .lead-text {
+                font-size: 1rem;
+            }
+
+            .card {
+                padding: 1.25rem;
+                border-radius: 16px;
+                margin-bottom: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.45rem;
+            }
+
+            h3 {
+                font-size: 1.2rem;
+                margin: 1.25rem 0 0.75rem 0;
+            }
+
+            .math-box {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+
+            .playground-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+
+            .control-panel, .visual-panel {
+                padding: 1.1rem;
+                border-radius: 12px;
+            }
+
+            pre {
+                padding: 1rem;
+            }
+
+            code {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="logo-area" style="margin-bottom: 0;">
+            <div class="logo-icon" style="width: 32px; height: 32px; border-radius: 8px; font-size: 1rem; box-shadow: none;"><i class="fa-solid fa-brain"></i></div>
+            <div class="logo-text" style="font-size: 1.1rem;">KHANG LESSON</div>
+        </div>
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars" id="menu-icon"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside>
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-brain"></i></div>
+            <div class="logo-text">KHANG LESSON</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active"><a href="#lo-trinh"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình 2 Tuần</a></li>
+            <li class="nav-item"><a href="#thuyet-1"><i class="fa-solid fa-compass"></i> 1. Self-Attention</a></li>
+            <li class="nav-item"><a href="#complexity"><i class="fa-solid fa-microchip"></i> 2. Phân Tích Độ Phức Tạp</a></li>
+            <li class="nav-item"><a href="#linformer"><i class="fa-solid fa-network-wired"></i> 3. Cải Tiến Linformer</a></li>
+            <li class="nav-item"><a href="#multimodal"><i class="fa-solid fa-icons"></i> 4. Đa Phương Thức (ViT)</a></li>
+            <li class="nav-item"><a href="#code-mau"><i class="fa-solid fa-code"></i> 5. Code Lập Trình</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+        <header>
+            <div class="badge"><i class="fa-solid fa-atom"></i> Chìa khóa GenAI (Nền Móng Khổng Lồ)</div>
+            <h1>Transformer & Self-Attention</h1>
+            <p class="lead-text">Chào Khang! Cơ chế Chú Ý Tự Thân (Self-Attention) chính là lực hấp dẫn kết nối ngữ nghĩa từ ngữ. Trang web tương tác này sẽ hiển thị tường tận cách Q, K, V bắt cặp và độ lợi khi cải tiến lên Linformer.</p>
+        </header>
+
+        <!-- CHECKLIST TIẾN ĐỘ -->
+        <section id="lo-trinh" class="card">
+            <h2><i class="fa-solid fa-calendar-check" style="color: var(--accent-purple);"></i> Nhật Ký Học Tập 1 - 2 Tuần</h2>
+            <p>Trực quan hóa lộ trình và lưu trữ tiến trình tự động trên các thiết bị của bạn:</p>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('week1')">📅 Tuần 1: Cốt lõi toán học</button>
+                <button class="tab-btn" onclick="switchTab('week2')">📅 Tuần 2: Linformer & Đa phương thức</button>
+            </div>
+
+            <!-- Week 1 Content -->
+            <div id="week1" class="tab-content active">
+                <div class="checklist">
+                    <div class="check-item" onclick="toggleCheck(this, 'tf_c1')">
+                        <div class="check-checkbox" id="tf_c1"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Nhận biết điểm yếu của RNN và LSTM cổ điển</div>
+                            <div class="check-desc">Hiểu tại sao xử lý tuần tự gây thắt nút cổ chai tính toán và mất trí nhớ ngữ nghĩa khoảng cách xa.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'tf_c2')">
+                        <div class="check-checkbox" id="tf_c2"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Thấu suốt mô hình bộ ba Q, K, V (Query, Key, Value)</div>
+                            <div class="check-desc">Sử dụng phép ẩn dụ hệ thống tìm kiếm YouTube để làm rõ vai trò và ý nghĩa của từng ma trận.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'tf_c3')">
+                        <div class="check-checkbox" id="tf_c3"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Thuộc lòng công thức Scaled Dot-Product Attention</div>
+                            <div class="check-desc">Giải thích được lý do chia cho hệ số căn bậc hai $\sqrt{d_k}$ và vai trò phân phối xác suất của Softmax.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Week 2 Content -->
+            <div id="week2" class="tab-content">
+                <div class="checklist">
+                    <div class="check-item" onclick="toggleCheck(this, 'tf_c4')">
+                        <div class="check-checkbox" id="tf_c4"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Hạn chế bộ nhớ bậc hai $O(T^2)$</div>
+                            <div class="check-desc">Nắm vững nguyên lý tại sao chiều dài văn bản tăng gấp đôi thì dung lượng tính toán tăng gấp bốn.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'tf_c5')">
+                        <div class="check-checkbox" id="tf_c5"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Khám phá cải tiến Linformer về $O(T)$</div>
+                            <div class="check-desc">Hiểu cơ chế chiếu Key và Value xuống không gian hạng thấp (Low-rank $k$) để giảm tải RAM GPU.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'tf_c6')">
+                        <div class="check-checkbox" id="tf_c6"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Vision Transformer (ViT) & Multi-modal</div>
+                            <div class="check-desc">Hiểu cách phân cắt hình ảnh 2D thành các ô Patch 1D đưa vào mô hình xử lý tương tự văn bản đầu vào.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 1. SELF-ATTENTION -->
+        <section id="thuyet-1" class="card">
+            <h2><i class="fa-solid fa-compass" style="color: var(--accent-purple);"></i> 1. Trực Giác: Cơ Chế Chú Ý Tự Thân (Self-Attention)</h2>
+            <p>Self-Attention cho phép mỗi từ trong câu nhìn vào tất cả các từ khác và quyết định xem từ nào đóng vai trò quan trọng nhất trong việc định nghĩa chính nó.</p>
+            <div class="math-box">
+                $$\text{Attention}(Q, K, V) = \text{Softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V$$
+            </div>
+
+            <!-- Sentence Attention Visualizer -->
+            <h3 style="margin-top: 2rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Bộ Mô Phỏng Phân Bổ Chú Ý Tương Tác</h3>
+            <p>Chọn/Nhấp vào một từ dưới đây để xem đại lượng Query ($Q$) của từ đó thu hút điểm số chú ý (Softmax score) từ các Key ($K$) của các từ khác như thế nào:</p>
+
+            <div class="sentence-container">
+                <span class="token selected" onclick="selectToken(this, 'it')">it</span>
+                <span class="token" onclick="selectToken(this, 'animal')">The animal</span>
+                <span class="token" onclick="selectToken(this, 'didnt')">didn't</span>
+                <span class="token" onclick="selectToken(this, 'cross')">cross</span>
+                <span class="token" onclick="selectToken(this, 'street')">the street</span>
+                <span class="token" onclick="selectToken(this, 'because')">because</span>
+                <span class="token" onclick="selectToken(this, 'was')">was</span>
+                <span class="token" onclick="selectToken(this, 'tired')">too tired.</span>
+            </div>
+
+            <div class="bars-container" id="attention-bars-display">
+                <!-- Bars dynamically created by JS -->
+            </div>
+        </section>
+
+        <!-- 2. PHÂN TÍCH ĐỘ PHỨC TẠP -->
+        <section id="complexity" class="card">
+            <h2><i class="fa-solid fa-microchip" style="color: var(--accent-pink);"></i> 2. Nút Thắt Cổ Chai Tính Toán $O(T^2)$</h2>
+            <p>Bởi vì mỗi từ phải so khớp tích vô hướng với tất cả các từ khác, kích thước của ma trận Attention tỷ lệ thuận với bình phương độ dài chuỗi đầu vào $T$.</p>
+            
+            <div class="info-tip">
+                <i class="fa-solid fa-triangle-exclamation" style="color: var(--danger-color);"></i>
+                <p><strong>Cảnh báo OOM (Out of Memory):</strong> Khi xử lý văn bản cực dài (ví dụ sách, báo cáo tài chính), ma trận attention bậc hai sẽ nhanh chóng làm ngập và quá tải bộ nhớ VRAM của GPU, khiến quá trình huấn luyện/suy luận bị đổ vỡ hoàn toàn.</p>
+            </div>
+        </section>
+
+        <!-- 3. CẢI TIẾN LINFORMER -->
+        <section id="linformer" class="card">
+            <h2><i class="fa-solid fa-network-wired" style="color: var(--accent-cyan);"></i> 3. Cách Mạng Độ Phức Tạp Tuyến Tính: Linformer</h2>
+            <p>Được thiết kế để giải quyết bài toán $O(T^2)$, mô hình <strong>Linformer</strong> chiếu ma trận Key ($K$) và Value ($V$) xuống không gian hạng thấp (Low-rank matrix) thông qua hai ma trận chiếu tuyến tính kích thước $k \times T$:</p>
+            <div class="math-box">
+                $$K_{new} = E K, \quad V_{new} = F V \quad (\text{với } E, F \in \mathbb{R}^{k \times T})$$
+            </div>
+            <p>Lúc này, ma trận Attention chỉ còn kích thước $T \times k$. Độ phức tạp giảm xuống mức **Tuyến tính $O(T \cdot k)$**, mang đến tốc độ vượt trội và tiết kiệm bộ nhớ tối đa!</p>
+
+            <!-- Complexity Simulator Playground -->
+            <h3 style="margin-top: 2rem;"><i class="fa-solid fa-chart-line"></i> Bộ So Sánh Tài Nguyên: Chuẩn $O(T^2)$ vs Linformer $O(T)$</h3>
+            <p>Kéo dài chuỗi văn bản đầu vào $T$ để xem độ tiêu hao bộ nhớ (phép tính) tăng vọt của thuật toán chuẩn so với tính bền bỉ của Linformer.</p>
+
+            <div class="playground-grid">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Độ Dài Chuỗi $T$ (Tokens)</span>
+                            <span id="seq-display" style="font-weight: bold; color: var(--accent-pink);">1024</span>
+                        </div>
+                        <input type="range" min="64" max="8192" step="64" value="1024" class="slider" id="seq-slider" oninput="simulateComplexity()">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Hạng Chiếu Thấp $k$ (Linformer Rank)</span>
+                            <span id="rank-display" style="font-weight: bold; color: var(--accent-cyan);">256</span>
+                        </div>
+                        <input type="range" min="64" max="512" step="64" value="256" class="slider" id="rank-slider" oninput="simulateComplexity()">
+                    </div>
+                </div>
+
+                <div class="visual-panel">
+                    <div style="position: absolute; top: 10px; right: 15px; font-size: 0.8rem; display: flex; gap: 0.75rem;">
+                        <span style="color: #ef4444;"><i class="fa-solid fa-minus"></i> Chuẩn O(T²)</span>
+                        <span style="color: #10b981;"><i class="fa-solid fa-minus-dashed"></i> Linformer O(T)</span>
+                    </div>
+                    <svg class="complexity-graph" id="complexity-svg" viewBox="0 0 200 100">
+                        <!-- Grid Lines -->
+                        <line x1="0" y1="20" x2="200" y2="20" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" />
+                        <line x1="0" y1="50" x2="200" y2="50" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" />
+                        <line x1="0" y1="80" x2="200" y2="80" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" />
+                        
+                        <!-- Paths -->
+                        <path class="graph-line-std" id="std-path" d="" />
+                        <path class="graph-line-lin" id="lin-path" d="" />
+                    </svg>
+                    <p style="text-align: center; font-size: 0.95rem; font-weight: 600; margin-top: 1rem; color: #ffffff;" id="oom-status">
+                        VRAM Status: Safe 🎉
+                    </p>
+                    <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; max-width: 90%;" id="oom-desc">
+                        Bộ nhớ hoạt động an toàn và mượt mà.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. VISION TRANSFORMER (ViT) -->
+        <section id="multimodal" class="card">
+            <h2><i class="fa-solid fa-icons" style="color: var(--accent-cyan);"></i> 4. Mở Rộng Đa Phương Thức: Vision Transformer (ViT)</h2>
+            <p>Để đưa ảnh vào kiến trúc Transformer, **Vision Transformer (ViT)** chia nhỏ bức ảnh 2D thành các ô vuông phẳng (**Patches**) kích thước cố định:</p>
+            
+            <div style="width: 100%; display: flex; flex-direction: column; align-items: center; margin: 1.5rem 0;">
+                <!-- Concept Art of ViT in CSS -->
+                <div style="display: grid; grid-template-columns: repeat(3, 40px); gap: 4px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #8b5cf6, #3b82f6); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">P1</div>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #a855f7, #06b6d4); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">P2</div>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #ec4899, #10b981); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">P3</div>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6, #f59e0b); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">P4</div>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #ef4444, #8b5cf6); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">P5</div>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #ec4899); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;">P6</div>
+                </div>
+                <div style="font-size: 1.25rem; color: var(--accent-purple); margin: 0.5rem 0;"><i class="fa-solid fa-arrow-down-long"></i></div>
+                <div style="display: flex; gap: 8px; font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    [P1 Vector] &rarr; [P2 Vector] &rarr; [P3 Vector] &rarr; [P4 Vector] ...
+                </div>
+            </div>
+            
+            <p>Các ô vuông Patch này sau đó được đi qua một lớp chiếu tuyến tính (Linear Projection) thành vector nhúng phẳng (Flat Embeddings) kết hợp cùng Positional Encoding để bảo toàn thông tin tọa độ không gian 2D gốc, giúp Transformer học mối quan hệ giữa các vùng ảnh cực tốt!</p>
+        </section>
+
+        <!-- 5. CODE LẬP TRÌNH -->
+        <section id="code-mau" class="card">
+            <h2><i class="fa-solid fa-code" style="color: var(--accent-cyan);"></i> 5. Code Lập Trình Scaled Dot-Product Attention</h2>
+            <p>Dưới đây là mã nguồn Python thuần túy viết bằng thư viện PyTorch biểu thị chính xác công thức toán học tính Attention của Google.</p>
+
+            <div class="code-header">
+                <div class="code-title">
+                    <span></span><span></span><span></span>
+                    &nbsp;scaled_dot_product_attention.py
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">PyTorch</span>
+            </div>
+            <pre><code><span class="keyword">import</span> torch
+<span class="keyword">import</span> torch.nn <span class="keyword">as</span> nn
+<span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F
+
+<span class="keyword">def</span> <span class="func">scaled_dot_product_attention</span>(q, k, v, mask=<span class="keyword">None</span>):
+    <span class="comment"># 1. Tính toán điểm số tương đồng Q * K^T</span>
+    d_k = q.size(-<span class="number">1</span>)
+    scores = torch.matmul(q, k.transpose(-<span class="number">2</span>, -<span class="number">1</span>)) / torch.sqrt(torch.tensor(d_k, dtype=torch.float32))
+    
+    <span class="comment"># 2. Áp dụng Mask (nếu dùng trong cơ chế Masked Multi-Head Decoder)</span>
+    <span class="keyword">if</span> mask <span class="keyword">is not</span> <span class="keyword">None</span>:
+        scores = scores.masked_fill(mask == <span class="number">0</span>, -<span class="number">1e9</span>)
+        
+    <span class="comment"># 3. Đưa qua hàm Softmax để nhận phân phối xác suất chú ý</span>
+    attention_weights = F.softmax(scores, dim=-<span class="number">1</span>)
+    
+    <span class="comment"># 4. Nhân trọng số với Value (V)</span>
+    output = torch.matmul(attention_weights, v)
+    
+    <span class="keyword">return</span> output, attention_weights</code></pre>
+
+            <a href="Transformer_SelfAttention_Practice.ipynb" class="btn-primary">
+                <i class="fa-solid fa-laptop-code"></i> Mở File Bài Tập Jupyter Notebook
+            </a>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <p>Được thiết kế chuyên biệt dành cho Khang | Microsoft AI For Beginners</p>
+            <p style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.5;">&copy; 2026 AI Study Companion. Attention is all you need!</p>
+        </footer>
+    </main>
+
+    <script>
+        // Tab switcher
+        function switchTab(dayId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(dayId).classList.add('active');
+        }
+
+        // Toggle mobile drawer
+        function toggleSidebar() {
+            const sidebar = document.querySelector('aside');
+            const overlay = document.getElementById('sidebar-overlay');
+            const menuIcon = document.getElementById('menu-icon');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            
+            if (sidebar.classList.contains('open')) {
+                menuIcon.className = "fa-solid fa-xmark";
+            } else {
+                menuIcon.className = "fa-solid fa-bars";
+            }
+        }
+
+        // Close on click link
+        document.querySelectorAll('.nav-item a').forEach(link => {
+            link.addEventListener('click', () => {
+                const sidebar = document.querySelector('aside');
+                if (sidebar.classList.contains('open')) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Checklist local storage
+        function initChecklist() {
+            const items = ['tf_c1', 'tf_c2', 'tf_c3', 'tf_c4', 'tf_c5', 'tf_c6'];
+            items.forEach(id => {
+                const isCompleted = localStorage.getItem(id) === 'true';
+                const el = document.getElementById(id);
+                if (el && isCompleted) {
+                    el.closest('.check-item').classList.add('completed');
+                }
+            });
+        }
+
+        function toggleCheck(element, id) {
+            element.classList.toggle('completed');
+            const hasCompleted = element.classList.contains('completed');
+            localStorage.setItem(id, hasCompleted);
+        }
+
+        // --- Playground 1: Interactive Self-Attention Sentence ---
+        // Hypothethical high quality attention weight values for when a query word is selected
+        const attentionData = {
+            'it': {
+                'it': 0.12,
+                'animal': 0.58,
+                'didnt': 0.02,
+                'cross': 0.05,
+                'street': 0.08,
+                'because': 0.03,
+                'was': 0.02,
+                'tired': 0.10
+            },
+            'animal': {
+                'it': 0.05,
+                'animal': 0.55,
+                'didnt': 0.05,
+                'cross': 0.12,
+                'street': 0.08,
+                'because': 0.02,
+                'was': 0.03,
+                'tired': 0.10
+            },
+            'didnt': {
+                'it': 0.01,
+                'animal': 0.08,
+                'didnt': 0.45,
+                'cross': 0.32,
+                'street': 0.05,
+                'because': 0.03,
+                'was': 0.05,
+                'tired': 0.01
+            },
+            'cross': {
+                'it': 0.04,
+                'animal': 0.15,
+                'didnt': 0.12,
+                'cross': 0.38,
+                'street': 0.22,
+                'because': 0.02,
+                'was': 0.02,
+                'tired': 0.05
+            },
+            'street': {
+                'it': 0.03,
+                'animal': 0.10,
+                'didnt': 0.05,
+                'cross': 0.28,
+                'street': 0.42,
+                'because': 0.04,
+                'was': 0.04,
+                'tired': 0.04
+            },
+            'because': {
+                'it': 0.02,
+                'animal': 0.02,
+                'didnt': 0.02,
+                'cross': 0.02,
+                'street': 0.02,
+                'because': 0.65,
+                'was': 0.10,
+                'tired': 0.15
+            },
+            'was': {
+                'it': 0.15,
+                'animal': 0.05,
+                'didnt': 0.02,
+                'cross': 0.02,
+                'street': 0.02,
+                'because': 0.12,
+                'was': 0.45,
+                'tired': 0.17
+            },
+            'tired': {
+                'it': 0.25,
+                'animal': 0.28,
+                'didnt': 0.02,
+                'cross': 0.03,
+                'street': 0.05,
+                'because': 0.05,
+                'was': 0.08,
+                'tired': 0.24
+            }
+        };
+
+        const wordKeysMap = {
+            'it': 'it',
+            'The animal': 'animal',
+            'didn\'t': 'didnt',
+            'cross': 'cross',
+            'the street': 'street',
+            'because': 'because',
+            'was': 'was',
+            'too tired.': 'tired'
+        };
+
+        function selectToken(element, key) {
+            // Remove previous selections
+            document.querySelectorAll('.token').forEach(t => t.classList.remove('selected'));
+            element.classList.add('selected');
+            renderAttentionBars(key);
+        }
+
+        function renderAttentionBars(queryWordKey) {
+            const container = document.getElementById('attention-bars-display');
+            container.innerHTML = ""; // Clear
+            
+            const data = attentionData[queryWordKey];
+            
+            // Loop through all words to display
+            Object.keys(wordKeysMap).forEach(displayName => {
+                const key = wordKeysMap[displayName];
+                const weight = data[key] || 0.02;
+                const percent = (weight * 100).toFixed(0);
+
+                const barRow = document.createElement('div');
+                barRow.className = "bar-row";
+                barRow.innerHTML = `
+                    <div class="bar-label">${displayName}</div>
+                    <div class="bar-outer">
+                        <div class="bar-inner" style="width: ${percent}%"></div>
+                    </div>
+                    <div class="bar-value">${(weight).toFixed(2)}</div>
+                `;
+                container.appendChild(barRow);
+            });
+        }
+
+        // --- Playground 2: Complexity Visualizer O(T^2) vs O(T) ---
+        function simulateComplexity() {
+            const seqT = parseInt(document.getElementById('seq-slider').value);
+            const rankK = parseInt(document.getElementById('rank-slider').value);
+
+            document.getElementById('seq-display').innerText = seqT;
+            document.getElementById('rank-display').innerText = rankK;
+
+            const stdPoints = [];
+            const linPoints = [];
+            
+            // SVG width=200, height=100. Let's map T [64, 8192] to pixel X [0, 200]
+            // We need a scale for Y (Operations/Memory footprint)
+            // Let's set the max Y to represent T=4096 in standard attention.
+            // Std Operations = T^2
+            // Lin Operations = T * k * 2
+            
+            const maxValLimit = 4096 * 4096; // Standard base scaling
+            
+            for (let i = 0; i <= 200; i++) {
+                // Map pixel i to sequence length xVal
+                const xVal = 64 + (i / 200) * 8128;
+                
+                const stdOps = xVal * xVal;
+                const linOps = xVal * rankK * 2.5; // Scale factor
+                
+                // Map values to pixel Y [0, 100]. Limit max values to prevent shooting out of graph
+                const stdYClamped = Math.min(100, (stdOps / maxValLimit) * 100);
+                const linYClamped = Math.min(100, (linOps / maxValLimit) * 100);
+                
+                // SVG coordinates (invert Y)
+                const stdPixelY = 100 - stdYClamped;
+                const subPixelY = 100 - linYClamped;
+                
+                stdPoints.push(`${i},${stdPixelY}`);
+                linPoints.push(`${i},${subPixelY}`);
+            }
+
+            document.getElementById('std-path').setAttribute('d', `M ${stdPoints.join(' L ')}`);
+            document.getElementById('lin-path').setAttribute('d', `M ${linPoints.join(' L ')}`);
+
+            // Check OOM states
+            const statusEl = document.getElementById('oom-status');
+            const descEl = document.getElementById('oom-desc');
+
+            if (seqT > 2048) {
+                statusEl.innerText = "Trạng thái: OUT OF MEMORY (OOM) 🚨";
+                statusEl.style.color = "var(--danger-color)";
+                descEl.innerText = `Tại T = ${seqT}, Self-Attention chuẩn chiếm ${((seqT*seqT)/(1024*1024)).toFixed(0)}x phép tính bậc hai gây sập RAM GPU. Linformer giúp giảm thiểu xuống mức tuyến tính cực an toàn.`;
+            } else if (seqT > 1024) {
+                statusEl.innerText = "Trạng thái: VRAM quá tải nhẹ ⚠️";
+                statusEl.style.color = "var(--warning-color)";
+                descEl.innerText = "Bộ nhớ bắt đầu phình to và tốc độ huấn luyện chậm dần. Nên cân nhắc chuyển đổi sang giải pháp chiếu ma trận.";
+            } else {
+                statusEl.innerText = "Trạng thái: VRAM An Toàn 🎉";
+                statusEl.style.color = "var(--success-color)";
+                descEl.innerText = "Chiều dài chuỗi ở mức trung bình, GPU đáp ứng tốt cả hai cơ chế chú ý.";
+            }
+        }
+
+        window.addEventListener('load', () => {
+            initChecklist();
+            renderAttentionBars('it');
+            simulateComplexity();
+        });
+    </script>
+</body>
+</html>

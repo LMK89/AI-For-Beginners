@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logistic Regression – Giải Thích Đơn Giản Cho Người Mới</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f0f1a;
+            --card: rgba(25, 25, 50, 0.7);
+            --border: rgba(255,255,255,0.07);
+            --accent: #f59e0b;
+            --accent2: #fb923c;
+            --text: #f1f1f1;
+            --muted: #a1a1aa;
+            --green: #34d399;
+            --red: #f87171;
+            --grad: linear-gradient(135deg, #f59e0b 0%, #fb923c 50%, #f97316 100%);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        body {
+            background: var(--bg); color: var(--text); min-height: 100vh; padding: 0;
+            background-image: radial-gradient(at 20% 0%, rgba(245,158,11,0.12) 0, transparent 50%), radial-gradient(at 80% 100%, rgba(251,146,60,0.08) 0, transparent 50%);
+        }
+        .top-bar {
+            background: rgba(15,15,26,0.85); backdrop-filter: blur(15px); border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; position: sticky; top: 0; z-index: 50;
+        }
+        .top-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--grad); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; }
+        .top-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.15rem; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .top-badge { margin-left: auto; background: rgba(245,158,11,0.15); color: var(--accent); border: 1px solid rgba(245,158,11,0.3); padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .container { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+        .hero { text-align: center; margin-bottom: 2.5rem; }
+        .hero h1 { font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; background: linear-gradient(to right, #fff, #fde68a, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { color: var(--muted); font-size: 1.05rem; line-height: 1.6; }
+
+        .card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem;
+            margin-bottom: 1.75rem; backdrop-filter: blur(10px); transition: border-color 0.3s;
+        }
+        .card:hover { border-color: rgba(245,158,11,0.2); }
+
+        .card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+        .card-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #fff; flex-shrink: 0; }
+        .card-header h2 { font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 700; }
+
+        p, .card p { color: var(--muted); font-size: 1rem; line-height: 1.7; margin-bottom: 1rem; }
+        strong { color: var(--text); }
+
+        .analogy {
+            background: rgba(245,158,11,0.08); border: 1px dashed rgba(245,158,11,0.25); border-radius: 12px;
+            padding: 1rem 1.25rem; margin: 1.25rem 0; display: flex; gap: 0.75rem; align-items: flex-start;
+        }
+        .analogy i { color: var(--accent); font-size: 1.3rem; margin-top: 0.1rem; flex-shrink: 0; }
+        .analogy p { margin-bottom: 0; font-size: 0.95rem; color: #e5e5e5; }
+
+        .step-list { display: flex; flex-direction: column; gap: 1rem; margin: 1rem 0; }
+        .step {
+            display: flex; gap: 1rem; align-items: flex-start; padding: 1rem;
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px;
+        }
+        .step-num {
+            width: 32px; height: 32px; border-radius: 8px; background: var(--grad); display: flex;
+            align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; color: #fff;
+        }
+        .step-text h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; color: #fff; }
+        .step-text p { font-size: 0.9rem; margin-bottom: 0; }
+
+        .vs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+        .vs-box { padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); }
+        .vs-box h4 { font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .vs-box p { font-size: 0.88rem; margin-bottom: 0; }
+
+        .takeaway {
+            background: linear-gradient(135deg, rgba(52,211,153,0.1) 0%, rgba(16,185,129,0.05) 100%);
+            border: 1px solid rgba(52,211,153,0.2); border-radius: 12px; padding: 1.25rem; margin: 1.25rem 0;
+        }
+        .takeaway h4 { color: var(--green); font-size: 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .takeaway p { font-size: 0.92rem; margin-bottom: 0; color: #d1d5db; }
+
+        .slider-demo { margin: 1.5rem 0; }
+        .slider-label { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; color: #fde68a; margin-bottom: 0.4rem; }
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px;
+            background: rgba(255,255,255,0.1); outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+            background: var(--accent); cursor: pointer; box-shadow: 0 0 8px rgba(245,158,11,0.5);
+        }
+        .demo-result {
+            text-align: center; font-family: monospace; font-size: 1.3rem; color: var(--accent);
+            margin-top: 0.75rem; padding: 0.6rem; background: rgba(0,0,0,0.3); border-radius: 8px;
+        }
+        .demo-explain { text-align: center; font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; }
+
+        .emoji-scale { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+
+        footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 2rem 1rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 1.75rem; }
+            .vs-grid { grid-template-columns: 1fr; }
+            .card { padding: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-icon"><i class="fa-solid fa-seedling"></i></div>
+        <span class="top-title">KHANG LESSON – Dễ Hiểu</span>
+        <span class="top-badge">Beginner Friendly</span>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Logistic Regression<br>Nói Cho Dễ Hiểu</h1>
+            <p>Không có công thức phức tạp. Chỉ có ví dụ đời thường, hình ảnh trực quan và những thứ bạn thực sự cần biết.</p>
+        </div>
+
+        <!-- BÀI TOÁN -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);"><i class="fa-solid fa-question"></i></div>
+                <h2>Nó giải quyết bài toán gì?</h2>
+            </div>
+            <p>Hãy tưởng tượng bạn là <strong>bác sĩ</strong> đang xem kết quả xét nghiệm của bệnh nhân. Bạn muốn trả lời câu hỏi duy nhất: <strong>"Bệnh nhân này có bệnh hay không?"</strong></p>
+            <p>Đó chính là bài toán <strong>Phân loại Nhị phân (Binary Classification)</strong> – trả lời "Có" hoặc "Không", hay nói cách khác, gán nhãn <strong>0</strong> hoặc <strong>1</strong> cho dữ liệu.</p>
+
+            <div class="analogy">
+                <i class="fa-solid fa-lightbulb"></i>
+                <p><strong>Ứng dụng thực tế:</strong> Email spam hay không spam? Giao dịch gian lận hay bình thường? Khách hàng mua hay bỏ giỏ hàng? Tất cả đều là bài toán phân loại nhị phân cả.</p>
+            </div>
+        </div>
+
+        <!-- TẠI SAO KHÔNG DÙNG ĐƯỜNG THẲNG -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #ef4444, #f97316);"><i class="fa-solid fa-ban"></i></div>
+                <h2>Tại sao vẽ đường thẳng không ổn?</h2>
+            </div>
+            <p>Nếu dùng <strong>Hồi quy Tuyến tính (Linear Regression)</strong> để dự đoán "Có" hoặc "Không", đầu ra có thể bằng <strong>-5</strong> hoặc <strong>+200</strong>. Vô nghĩa! Vì xác suất phải nằm giữa <strong>0%</strong> và <strong>100%</strong>.</p>
+
+            <div class="vs-grid">
+                <div class="vs-box" style="background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.2);">
+                    <h4><i class="fa-solid fa-xmark" style="color: var(--red);"></i> Đường thẳng</h4>
+                    <p>Đầu ra: bất kỳ số nào (-∞ tới +∞). Không diễn giải được.</p>
+                </div>
+                <div class="vs-box" style="background: rgba(52,211,153,0.06); border-color: rgba(52,211,153,0.2);">
+                    <h4><i class="fa-solid fa-check" style="color: var(--green);"></i> Đường cong chữ S</h4>
+                    <p>Đầu ra: luôn nằm giữa 0 và 1. Đọc được là xác suất!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIGMOID -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #8b5cf6, #a855f7);"><i class="fa-solid fa-wave-square"></i></div>
+                <h2>Đường cong chữ S kỳ diệu (Sigmoid)</h2>
+            </div>
+            <p>Hàm <strong>Sigmoid</strong> là "cỗ máy ép" biến bất kỳ con số nào thành xác suất từ 0 đến 1.</p>
+
+            <div class="analogy">
+                <i class="fa-solid fa-faucet-drip"></i>
+                <p><strong>Ẩn dụ vòi nước:</strong> Bạn vặn vòi nước từ trái (số âm lớn) sang phải (số dương lớn). Khi vặn hết bên trái → dòng nước gần như tắt (xác suất ≈ 0). Khi vặn hết bên phải → dòng nước chảy tối đa (xác suất ≈ 1). Ở giữa → dòng nước chảy phân nửa (xác suất = 0.5).</p>
+            </div>
+
+            <!-- Interactive Demo -->
+            <div class="slider-demo">
+                <div class="slider-label">
+                    <span>Giá trị đầu vào (z)</span>
+                    <span id="z-val">0.0</span>
+                </div>
+                <input type="range" min="-8" max="8" step="0.1" value="0" id="z-slider" oninput="updateSigmoid()">
+                <div class="emoji-scale">
+                    <span>🔴 Chắc chắn KHÔNG</span>
+                    <span>🟡 50/50</span>
+                    <span>🟢 Chắc chắn CÓ</span>
+                </div>
+                <div class="demo-result" id="sig-result">Xác suất: 50.0%</div>
+                <div class="demo-explain" id="sig-explain">Mô hình đang phân vân 50-50, chưa nghiêng về bên nào.</div>
+            </div>
+
+            <div class="takeaway">
+                <h4><i class="fa-solid fa-star"></i> Ghi nhớ mấu chốt</h4>
+                <p>Sigmoid nhận đầu vào bất kỳ → ép về khoảng 0 tới 1 → nếu kết quả ≥ 0.5 thì dự đoán "Có" (nhãn 1), ngược lại dự đoán "Không" (nhãn 0).</p>
+            </div>
+        </div>
+
+        <!-- LOSS FUNCTION -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #ec4899, #f43f5e);"><i class="fa-solid fa-gavel"></i></div>
+                <h2>Cơ chế "phạt" khi đoán sai (Loss)</h2>
+            </div>
+            <p>Mô hình cần biết nó đoán sai cỡ nào để rút kinh nghiệm. Hàm <strong>Loss (Mất mát)</strong> chính là "quan tòa" chấm điểm.</p>
+
+            <div class="analogy">
+                <i class="fa-solid fa-balance-scale"></i>
+                <p><strong>Ẩn dụ phòng thi:</strong> Bạn đi thi trắc nghiệm. Nếu bạn tự tin 99% đáp án là A nhưng thực tế đáp án là B → bạn bị trừ điểm CỰC NẶNG. Nhưng nếu bạn chỉ chọn A với 51% tự tin → bị trừ nhẹ hơn nhiều. Hàm Loss phạt nặng khi mô hình <strong>vừa sai vừa tự tin</strong>.</p>
+            </div>
+
+            <!-- Interactive Loss Demo -->
+            <div class="slider-demo">
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <button onclick="setLabel(1)" id="btn-1" style="flex:1; padding: 0.6rem; border-radius: 8px; border: 1px solid rgba(52,211,153,0.3); background: rgba(52,211,153,0.15); color: #34d399; cursor: pointer; font-weight: 600;">Nhãn thật = CÓ (1)</button>
+                    <button onclick="setLabel(0)" id="btn-0" style="flex:1; padding: 0.6rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: var(--muted); cursor: pointer; font-weight: 600;">Nhãn thật = KHÔNG (0)</button>
+                </div>
+                <div class="slider-label">
+                    <span>Mô hình dự đoán xác suất "CÓ"</span>
+                    <span id="pred-val">50%</span>
+                </div>
+                <input type="range" min="1" max="99" step="1" value="50" id="pred-slider" oninput="updateLoss()">
+                <div class="demo-result" id="loss-result" style="color: var(--accent2);">Mức phạt: Trung bình ⚠️</div>
+                <div class="demo-explain" id="loss-explain">Mô hình phân vân 50-50, bị phạt ở mức vừa phải.</div>
+            </div>
+
+            <div class="takeaway">
+                <h4><i class="fa-solid fa-star"></i> Ghi nhớ mấu chốt</h4>
+                <p>Hàm Loss không chỉ đo "đúng hay sai" mà còn đo mức độ tự tin. Tự tin đoán SAI = hình phạt cực kỳ nặng. Đây là động lực buộc mô hình phải liên tục cải thiện.</p>
+            </div>
+        </div>
+
+        <!-- GRADIENT DESCENT -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);"><i class="fa-solid fa-mountain-sun"></i></div>
+                <h2>Cách mô hình tự học (Gradient Descent)</h2>
+            </div>
+            <p>Đây là phần mà nhiều người sợ nhất vì toán phức tạp. Nhưng bản chất nó cực kỳ đơn giản.</p>
+
+            <div class="analogy">
+                <i class="fa-solid fa-person-hiking"></i>
+                <p><strong>Ẩn dụ leo núi mù sương:</strong> Bạn đang đứng trên đỉnh núi trong sương mù dày đặc và muốn đi xuống thung lũng (điểm có Loss thấp nhất). Bạn không nhìn thấy gì cả, nên mỗi bước, bạn <strong>sờ bằng chân xem mặt đất dốc về hướng nào</strong> rồi <strong>bước một bước nhỏ theo hướng dốc xuống</strong>. Lặp lại hàng ngàn lần → bạn tới chân núi!</p>
+            </div>
+
+            <div class="step-list">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <h3>Bắt đầu ngẫu nhiên</h3>
+                        <p>Mô hình khởi tạo các trọng số (tham số) hoàn toàn ngẫu nhiên. Lúc này nó đoán bừa.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <h3>Đo Loss – Xem đoán sai cỡ nào</h3>
+                        <p>Dùng hàm Loss để tính mức độ sai lệch giữa dự đoán và thực tế.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <h3>Tính hướng dốc (Gradient)</h3>
+                        <p>Xác định nên tăng hay giảm từng tham số để Loss giảm xuống.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-text">
+                        <h3>Cập nhật tham số một chút</h3>
+                        <p>Dịch chuyển tham số theo hướng dốc xuống, nhưng chỉ một bước nhỏ (Learning Rate) để không bị trượt qua đáy.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">🔄</div>
+                    <div class="step-text">
+                        <h3>Lặp lại bước 2–4 hàng ngàn lần</h3>
+                        <p>Sau mỗi lần lặp, mô hình đoán chính xác hơn một chút. Đến khi Loss gần như không giảm nữa → dừng lại!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="takeaway">
+                <h4><i class="fa-solid fa-star"></i> Ghi nhớ mấu chốt</h4>
+                <p>Gradient Descent = Sờ mặt đất + Bước theo hướng dốc xuống + Lặp lại. Đó là cách MỌI mô hình AI học được từ dữ liệu, không chỉ riêng Logistic Regression.</p>
+            </div>
+        </div>
+
+        <!-- TỔNG KẾT -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #10b981, #34d399);"><i class="fa-solid fa-puzzle-piece"></i></div>
+                <h2>Ghép lại toàn bộ mảnh ghép</h2>
+            </div>
+
+            <div class="step-list">
+                <div class="step">
+                    <div class="step-num" style="background: linear-gradient(135deg, #8b5cf6, #a855f7);">A</div>
+                    <div class="step-text">
+                        <h3>Dữ liệu đầu vào → Tính tổng có trọng số</h3>
+                        <p>Mô hình nhân mỗi đặc trưng (tuổi, thu nhập…) với trọng số tương ứng rồi cộng lại thành 1 con số duy nhất.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num" style="background: linear-gradient(135deg, #ec4899, #f43f5e);">B</div>
+                    <div class="step-text">
+                        <h3>Đưa qua Sigmoid → Thành xác suất</h3>
+                        <p>Con số đó được ép về khoảng 0–1 nhờ hàm Sigmoid.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num" style="background: linear-gradient(135deg, #f59e0b, #f97316);">C</div>
+                    <div class="step-text">
+                        <h3>So sánh với nhãn thật → Tính Loss</h3>
+                        <p>Hàm Loss đo lường mô hình đoán sai cỡ nào và phạt nặng khi tự tin sai.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num" style="background: linear-gradient(135deg, #06b6d4, #3b82f6);">D</div>
+                    <div class="step-text">
+                        <h3>Gradient Descent → Cập nhật trọng số</h3>
+                        <p>Mô hình tự điều chỉnh trọng số theo hướng làm giảm Loss. Lặp lại A→D hàng ngàn lần cho đến khi giỏi!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analogy">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <p><strong>Tại sao Logistic Regression quan trọng?</strong> Vì nó chính là <strong>1 nơ-ron (neuron) đơn lẻ</strong> trong mạng Neural. Hiểu nó = hiểu viên gạch nền tảng của toàn bộ Deep Learning. Mọi mô hình phức tạp nhất như ChatGPT đều được xây dựng từ hàng tỷ viên gạch như thế này.</p>
+            </div>
+        </div>
+
+        <!-- BƯỚC TIẾP THEO -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background: linear-gradient(135deg, #f59e0b, #fb923c);"><i class="fa-solid fa-rocket"></i></div>
+                <h2>Bước tiếp theo</h2>
+            </div>
+            <p>Khi bạn đã cảm thấy thoải mái với các khái niệm trên, hãy:</p>
+            <div class="step-list">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <h3>Mở file bài tập Notebook</h3>
+                        <p>File <code>Logistic_Regression_Scratch.ipynb</code> đã được chuẩn bị sẵn. Bạn sẽ tự code từng phần bằng Numpy.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <h3>Xem phiên bản chuyên sâu (nếu muốn)</h3>
+                        <p>Mở file <code>study_guide.html</code> khi bạn sẵn sàng xem các công thức toán đầy đủ và mô phỏng nâng cao hơn.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Phiên bản Đơn Giản • Dành cho Khang • Không công thức, chỉ có trực giác 💛</p>
+    </footer>
+
+    <script>
+        function updateSigmoid() {
+            const z = parseFloat(document.getElementById('z-slider').value);
+            document.getElementById('z-val').innerText = z.toFixed(1);
+            const prob = 1 / (1 + Math.exp(-z));
+            const pct = (prob * 100).toFixed(1);
+            document.getElementById('sig-result').innerText = `Xác suất: ${pct}%`;
+
+            const el = document.getElementById('sig-explain');
+            if (prob > 0.9) {
+                el.innerText = "🟢 Mô hình rất tự tin đây là CÓ (nhãn 1). Gần như chắc chắn!";
+            } else if (prob > 0.6) {
+                el.innerText = "🟡 Mô hình nghiêng về CÓ nhưng chưa quá tự tin.";
+            } else if (prob > 0.4) {
+                el.innerText = "⚪ Mô hình đang phân vân 50-50, chưa nghiêng về bên nào.";
+            } else if (prob > 0.1) {
+                el.innerText = "🟡 Mô hình nghiêng về KHÔNG nhưng chưa quá tự tin.";
+            } else {
+                el.innerText = "🔴 Mô hình rất tự tin đây là KHÔNG (nhãn 0). Gần như chắc chắn!";
+            }
+        }
+
+        let trueLabel = 1;
+        function setLabel(val) {
+            trueLabel = val;
+            document.getElementById('btn-1').style.background = val === 1 ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.03)';
+            document.getElementById('btn-1').style.borderColor = val === 1 ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)';
+            document.getElementById('btn-1').style.color = val === 1 ? '#34d399' : '#a1a1aa';
+            document.getElementById('btn-0').style.background = val === 0 ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.03)';
+            document.getElementById('btn-0').style.borderColor = val === 0 ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.1)';
+            document.getElementById('btn-0').style.color = val === 0 ? '#f87171' : '#a1a1aa';
+            updateLoss();
+        }
+
+        function updateLoss() {
+            const pred = parseInt(document.getElementById('pred-slider').value) / 100;
+            document.getElementById('pred-val').innerText = (pred * 100).toFixed(0) + '%';
+            
+            let loss = 0;
+            if (trueLabel === 1) {
+                loss = -Math.log(Math.max(pred, 0.001));
+            } else {
+                loss = -Math.log(Math.max(1 - pred, 0.001));
+            }
+
+            const el = document.getElementById('loss-result');
+            const ex = document.getElementById('loss-explain');
+
+            if (loss < 0.15) {
+                el.innerText = "Mức phạt: Rất nhẹ 🎉";
+                el.style.color = '#34d399';
+                ex.innerText = "Tuyệt vời! Mô hình dự đoán rất khớp với thực tế.";
+            } else if (loss < 0.7) {
+                el.innerText = "Mức phạt: Trung bình ⚠️";
+                el.style.color = '#f59e0b';
+                ex.innerText = "Đúng hướng nhưng mô hình chưa đủ tự tin, cần cải thiện thêm.";
+            } else if (loss < 2) {
+                el.innerText = "Mức phạt: Nặng 🚨";
+                el.style.color = '#f97316';
+                ex.innerText = "Mô hình đang dự đoán ngược với thực tế. Bị phạt khá nhiều!";
+            } else {
+                el.innerText = "Mức phạt: Cực kỳ nặng 💥";
+                el.style.color = '#ef4444';
+                ex.innerText = "Thảm họa! Mô hình tự tin đoán SAI hoàn toàn. Phạt kịch trần!";
+            }
+        }
+    </script>
+</body>
+</html>
