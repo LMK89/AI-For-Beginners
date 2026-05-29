@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI for Engineers: Transformer & Attention</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; color: #1e293b; max-width: 1000px; margin: 0 auto; padding: 40px; background-color: #f8fafc; }
+        .card { background: white; padding: 35px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 30px; }
+        h1 { color: #4338ca; font-size: 2.25rem; border-left: 8px solid #6366f1; padding-left: 15px; }
+        h2 { color: #0f172a; font-size: 1.5rem; margin-top: 2rem; border-bottom: 2px solid #e2e8f0; }
+        .block { background: #f1f5f9; padding: 20px; border-radius: 12px; margin: 15px 0; }
+        .formula { background: #ffffff; padding: 15px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; margin: 15px 0; }
+        .keyword { color: #0ea5e9; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Transformer: Cơ chế Query-Key-Value (Q-K-V)</h1>
+        
+        <p>Transformer giải quyết bài toán xử lý chuỗi bằng cách biến nó thành một bài toán <strong>Database Retrieval</strong> thông minh.</p>
+
+        <h2>1. Bản chất của Self-Attention</h2>
+        <p>Hãy coi mỗi từ trong câu là một <code>Object</code> trong Database. Khi AI muốn hiểu ý nghĩa của một từ, nó thực hiện một lệnh <code>Search</code> vào chính câu đó.</p>
+
+        <div class="block">
+            <strong>Cấu trúc dữ liệu:</strong>
+            <ul>
+                <li><span class="keyword">Query (Q):</span> Câu hỏi bạn đang đặt ra ("Tôi quan tâm đến cái gì?").</li>
+                <li><span class="keyword">Key (K):</span> Chỉ mục/Nhãn của các từ khác ("Tôi có gì để bạn so sánh?").</li>
+                <li><span class="keyword">Value (V):</span> Giá trị thực của từ đó ("Nếu tôi liên quan, đây là thông tin tôi cung cấp").</li>
+            </ul>
+        </div>
+
+        <h2>2. Math Spec (Cơ chế tính điểm liên quan)</h2>
+        <div class="formula">
+            \[ \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V \]
+        </div>
+        <p><strong>Giải thích luồng chạy:</strong></p>
+        <ol>
+            <li><code>QK^T</code>: Tính tích vô hướng giữa "Câu hỏi" và "Nhãn". Nếu hai từ liên quan (như "mèo" và "ngủ"), điểm số sẽ cực cao.</li>
+            <li><code>softmax</code>: Chuyển các điểm số đó thành trọng số (%) sao cho tổng bằng 100%.</li>
+            <li>Nhân với <code>V</code>: Lấy thông tin từ các từ có trọng số cao nhất để tổng hợp thành ý nghĩa mới.</li>
+        </ol>
+
+        <h2>3. Positional Encoding: Hack thứ tự dữ liệu</h2>
+        <p>Vì Transformer không dùng vòng lặp (vốn dĩ xử lý song song toàn bộ dữ liệu), nó mất đi khái niệm từ nào đứng trước từ nào. Kỹ thuật này cộng thêm một <strong>vector sóng Sin/Cos</strong> vào input để "nhúng" thông tin vị trí vào dữ liệu.</p>
+        
+        <div class="block">
+            <strong>Lợi thế Senior Dev:</strong> Việc này cho phép bạn train model cực nhanh trên GPU vì không phải đợi từ sau chạy xong từ trước (phá bỏ rào cản tuần tự của RNN).
+        </div>
+    </div>
+</body>
+</html>
