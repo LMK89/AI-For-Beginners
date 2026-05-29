@@ -3,54 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI for Engineers: Boosting Strategy</title>
+    <title>Masterclass: Boosting Algorithms</title>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; color: #334155; max-width: 1000px; margin: 0 auto; padding: 40px; background-color: #fefce8; }
-        .card { background: white; padding: 35px; border-radius: 16px; border: 1px solid #fef08a; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        h1 { color: #92400e; border-left: 8px solid #fbbf24; padding-left: 15px; }
-        h2 { color: #1e293b; border-bottom: 2px solid #fde68a; padding-bottom: 8px; margin-top: 2rem; }
-        .code-logic { background: #fffbeb; border: 1px solid #fde68a; padding: 20px; border-radius: 8px; font-family: monospace; }
-        .formula { background: #ffffff; padding: 15px; border: 1px solid #fde68a; border-radius: 8px; text-align: center; margin: 15px 0; }
-        .step-num { display: inline-block; background: #fbbf24; color: white; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; margin-right: 10px; font-weight: bold; }
+        body { font-family: 'Inter', sans-serif; line-height: 1.7; color: #334155; max-width: 1000px; margin: 0 auto; padding: 40px; background-color: #fffbeb; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1 { color: #92400e; border-bottom: 2px solid #fde68a; padding-bottom: 10px; }
+        h2 { color: #b45309; margin-top: 30px; }
+        .formula-box { background: #fffdf2; padding: 20px; border-radius: 8px; border: 1px solid #fef3c7; text-align: center; font-size: 1.2rem; }
+        .highlight { font-weight: bold; color: #92400e; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Boosting: Gradient Boosting Decision Tree (GBDT)</h1>
-        
-        <p>Boosting không phải là một thuật toán đơn lẻ, nó là một <strong>chiến lược tối ưu hóa</strong>: Kết hợp nhiều mô hình yếu để tạo ra một hệ thống mạnh.</p>
+    <div class="container">
+        <h1>Boosting: Chiến Lược Tối Ưu Hóa Sai Số</h1>
+        <p>Boosting (XGBoost/LightGBM) là phương pháp <span class="highlight">Ensemble Learning</span>, xây dựng các cây quyết định tuần tự để sửa lỗi cho nhau.</p>
 
-        <h2>1. Tư duy lập trình: Boosting là gì?</h2>
-        <p>Hãy coi Boosting giống như việc <strong>Fix Bug tuần tự</strong>:</p>
-        <div class="code-logic">
-            Model_0 = Dự đoán trung bình;<br>
-            Residual_0 = Label - Model_0; // Tính sai số hiện tại<br><br>
-            Tree_1 = Train_Model(Residual_0); // Cây 1 tập trung fix sai số của bước trước<br>
-            Model_1 = Model_0 + Learning_Rate * Tree_1;<br>
-            Residual_1 = Label - Model_1; // Tiếp tục tìm sai số mới...
+        <h2>1. Hàm Mục Tiêu (Objective Function)</h2>
+        <p>Mỗi bước nhảy, mô hình tối ưu hóa một hàm chứa cả <span class="highlight">Loss</span> (Độ chính xác) và <span class="highlight">Regularization</span> (Độ phức tạp).</p>
+        <div class="formula-box">
+            \[ \text{Obj}(\theta) = \sum L(y_i, \hat{y}_i) + \sum \Omega(f_k) \]
+        </div>
+        <p>Thành phần \(\Omega\) giúp hệ thống không bị "học vẹt" (Overfitting) bằng cách phạt những cây quá sâu hoặc quá nhiều lá.</p>
+
+        <h2>2. Gradient & Hessian (Taylor Expansion)</h2>
+        <p>XGBoost dùng đạo hàm bậc 2 để tìm hướng đi tối ưu nhất cho hàm Loss, giúp mô hình hội tụ nhanh hơn nhiều so với Boosting truyền thống.</p>
+        <div class="formula-box">
+            \[ \text{Obj}^{(t)} \approx \sum [g_i f_t(x_i) + \frac{1}{2} h_i f_t^2(x_i)] + \Omega(f_t) \]
+        </div>
+        <p>Trong đó \(g_i\) là Gradient bậc 1 và \(h_i\) là Hessian bậc 2.</p>
+
+        <h2>3. Cơ chế Split Finding (Gain)</h2>
+        <p>Tại mỗi nút, máy tính điểm <span class="highlight">Gain</span> để quyết định xem có nên chia nhánh hay không. Nếu chia mà không làm giảm Loss đáng kể, máy sẽ dừng lại (Pruning).</p>
+        <div class="formula-box">
+            \[ \text{Gain} = \frac{1}{2} [ \frac{G_L^2}{H_L + \lambda} + \frac{G_R^2}{H_R + \lambda} - \frac{(G_L+G_R)^2}{H_L+H_R + \lambda} ] - \gamma \]
         </div>
 
-        <h2>2. Math Spec: Xấp xỉ Taylor bậc 2</h2>
-        <p>XGBoost nhanh và chính xác hơn các thuật toán khác vì nó dùng cả đạo hàm bậc 1 (Gradient) và bậc 2 (Hessian) để tìm hướng đi ngắn nhất đến đáy của <code>Loss Function</code>.</p>
-        <div class="formula">
-            \[ Obj = \sum L(y_i, \hat{y}_i) + \Omega(f) \]
-            <em>Trong đó \(\Omega(f)\) là thành phần <strong>Regularization</strong> - công cụ ngăn model "học vẹt" (Overfitting).</em>
-        </div>
-
-        <h2>3. Quy trình tìm điểm chia (Split Finding)</h2>
-        <p>Mỗi nút trong cây quyết định sẽ chọn thuộc tính nào để chia nhánh dựa trên điểm <strong>Gain</strong>:</p>
-        <div class="formula">
-            \[ Gain = \frac{1}{2} \left[ \frac{G_L^2}{H_L + \lambda} + \frac{G_R^2}{H_R + \lambda} - \frac{(G_L+G_R)^2}{H_L+H_R + \lambda} \right] - \gamma \]
-        </div>
-        <p><strong>Dành cho Dev:</strong> Đây thực chất là một thuật toán <code>Greedy Search</code>. Nó duyệt qua các điểm chia tiềm năng và chọn cái nào làm giảm <code>Loss</code> nhiều nhất.</p>
-
-        <h2>4. Key Hyperparameters (Cấu hình hệ thống)</h2>
+        <h2>4. Hyperparameters Cốt Lõi</h2>
         <ul>
-            <li><code>learning_rate</code> (Eta): Độ lớn của mỗi bước sửa lỗi. (Senior tip: Thường để nhỏ 0.01-0.1).</li>
-            <li><code>max_depth</code>: Độ sâu tối đa của cây (Ngăn cây quá chi tiết gây loãng hệ thống).</li>
-            <li><code>lambda / gamma</code>: Các tham số Regularization để "phạt" mô hình nếu nó trở nên quá phức tạp.</li>
+            <li><code>learning_rate</code>: Độ lớn của mỗi bước sửa lỗi.</li>
+            <li><code>max_depth</code>: Giới hạn độ phức tạp của từng cây đơn lẻ.</li>
+            <li><code>lambda/gamma</code>: Các thông số kiểm soát Regularization.</li>
         </ul>
     </div>
 </body>

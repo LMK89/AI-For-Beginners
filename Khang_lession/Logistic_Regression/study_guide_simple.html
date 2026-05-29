@@ -3,56 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI for Engineers: Logistic Regression</title>
+    <title>Masterclass: Logistic Regression for Engineers</title>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; color: #334155; max-width: 1000px; margin: 0 auto; padding: 40px; background-color: #f1f5f9; }
-        .card { background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; margin-bottom: 30px; }
-        h1 { color: #1e3a8a; font-size: 2.25rem; margin-bottom: 1rem; border-left: 8px solid #3b82f6; padding-left: 15px; }
-        h2 { color: #0f172a; font-size: 1.5rem; margin-top: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
-        .tech-note { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
-        .formula { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; margin: 15px 0; text-align: center; }
-        code { background: #f1f5f9; color: #be123c; padding: 2px 6px; border-radius: 4px; font-family: 'Fira Code', monospace; }
-        .step { font-weight: bold; color: #2563eb; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; line-height: 1.7; color: #1e293b; max-width: 1000px; margin: 0 auto; padding: 40px; background-color: #f8fafc; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1 { color: #1e40af; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        h2 { color: #0369a1; margin-top: 30px; }
+        .formula-box { background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; font-size: 1.2rem; }
+        .highlight { font-weight: bold; color: #0369a1; }
+        .note { border-left: 4px solid #0369a1; padding-left: 15px; background: #f0f9ff; padding: 15px; border-radius: 0 8px 8px 0; margin: 20px 0; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Logistic Regression: Binary Classification Pipeline</h1>
-        
-        <p>Thay vì coi đây là một đống công thức, hãy coi đây là một <strong>hàm biến đổi dữ liệu</strong> nhạy cảm với xác suất.</p>
+    <div class="container">
+        <h1>Logistic Regression: Pipeline Phân Loại</h1>
+        <p>Bản chất của Logistic Regression là một <strong>Linear Model</strong> được bọc bởi một hàm phi tuyến để thực hiện nhiệm vụ <span class="highlight">Classification</span>.</p>
 
-        <h2>1. The Problem: Phân loại nhị phân</h2>
-        <p>Bạn có <code>Input Data</code> (Features) và cần output là <code>0</code> hoặc <code>1</code>. Vấn đề là các phép toán nhân/cộng thông thường cho ra kết quả vô tận, không thể dùng trực tiếp để làm <code>flag</code> được.</p>
-
-        <h2>2. Logic Luồng Xử Lý (The Architecture)</h2>
-        <div class="tech-note">
-            <span class="step">Bước 1: Weighted Sum.</span> Tính tổng mức độ ảnh hưởng của các thuộc tính đầu vào.<br>
-            <span class="step">Bước 2: Sigmoid Activation.</span> Ép con số đó vào dải xác suất (0 đến 1).<br>
-            <span class="step">Bước 3: Prediction.</span> Nếu xác suất > 0.5 thì <code>return 1</code>, ngược lại <code>return 0</code>.
+        <h2>1. Mô hình dự báo (The Model)</h2>
+        <p>Hệ thống tính tổng trọng số của các thuộc tính (Linear Combination), sau đó nén kết quả vào dải xác suất (0, 1) bằng hàm <strong>Sigmoid</strong>.</p>
+        <div class="formula-box">
+            \[ \hat{y} = \sigma(\mathbf{w}^T\mathbf{x} + b) = \frac{1}{1 + e^{-(\mathbf{w}^T\mathbf{x} + b)}} \]
+        </div>
+        <div class="note">
+            <strong>Key Note:</strong> Hàm Sigmoid đóng vai trò là "bộ lọc" để chuyển một con số bất kỳ thành xác suất. Nếu \(\hat{y} \geq 0.5\), ta phân loại là 1, ngược lại là 0.
         </div>
 
-        <h2>3. Math Spec (Lớp thực thi)</h2>
-        <p>Công thức toán học chỉ đơn giản là cách hiện thực hóa logic trên:</p>
-        <div class="formula">
-            Tổng trọng số: \[ z = \sum_{i=1}^{n} w_ix_i + b \]
-            Xác suất dự đoán: \[ \hat{y} = \frac{1}{1 + e^{-z}} \]
+        <h2>2. Hàm Mất Mát (Loss Function): Binary Cross-Entropy</h2>
+        <p>Để máy tính biết mình đang dự đoán "tệ" đến mức nào, ta không dùng sai số bình phương thông thường mà dùng <strong>Log Loss</strong>. Công thức này trừng phạt cực nặng những dự đoán sai mà lại có độ tự tin cao.</p>
+        <div class="formula-box">
+            \[ J(\mathbf{w}) = -\frac{1}{m} \sum_{i=1}^{m} [y^{(i)} \log(\hat{y}^{(i)}) + (1 - y^{(i)}) \log(1 - \hat{y}^{(i)})] \]
         </div>
-
-        <h2>4. Hàm Mất Mát (Loss Function): Cơ chế "Phạt"</h2>
-        <p>Trong lập trình, bạn dùng <code>Unit Test</code> để check đúng/sai. Trong AI, ta dùng <strong>Log Loss</strong> để máy tự "debug" trọng số của chính nó.</p>
-        <div class="formula">
-            \[ Loss = -(y \log(\hat{y}) + (1-y) \log(1-\hat{y})) \]
-        </div>
-        <p><strong>Tại sao công thức này lại hoạt động?</strong></p>
         <ul>
-            <li>Nếu kết quả đúng là <code>1</code> nhưng máy dự đoán <code>0.1</code>: Hàm Log sẽ trả về một con số cực lớn -> Máy bị phạt nặng và phải điều chỉnh lại các <code>Weights</code>.</li>
-            <li>Nó ép máy không chỉ "đúng" mà phải "tự tin" (xác suất càng gần 0 hoặc 1 càng tốt).</li>
+            <li>Khi thực tế là 1 (\(y=1\)): Máy phải tối đa hóa \(\log(\hat{y})\).</li>
+            <li>Khi thực tế là 0 (\(y=0\)): Máy phải tối đa hóa \(\log(1-\hat{y})\).</li>
         </ul>
 
-        <h2>5. Optimization: Gradient Descent</h2>
-        <p>Nó giống như một vòng lặp <code>while(loss > threshold)</code>. Mỗi vòng lặp, máy tính đạo hàm (Gradient) để biết hướng nào làm giảm <code>Loss</code> nhanh nhất và cập nhật tham số.</p>
+        <h2>3. Tối Ưu Hóa (Optimization): Gradient Descent</h2>
+        <p>Đây là thuật toán "sửa lỗi" lặp đi lặp lại. Máy tính toán đạo hàm (Gradient) của hàm Loss để biết hướng nào làm giảm sai số nhanh nhất, sau đó cập nhật trọng số \(\mathbf{w}\).</p>
+        <div class="formula-box">
+            \[ \mathbf{w} := \mathbf{w} - \alpha \nabla_{\mathbf{w}} J(\mathbf{w}) \]
+        </div>
+        <p>Trong đó \(\alpha\) là <span class="highlight">Learning Rate</span> - thông số cấu hình tốc độ học của hệ thống.</p>
     </div>
 </body>
 </html>
