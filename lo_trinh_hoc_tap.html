@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản Đồ Học Tập AI Thực Chiến - Trực Quan Hóa Mối Liên Kết</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- MathJax for rendering LaTeX equations -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+
+    <style>
+        :root {
+            --bg-dark: #06050e;
+            --bg-card: rgba(18, 16, 35, 0.7);
+            --border-glow: rgba(139, 92, 246, 0.3);
+            --primary-grad: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+            --accent-violet: #8b5cf6;
+            --accent-magenta: #d946ef;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f97316;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(6, 182, 212, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        .badge {
+            background: rgba(139, 92, 246, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 0.5rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #ffffff, #c084fc, #e879f9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Interactive Mindmap Grid */
+        .mindmap-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .mindmap-grid {
+                grid-template-columns: 320px 1fr;
+            }
+        }
+
+        /* Sidebar Navigation Controls */
+        .sidebar {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 2rem;
+            height: fit-content;
+        }
+
+        .sidebar-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.75rem;
+        }
+
+        .menu-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .menu-btn {
+            width: 100%;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .menu-btn:hover, .menu-btn.active {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.4);
+            color: #ffffff;
+            transform: translateX(5px);
+        }
+
+        .menu-btn.active {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+        }
+
+        .menu-btn i {
+            font-size: 1.1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-btn.active i {
+            color: var(--accent-magenta);
+            transform: scale(1.1);
+        }
+
+        /* Flow Area Styles */
+        .flow-container {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        /* Section Block Animation */
+        .flow-section {
+            display: none;
+            animation: slideUp 0.5s ease forwards;
+        }
+
+        .flow-section.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Section Header */
+        .sec-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .sec-title-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sec-icon {
+            background: var(--primary-grad);
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .sec-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .sec-badge {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            padding: 0.35rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Learning Flow (Roadmap Line) */
+        .timeline {
+            position: relative;
+            padding-left: 2.5rem;
+            border-left: 2px dashed rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        .timeline-item {
+            position: relative;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: calc(-2.5rem - 11px);
+            top: 0.25rem;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--bg-dark);
+            border: 4px solid var(--accent-violet);
+            box-shadow: 0 0 10px var(--accent-violet);
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .timeline-item:hover .timeline-marker {
+            transform: scale(1.3);
+            border-color: var(--accent-magenta);
+            box-shadow: 0 0 15px var(--accent-magenta);
+        }
+
+        /* Card Content Inner */
+        .step-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 1.75rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .step-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(139, 92, 246, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .step-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-magenta);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-desc {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+        }
+
+        /* Mixed Details Columns */
+        .mixed-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+            margin-top: 1.25rem;
+        }
+
+        @media (min-width: 768px) {
+            .mixed-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .mixed-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .mixed-box h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.5rem;
+        }
+
+        .mixed-box.math h4 i { color: var(--accent-violet); }
+        .mixed-box.code h4 i { color: var(--accent-cyan); }
+        .mixed-box.analyst h4 i { color: var(--accent-green); }
+        .mixed-box.visual h4 i { color: var(--accent-orange); }
+
+        .mixed-box p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+        }
+
+        .mixed-box pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.75rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: 0.5rem;
+        }
+
+        .mixed-box code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            color: #a5f3fc;
+        }
+
+        /* Flow Chart Simulator Box */
+        .chart-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chart-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-chart-visual {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            position: relative;
+        }
+
+        .flow-node {
+            background: var(--bg-dark);
+            border: 2px solid var(--accent-violet);
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 130px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .flow-node:hover {
+            border-color: var(--accent-magenta);
+            box-shadow: 0 0 15px rgba(217, 70, 239, 0.3);
+            transform: scale(1.05);
+        }
+
+        .flow-arrow {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            animation: pulseArrow 1.5s infinite;
+        }
+
+        @keyframes pulseArrow {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="badge"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình Học AI Thực Chiến</div>
+            <h1>Bản Đồ Mối Liên Kết Thực Chiến AI</h1>
+            <p class="subtitle">Khám phá mối liên kết hữu cơ mạnh mẽ giữa Lý thuyết toán, Code thực tiễn, và Ứng dụng doanh nghiệp thông qua sơ đồ tương tác xen kẽ cực kỳ trực quan dành riêng cho bạn.</p>
+        </header>
+
+        <div class="mindmap-grid">
+            <!-- Sidebar Selection Menu -->
+            <div class="sidebar">
+                <h3 class="sidebar-title"><i class="fa-solid fa-list-check"></i> Các Phần Học Tập</h3>
+                <ul class="menu-list">
+                    <li><button class="menu-btn active" onclick="showSection('step1')">01. Toán Thống Kê & ML <i class="fa-solid fa-chevron-right"></i></button></li>
+                    <li><button class="menu-btn" onclick="showSection('step2')">02. Cây Quyết Định & Ensemble <i class="fa-solid fa-chevron-right"></i></button></li>
+                    <li><button class="menu-btn" onclick="showSection('step3')">03. Neural Networks & SGD <i class="fa-solid fa-chevron-right"></i></button></li>
+                    <li><button class="menu-btn" onclick="showSection('step4')">04. Học Sâu & Mạng CNN <i class="fa-solid fa-chevron-right"></i></button></li>
+                    <li><button class="menu-btn" onclick="showSection('step5')">05. Xử Lý Ngôn Ngữ & NLP <i class="fa-solid fa-chevron-right"></i></button></li>
+                    <li><button class="menu-btn" onclick="showSection('step6')">06. Transformers & GenAI <i class="fa-solid fa-chevron-right"></i></button></li>
+                </ul>
+            </div>
+
+            <!-- Flow Visual Content Area -->
+            <div class="flow-container">
+
+                <!-- STEP 1 -->
+                <div id="step1" class="flow-section active">
+                    <div class="sec-header">
+                        <div class="sec-title-group">
+                            <div class="sec-icon"><i class="fa-solid fa-calculator"></i></div>
+                            <h2 class="sec-title">Toán Thống Kê & Hồi Quy Logistic</h2>
+                        </div>
+                        <span class="sec-badge">Bắt Đầu</span>
+                    </div>
+
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="step-card">
+                                <div class="step-num">Phần 1.1</div>
+                                <h3 class="step-title">Ánh xạ từ Tuyến Tính sang Xác Suất</h3>
+                                <p class="step-desc">Khi bắt đầu học AI, toán học thường là rào cản. Ở đây chúng ta học Hàm Sigmoid để giải quyết bài toán Phân Loại nhị phân. Công thức sigmoid biến đổi mọi giá trị tuyến tính $z = Wx + b$ thành một xác suất chính xác từ 0 đến 1.</p>
+
+                                <div class="mixed-grid">
+                                    <div class="mixed-box math">
+                                        <h4><i class="fa-solid fa-square-root-variable"></i> Bản chất toán học</h4>
+                                        <p>Hàm kích hoạt Sigmoid giúp thu hẹp vô hạn về khoảng 0 và 1:</p>
+                                        <p>$$\sigma(z) = \frac{1}{1 + e^{-z}}$$</p>
+                                    </div>
+                                    <div class="mixed-box code">
+                                        <h4><i class="fa-solid fa-terminal"></i> Lập trình Python</h4>
+                                        <p>Triển khai cực gọn bằng thư viện Numpy:</p>
+                                        <pre><code>import numpy as np
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))</code></pre>
+                                    </div>
+                                    <div class="mixed-box analyst">
+                                        <h4><i class="fa-solid fa-briefcase"></i> Ứng dụng Doanh Nghiệp</h4>
+                                        <p><strong>Data Analyst / Engineer dùng làm gì?</strong></p>
+                                        <p>Phân tích rủi ro tín dụng (Duyệt vay: Có/Không), dự đoán khách hàng rời bỏ dịch vụ dựa trên hành vi chi tiêu.</p>
+                                    </div>
+                                    <div class="mixed-box visual">
+                                        <h4><i class="fa-solid fa-chart-line"></i> Trực quan hóa (Visual)</h4>
+                                        <p>Đồ thị có dạng đường cong hình chữ S đặc trưng cắt trục tung tại giá trị 0.5 (ngưỡng phân loại mặc định).</p>
+                                    </div>
+                                </div>
+
+                                <div class="chart-box">
+                                    <div class="chart-title"><i class="fa-solid fa-circle-nodes"></i> Quy trình luồng xử lý (Pipeline Flow)</div>
+                                    <div class="flow-chart-visual">
+                                        <div class="flow-node">Đầu vào X</div>
+                                        <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                                        <div class="flow-node">Wx + b (Tuyến tính)</div>
+                                        <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                                        <div class="flow-node">Sigmoid Activation</div>
+                                        <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                                        <div class="flow-node">Xác suất (0 đến 1)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2 -->
+                <div id="step2" class="flow-section">
+                    <div class="sec-header">
+                        <div class="sec-title-group">
+                            <div class="sec-icon"><i class="fa-solid fa-tree"></i></div>
+                            <h2 class="sec-title">Cây Quyết Định & Các Mô Hình Ensemble</h2>
+                        </div>
+                        <span class="sec-badge">Trung Cấp</span>
+                    </div>
+
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="step-card">
+                                <div class="step-num">Phần 1.2</div>
+                                <h3 class="step-title">Tối Ưu Hóa Chia Nhánh & Gradient Boosting</h3>
+                                <p class="step-desc">Từ cây quyết định đơn lẻ (Decision Tree), ta liên kết với toán thống kê để hiểu chỉ số Entropy và độ tinh khiết Gini. Sau đó phát triển lên thuật toán mạnh mẽ XGBoost và LightGBM thống trị dữ liệu bảng của doanh nghiệp.</p>
+
+                                <div class="mixed-grid">
+                                    <div class="mixed-box math">
+                                        <h4><i class="fa-solid fa-square-root-variable"></i> Bản chất toán học</h4>
+                                        <p>Tính độ hỗn loạn Entropy của dữ liệu để tìm điểm chia nhánh tốt nhất:</p>
+                                        <p>$$H(X) = -\sum P(x_i) \log_2 P(x_i)$$</p>
+                                    </div>
+                                    <div class="mixed-box code">
+                                        <h4><i class="fa-solid fa-terminal"></i> Lập trình Python</h4>
+                                        <p>Sử dụng thư viện scikit-learn và LightGBM thực chiến:</p>
+                                        <pre><code>from lightgbm import LGBMClassifier
+model = LGBMClassifier()
+model.fit(X_train, y_train)</code></pre>
+                                    </div>
+                                    <div class="mixed-box analyst">
+                                        <h4><i class="fa-solid fa-briefcase"></i> Ứng dụng Doanh Nghiệp</h4>
+                                        <p><strong>Xử lý dữ liệu thô:</strong></p>
+                                        <p>Data Engineer dùng cây để tự động phân loại hồ sơ khách hàng mà không cần chuẩn hóa feature, trích xuất thuộc tính <code>feature_importances_</code> để hiểu các biến quan trọng nhất.</p>
+                                    </div>
+                                    <div class="mixed-box visual">
+                                        <h4><i class="fa-solid fa-chart-line"></i> Trực quan hóa (Visual)</h4>
+                                        <p>Biểu đồ sơ đồ cây mọc phân nhánh nhị phân (Level-wise của XGBoost vs Leaf-wise của LightGBM).</p>
+                                    </div>
+                                </div>
+
+                                <div class="chart-box">
+                                    <div class="chart-title"><i class="fa-solid fa-circle-nodes"></i> Quy trình luồng xử lý (Pipeline Flow)</div>
+                                    <div class="flow-chart-visual">
+                                        <div class="flow-node">Dữ liệu Bảng SQL</div>
+                                        <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                                        <div class="flow-node">Tính toán Entropy/Gini</div>
+                                        <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                                        <div class="flow-node">Chia Nhánh Cây</div>
+                                        <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                                        <div class="flow-node">Feature Importance</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3 -->
+                <div id="step3" class="flow-section">
+                    <div class="sec-header">
+                        <div class="sec-title-group">
+                            <div class="sec-icon"><i class="fa-solid fa-brain"></i></div>
+                            <h2 class="sec-title">Mạng Neural & Tối Ưu Hóa Gradient</h2>
+                        </div>
+                        <span class="sec-badge">Nền Móng Deep Learning</span>
+                    </div>
+
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="step-card">
+                                <div class="step-num">Phần 1.3</div>
+                                <h3 class="step-title">Thuật Toán Lan Truyền Ngược (Backpropagation)</h3>
+                                <p class="step-desc">Mở rộng từ mô hình tuyến tính, ta liên kết nhiều neuron lại với nhau tạo thành mạng neural đa tầng. Cách mạng học dựa vào phép tính Đạo hàm chuỗi (Chain Rule) để tối ưu trọng số.</p>
+
+                                <div class="mixed-grid">
+                                    <div class="mixed-box math">
+                                        <h4><i class="fa-solid fa-square-root-variable"></i> Bản chất toán học</h4>
+                                        <p>Tính đạo hàm Chain Rule lan truyền lỗi ngược về các lớp trước:</p>
+                                        <p>$$\frac{\partial Loss}{\partial w} = \frac{\partial Loss}{\partial y\_pred} \times \frac{\partial y\_pred}{\partial z} \times \frac{\partial z}{\partial w}$$</p>
+                                    </div>
+                                    <div class="mixed-box code">
+                                        <h4><i class="fa-solid fa-terminal"></i> Lập trình Python</h4>
+                                        <p>Xây dựng Backprop thủ công bằng Numpy:</p>
+                                        <pre><code># Gradient step
+d_weights = np.dot(X.T, (y_pred - y))
+weights -= learning_rate * d_weights</code></pre>
+                                    </div>
+                                    <div class="mixed-box analyst">
+                                        <h4><i class="fa-solid fa-briefcase"></i> Ứng dụng Doanh Nghiệp</h4>
+                                        <p>Dự đoán chuỗi thời gian (Doanh số bán hàng, lượng người dùng truy cập máy chủ hệ thống thương mại điện tử).</p>
+                                    </div>
+                                    <div class="mixed-box visual">
+                                        <h4><i class="fa-solid fa-chart-line"></i> Trực quan hóa (Visual)</h4>
+                                        <p>Biểu đồ lỗi Loss giảm dần qua từng Epoch và mạng lưới kết nối đa tầng giữa các nốt neuron.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4 -->
+                <div id="step4" class="flow-section">
+                    <div class="sec-header">
+                        <div class="sec-title-group">
+                            <div class="sec-icon"><i class="fa-solid fa-eye"></i></div>
+                            <h2 class="sec-title">Học Sâu Cho Thị Giác Máy Tính (Computer Vision)</h2>
+                        </div>
+                        <span class="sec-badge">Thực Chiến Trực Quan</span>
+                    </div>
+
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="step-card">
+                                <div class="step-num">Phần 1.4</div>
+                                <h3 class="step-title">Mạng Tích Chập CNN & Phép Nhân Ma Trận 2D</h3>
+                                <p class="step-desc">Từ mảng toán học ma trận, ta liên kết trực tiếp tới việc xử lý điểm ảnh 2D của máy tính. Sử dụng phép toán Tích chập (Convolution) để phát hiện cạnh, góc, và đối tượng trong ảnh.</p>
+
+                                <div class="mixed-grid">
+                                    <div class="mixed-box math">
+                                        <h4><i class="fa-solid fa-square-root-variable"></i> Bản chất toán học</h4>
+                                        <p>Phép toán tích chập nhân quét ma trận bộ lọc (Kernel) với ma trận ảnh đầu vào:</p>
+                                        <p>$$(I * K)(i, j) = \sum_m \sum_n I(i-m, j-n) K(m, n)$$</p>
+                                    </div>
+                                    <div class="mixed-box code">
+                                        <h4><i class="fa-solid fa-terminal"></i> Lập trình Python</h4>
+                                        <p>Định nghĩa mạng CNN ngắn gọn bằng PyTorch:</p>
+                                        <pre><code>import torch.nn as nn
+class SimpleCNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv = nn.Conv2d(3, 16, kernel_size=3)</code></pre>
+                                    </div>
+                                    <div class="mixed-box analyst">
+                                        <h4><i class="fa-solid fa-briefcase"></i> Ứng dụng Doanh Nghiệp</h4>
+                                        <p>Phân loại sản phẩm lỗi trên băng chuyền tự động, nhận diện khuôn mặt điểm danh nhân viên camera thông minh.</p>
+                                    </div>
+                                    <div class="mixed-box visual">
+                                        <h4><i class="fa-solid fa-chart-line"></i> Trực quan hóa (Visual)</h4>
+                                        <p>Ảnh GIF mô phỏng cửa sổ bộ lọc trượt trên ảnh và trích xuất đặc trưng biên cạnh.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 5 -->
+                <div id="step5" class="flow-section">
+                    <div class="sec-header">
+                        <div class="sec-title-group">
+                            <div class="sec-icon"><i class="fa-solid fa-language"></i></div>
+                            <h2 class="sec-title">Xử Lý Ngôn Ngữ Tự Nhiên (NLP)</h2>
+                        </div>
+                        <span class="sec-badge">Ngữ Nghĩa Số Hóa</span>
+                    </div>
+
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="step-card">
+                                <div class="step-num">Phần 1.5</div>
+                                <h3 class="step-title">Vector Hóa Ngôn Ngữ (Embeddings) & Mạng Tuần Tự</h3>
+                                <p class="step-desc">Làm thế nào để chuyển từ văn bản chữ viết sang số học tính toán? Chúng ta học cách ánh xạ các từ thành các vector đa chiều (Embeddings) thông qua không gian vectơ hình học tuyến tính.</p>
+
+                                <div class="mixed-grid">
+                                    <div class="mixed-box math">
+                                        <h4><i class="fa-solid fa-square-root-variable"></i> Bản chất toán học</h4>
+                                        <p>Độ đo khoảng cách Cosine (Cosine Similarity) đo mức độ giống nhau về nghĩa giữa 2 từ:</p>
+                                        <p>$$\text{Similarity} = \frac{\vec{u} \cdot \vec{v}}{\|\vec{u}\| \|\vec{v}\|}$$</p>
+                                    </div>
+                                    <div class="mixed-box code">
+                                        <h4><i class="fa-solid fa-terminal"></i> Lập trình Python</h4>
+                                        <p>Sử dụng thư viện Hugging Face sinh vector embedding:</p>
+                                        <pre><code>from sentence_transformers import SentenceTransformer
+model = SentenceTransformer('all-MiniLM-L6-v2')
+vectors = model.encode(["Học AI rất vui", "Trí tuệ nhân tạo"])</code></pre>
+                                    </div>
+                                    <div class="mixed-box analyst">
+                                        <h4><i class="fa-solid fa-briefcase"></i> Ứng dụng Doanh Nghiệp</h4>
+                                        <p>Tìm kiếm thông tin nội bộ thông minh (Semantic Search), phân loại email rác tự động, phân tích sắc thái bình luận khách hàng (Tích cực/Tiêu cực).</p>
+                                    </div>
+                                    <div class="mixed-box visual">
+                                        <h4><i class="fa-solid fa-chart-line"></i> Trực quan hóa (Visual)</h4>
+                                        <p>Không gian 3D biểu diễn các từ liên quan đứng gần nhau (ví dụ: "vua" gần với "hoàng hậu", "học máy" gần với "dữ liệu").</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 6 -->
+                <div id="step6" class="flow-section">
+                    <div class="sec-header">
+                        <div class="sec-title-group">
+                            <div class="sec-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <h2 class="sec-title">Kỷ Nguyên Transformers & Generative AI</h2>
+                        </div>
+                        <span class="sec-badge">Đỉnh Cao Hiện Đại</span>
+                    </div>
+
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="step-card">
+                                <div class="step-num">Phần 1.6</div>
+                                <h3 class="step-title">Cơ Chế Tự Chú Ý (Self-Attention)</h3>
+                                <p class="step-desc">Chúng ta liên kết mọi mảnh ghép đã học: Toán ma trận, Hàm Sigmoid/Softmax và Vector Embedding để tạo ra trái tim của ChatGPT - cơ chế Chú ý giúp mô hình hiểu ngữ cảnh dài cực tốt.</p>
+
+                                <div class="mixed-grid">
+                                    <div class="mixed-box math">
+                                        <h4><i class="fa-solid fa-square-root-variable"></i> Bản chất toán học</h4>
+                                        <p>Tính điểm tương đồng giữa Query (Q), Key (K) và ánh xạ thông tin từ Value (V):</p>
+                                        <p>$$\text{Attention}(Q, K, V) = \text{Softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$</p>
+                                    </div>
+                                    <div class="mixed-box code">
+                                        <h4><i class="fa-solid fa-terminal"></i> Lập trình Python</h4>
+                                        <p>Tính Attention tinh gọn bằng PyTorch:</p>
+                                        <pre><code>import torch
+import torch.nn.functional as F
+def attention(Q, K, V):
+    scores = torch.matmul(Q, K.transpose(-2, -1)) / np.sqrt(Q.shape[-1])
+    return torch.matmul(F.softmax(scores, dim=-1), V)</code></pre>
+                                    </div>
+                                    <div class="mixed-box analyst">
+                                        <h4><i class="fa-solid fa-briefcase"></i> Ứng dụng Doanh Nghiệp</h4>
+                                        <p>Xây dựng Chatbot hỗ trợ khách hàng thông minh tự động tra cứu quy chế công ty (RAG - Retrieval-Augmented Generation), dịch thuật ngôn ngữ thời gian thực chất lượng cao.</p>
+                                    </div>
+                                    <div class="mixed-box visual">
+                                        <h4><i class="fa-solid fa-chart-line"></i> Trực quan hóa (Visual)</h4>
+                                        <p>Ma trận nhiệt (Heatmap) biểu diễn độ liên kết ngữ nghĩa giữa các từ trong câu văn.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <footer>
+            <p>Được thiết kế chuyên biệt cho học viên trái ngành | Microsoft AI For Beginners</p>
+            <p style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.5;">&copy; 2026 AI Study Companion. Let's study smart!</p>
+        </footer>
+    </div>
+
+    <script>
+        function showSection(stepId) {
+            // Remove active classes
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.flow-section').forEach(sec => sec.classList.remove('active'));
+
+            // Add active class to clicked button and target section
+            event.currentTarget.classList.add('active');
+            document.getElementById(stepId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
