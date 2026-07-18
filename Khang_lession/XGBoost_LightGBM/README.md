@@ -6,6 +6,8 @@ Chào Khang! Trong các doanh nghiệp thực tế (như tài chính, ngân hàn
 
 Dưới đây là lộ trình chi tiết giúp bạn làm chủ hai công cụ mạnh mẽ nhất hiện nay trong 3 - 5 ngày.
 
+> 🧭 **Thấy lý thuyết khô khan?** Hãy mở file [USECASE.md](./USECASE.md) trước: XGBoost đấu tay đôi với Logistic Regression trên bộ dữ liệu duyệt vay 30 dòng — xem cây thắng ở dòng nào (chữ V, tương tác chéo, NaN), thua ở dòng nào (học vẹt, nhãn nhiễu), và `max_depth`, `learning_rate`, `min_child_weight` thay đổi kết quả ra sao. Toàn bộ số liệu chạy thật, kèm code.
+
 ---
 
 ## 🎯 Mục Tiêu Cốt Lõi Cần Đạt Được
