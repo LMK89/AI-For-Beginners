@@ -6,6 +6,8 @@ Chào Khang! Nhiều người khi mới học AI thường vội vàng nhảy ng
 
 Dưới đây là lộ trình chi tiết và tài liệu học tập được thiết kế riêng cho bạn trong 1 - 2 ngày tới.
 
+> 🧭 **Thấy lý thuyết khô khan?** Hãy mở file [USECASE.md](./USECASE.md) trước: học qua bộ dữ liệu 30 dòng cụ thể (bài toán duyệt khoản vay) — xem Logistic Regression đúng ở dòng nào, sai ở dòng nào, tại sao, và các tham số (ngưỡng, C, learning rate) ảnh hưởng ra sao. Toàn bộ số liệu đều chạy thật, có code kèm theo để tự nghịch.
+
 ---
 
 ## 🎯 Mục Tiêu Cốt Lõi Cần Đạt Được

@@ -2,6 +2,9 @@
 
 Chào mừng bạn đến với Chương 6 - đỉnh cao của lộ trình học tập AI thực chiến! Đây là nơi chúng ta gộp toàn bộ các mảnh ghép toán học ma trận, hàm kích hoạt Softmax, và vector embedding để xây dựng nên cấu trúc "bộ não" đứng sau ChatGPT - cơ chế **Self-Attention**.
 
+> 🧭 **Học qua ví dụ trước, lý thuyết sau?** Mở [USECASE về Transformer & Self-Attention](../../Khang_lession/Transformer_SelfAttention/USECASE.md): 30 câu review — chứng minh mô hình đếm từ bắt buộc sai với cặp câu đảo thứ tự, vì sao cần Attention, và cái giá bộ nhớ O(T²) bằng số thật (T=131k → 68,7 GB). Kèm code.
+
+
 ---
 
 ## 📐 1. Bản Chất Toán Học (Math Foundations)

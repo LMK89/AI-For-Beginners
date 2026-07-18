@@ -6,6 +6,8 @@ Chào Khang! Kể từ bài báo lịch sử **"Attention Is All You Need"** (20
 
 Dưới đây là lộ trình học tập toàn diện được thiết kế trong 1 - 2 tuần giúp bạn làm chủ "bộ não" của GenAI.
 
+> 🧭 **Thấy lý thuyết khô khan?** Hãy mở file [USECASE.md](./USECASE.md) trước: học qua 30 câu review thật — xem câu nào chỉ cần "đếm từ" là đoán được, câu nào (phủ định, đảo thứ tự, mỉa mai) khiến mô hình kiểu cũ chết đứng và vì sao phải có Self-Attention, kèm cái giá bộ nhớ O(T²) tính bằng số thật. Toàn bộ thí nghiệm chạy thật, kèm code.
+
 ---
 
 ## 🎯 Mục Tiêu Cốt Lõi Cần Đạt Được
