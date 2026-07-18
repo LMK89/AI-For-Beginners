@@ -1,6 +1,8 @@
 # Chương 3: Mạng Neural Nhân Tạo & Tối Ưu Hóa (Stochastic Gradient Descent)
 
 Chào mừng bạn đến với Chương 3! Đây là bước nhảy vọt đưa bạn từ Machine Learning truyền thống bước vào thế giới Học Sâu (Deep Learning) kỳ vĩ. Chúng ta sẽ cùng học cách liên kết toán học đạo hàm giải tích để tối ưu hóa cả một mạng lưới neuron.
+> 🧭 **Học qua ví dụ trước, lý thuyết sau?** Mở [USECASE.md](./USECASE.md): 30 cửa hàng lãi/lỗ theo quy luật XOR — Logistic Regression đúng 50% (tung xu), MLP 4 neuron đúng 100%, và bỏ hàm phi tuyến đi thì mạng bao nhiêu tầng cũng về 50%. Kèm thí nghiệm learning rate, batch size của SGD. Số liệu chạy thật, kèm code.
+
 
 ---
 

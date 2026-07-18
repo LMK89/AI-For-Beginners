@@ -1,6 +1,8 @@
 # Chương 2: Cây Quyết Định & Các Mô Hình Ensemble (XGBoost & LightGBM)
 
 Chào mừng bạn đến với Chương 2! Trong thế giới doanh nghiệp thực tế, hơn 80% dữ liệu tồn tại dưới dạng bảng (tabular data từ SQL, Excel). Đây là nơi các mô hình dựa trên Cây Quyết Định (Tree-based models) như XGBoost và LightGBM thống trị tuyệt đối.
+> 🧭 **Học qua ví dụ trước, lý thuyết sau?** Mở [USECASE về XGBoost/LightGBM](../../Khang_lession/XGBoost_LightGBM/USECASE.md): XGBoost đấu tay đôi Logistic Regression trên 30 hồ sơ vay — cây thắng ở đâu (chữ V, tương tác chéo, NaN), thua ở đâu (học vẹt, nhãn nhiễu), và `max_depth`, `learning_rate`, `min_child_weight` đổi kết quả thế nào. Số liệu chạy thật, kèm code.
+
 
 ---
 

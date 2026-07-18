@@ -1,6 +1,8 @@
 # Chương 1: Toán Thống Kê & Hồi Quy Logistic (Logistic Regression)
 
 Chào mừng bạn đến với phần học đầu tiên của lộ trình AI thực chiến! Phần học này được thiết kế theo hình thức học xen kẽ (mixed): từ toán học -> liên kết mô hình AI -> ứng dụng thực tiễn của Data Analyst / Data Engineer -> code Python thuần -> trực quan hóa công thức.
+> 🧭 **Học qua ví dụ trước, lý thuyết sau?** Mở [USECASE về Logistic Regression](../../Khang_lession/Logistic_Regression/USECASE.md): bộ dữ liệu duyệt vay 30 dòng — dòng nào mô hình đúng/sai, tại sao, và ngưỡng, C, learning rate ảnh hưởng ra sao. Toàn bộ số liệu chạy thật, kèm code.
+
 
 ---
 

@@ -1,6 +1,8 @@
 # Chương 4: Học Sâu Cho Thị Giác Máy Tính (Computer Vision)
 
 Chào mừng bạn đến với Chương 4! Ở chương này, chúng ta sẽ liên kết trực tiếp phép toán ma trận trong đại số tuyến tính với cấu trúc điểm ảnh của một bức ảnh 2D, giải thích cách máy tính có thể tự động "nhìn" và phân loại hình ảnh.
+> 🧭 **Học qua ví dụ trước, lý thuyết sau?** Mở [USECASE.md](./USECASE.md): 30 bức ảnh 8×8 — mạng phẳng đạt 100% tập học nhưng 0/6 trên ảnh vạch dịch chỗ, còn tích chập + padding + pooling đúng 6/6. Hiểu kernel, padding, pooling qua số đo thật, kèm code.
+
 
 ---
 

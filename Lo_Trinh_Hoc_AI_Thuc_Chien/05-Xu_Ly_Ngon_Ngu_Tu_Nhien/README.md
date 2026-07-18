@@ -1,6 +1,8 @@
 # Chương 5: Xử Lý Ngôn Ngữ Tự Nhiên (Natural Language Processing)
 
 Chào mừng bạn đến với Chương 5! Làm thế nào để máy tính - vốn chỉ hiểu được các con số 0 và 1 - lại có thể đọc hiểu và cảm nhận được ý nghĩa của các từ ngữ phức tạp mà con người nói hàng ngày? Hãy cùng khám phá mối liên kết toán học hình học đằng sau quá trình này.
+> 🧭 **Học qua ví dụ trước, lý thuyết sau?** Mở [USECASE.md](./USECASE.md): tự train word embedding trên kho 38 câu rồi soi 30 từ — đồng nghĩa tụ đàn (cos(ngon, tuyệt) = 1.00), nhưng trái nghĩa cũng dính nhau (cos(ngon, dở) = 0.99!), từ đa nghĩa kẹt giữa hai cụm, từ hiếm thành vector rác. Số liệu chạy thật, kèm code.
+
 
 ---
 
