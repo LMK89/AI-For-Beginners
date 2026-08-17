@@ -46,6 +46,182 @@
             \[ \mathbf{w} := \mathbf{w} - \alpha \nabla_{\mathbf{w}} J(\mathbf{w}) \]
         </div>
         <p>Trong đó \(\alpha\) là <span class="highlight">Learning Rate</span> - thông số cấu hình tốc độ học của hệ thống.</p>
+
+
+<style>
+/* Dark mode and base styles */
+:root {
+  --bg-color: #f8fafc;
+  --text-color: #1e293b;
+  --container-bg: white;
+  --primary-color: #0369a1;
+  --border-color: #e2e8f0;
+  --success: #22c55e;
+  --warning: #eab308;
+  --danger: #ef4444;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #0f172a;
+    --text-color: #f1f5f9;
+    --container-bg: #1e293b;
+    --primary-color: #38bdf8;
+    --border-color: #334155;
+  }
+}
+body { background-color: var(--bg-color); color: var(--text-color); transition: background-color 0.3s, color 0.3s; }
+.container { background: var(--container-bg); transition: background-color 0.3s; }
+
+/* Animations */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-down { animation: fadeInDown 0.5s ease-out forwards; }
+.animate-slide-up { animation: slideUp 0.5s ease-out forwards; opacity: 0; }
+.animate-slide-down { animation: slideDown 0.4s ease-out forwards; display: none; }
+.animate-pulse { animation: pulse 2s infinite; }
+
+/* Interactive UI */
+.interactive-section { margin-top: 40px; padding-top: 20px; border-top: 2px solid var(--border-color); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
+.card { background: var(--bg-color); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); transition: all 0.3s; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.demo-box { background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; min-height: 120px; transition: opacity 0.3s; }
+.input-group { margin: 15px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+input[type="number"], input[type="text"] { padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--container-bg); color: var(--text-color); }
+button { padding: 8px 16px; border: none; border-radius: 4px; background: var(--primary-color); color: white; cursor: pointer; transition: background 0.3s; font-weight: bold; }
+button:hover { opacity: 0.9; }
+.quiz-option { display: block; margin: 10px 0; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+.quiz-option:hover { background: var(--bg-color); }
+.flow-diagram { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 20px 0; font-size: 1.2rem; font-weight: bold; flex-wrap: wrap; }
+.arrow { color: var(--primary-color); }
+</style>
+
+<div class="interactive-section">
+    <h2 class="animate-fade-in-down">4. Trình Bày Tương Tác: Tối Ưu Hóa Tốc Độ Học (Learning Rate)</h2>
+
+    <div class="card-grid">
+        <div class="card animate-slide-up" style="animation-delay: 0.1s">
+            <h3>Cách 1: LR Quá Lớn (❌)</h3>
+            <p>Input: <code>&alpha; = 5.0</code></p>
+            <code>w -= 5.0 * grad</code>
+            <p>Output: Mất mát nhảy vọt, phân kỳ.</p>
+        </div>
+        <div class="card animate-slide-up" style="animation-delay: 0.2s">
+            <h3>Cách 2: LR Quá Nhỏ (⚠️)</h3>
+            <p>Input: <code>&alpha; = 0.0001</code></p>
+            <code>w -= 0.0001 * grad</code>
+            <p>Output: Giảm từng chút một, rất chậm.</p>
+        </div>
+        <div class="card animate-slide-up" style="animation-delay: 0.3s">
+            <h3>Cách 3: LR Chuẩn (✅)</h3>
+            <p>Input: <code>&alpha; = 0.1</code></p>
+            <code>w -= 0.1 * grad</code>
+            <p>Output: Giảm đều đặn, ổn định.</p>
+        </div>
+    </div>
+
+    <h3 class="animate-fade-in-down" style="margin-top: 30px;">Demo Thực Tế: Mô Phỏng Loss</h3>
+    <div class="flow-diagram animate-pulse">
+        <span>Input (LR)</span> <span class="arrow">➔</span> <span>Cập Nhật (w)</span> <span class="arrow">➔</span> <span>Output (Loss)</span>
+    </div>
+
+    <div class="input-group animate-slide-up" style="animation-delay: 0.4s">
+        <label>Nhập Learning Rate:</label>
+        <input type="number" id="lr-input" value="0.1" step="0.1">
+        <button onclick="runDemo()">Play Demo</button>
+    </div>
+    <div class="demo-box animate-slide-up" id="demo-output" style="animation-delay: 0.5s">
+        Nhấn Play để xem trạng thái cập nhật...
+    </div>
+
+    <h3 class="animate-fade-in-down" style="margin-top: 30px;">Bài Tập Tương Tác</h3>
+    <div class="card animate-slide-up" style="animation-delay: 0.6s">
+        <p><strong>Câu hỏi:</strong> Nếu hàm Loss sau 3 epoch là: <code>0.8 &rarr; 1.5 &rarr; 3.2</code>, bạn nên làm gì?</p>
+        <label class="quiz-option"><input type="radio" name="quiz1" value="A"> Tăng Learning Rate</label>
+        <label class="quiz-option"><input type="radio" name="quiz1" value="B"> Giảm Learning Rate</label>
+        <label class="quiz-option"><input type="radio" name="quiz1" value="C"> Giữ nguyên</label>
+        <button onclick="checkQuiz()" style="margin-top: 10px;">Check Answer</button>
+        <div id="quiz-result" class="animate-slide-down" style="margin-top: 15px; padding: 10px; border-radius: 4px;"></div>
+    </div>
+</div>
+
+<script>
+function runDemo() {
+    const lr = parseFloat(document.getElementById('lr-input').value);
+    const output = document.getElementById('demo-output');
+
+    // Smooth transition simulation
+    output.style.opacity = '0.5';
+    output.innerHTML = "Đang chạy mô phỏng...<br>";
+
+    setTimeout(() => {
+        let text = "[Trạng thái Loss qua 3 Epoch]<br><br>";
+        if (lr > 1.0) {
+            text += "Epoch 1: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.8)<br>";
+            text += "Epoch 2: ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ (Loss = 1.2) ✗ Vượt qua điểm tối ưu<br>";
+            text += "Epoch 3: ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ (Loss = 2.0) ✗ Phân kỳ<br>";
+            text += "<br>Kết luận: ❌ LR Quá Lớn";
+        } else if (lr < 0.01) {
+            text += "Epoch 1: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.800)<br>";
+            text += "Epoch 2: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.799)<br>";
+            text += "Epoch 3: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.798) ⚠️ Hội tụ quá chậm<br>";
+            text += "<br>Kết luận: ⚠️ LR Quá Nhỏ";
+        } else {
+            text += "Epoch 1: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.80)<br>";
+            text += "Epoch 2: ■ ■ ■ ■ □ □ □ □ □ □ (Loss = 0.40) ✓<br>";
+            text += "Epoch 3: ■ □ □ □ □ □ □ □ □ □ (Loss = 0.12) ✓ Hội tụ tốt<br>";
+            text += "<br>Kết luận: ✅ LR Chuẩn";
+        }
+        output.innerHTML = text;
+        output.style.opacity = '1';
+    }, 400); // 0.4s smooth transition illusion
+}
+
+function checkQuiz() {
+    const options = document.getElementsByName('quiz1');
+    let selected = null;
+    for (let opt of options) {
+        if (opt.checked) selected = opt.value;
+    }
+
+    const resultDiv = document.getElementById('quiz-result');
+
+    // reset animation
+    resultDiv.style.animation = 'none';
+    resultDiv.offsetHeight; /* trigger reflow */
+    resultDiv.style.animation = null;
+
+    resultDiv.style.display = 'block';
+    resultDiv.classList.add('animate-slide-down');
+
+    if (selected === 'B') {
+        resultDiv.style.backgroundColor = 'rgba(34, 197, 94, 0.2)';
+        resultDiv.style.border = '1px solid var(--success)';
+        resultDiv.innerHTML = "✅ <strong>Chính xác!</strong> Loss đang tăng vọt, chứng tỏ phân kỳ do LR quá lớn. Cần giảm LR.";
+    } else {
+        resultDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+        resultDiv.style.border = '1px solid var(--danger)';
+        resultDiv.innerHTML = "❌ <strong>Chưa đúng!</strong> Loss đang tăng (phân kỳ), nghĩa là bước nhảy quá lớn. Hãy chọn lại.";
+    }
+}
+</script>
+</div>
     </div>
 </body>
 </html>
