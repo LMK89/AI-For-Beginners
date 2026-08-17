@@ -46,6 +46,97 @@
             \[ \mathbf{w} := \mathbf{w} - \alpha \nabla_{\mathbf{w}} J(\mathbf{w}) \]
         </div>
         <p>Trong đó \(\alpha\) là <span class="highlight">Learning Rate</span> - thông số cấu hình tốc độ học của hệ thống.</p>
+
+        <h2>4. Phần Trình Bày Trực Quan: Tối Ưu Hóa Tốc Độ Học (Learning Rate)</h2>
+        <p>Để Gradient Descent hội tụ đến điểm tối ưu (Loss thấp nhất), việc chọn Learning Rate (LR) là cực kỳ quan trọng. Hãy cùng quan sát 3 trạng thái của Learning Rate.</p>
+
+        <h3>4.1 Sơ Đồ Trực Quan (State Trace Visualization)</h3>
+        <p>Mô phỏng bộ nhớ/dữ liệu khi con trỏ lặp qua từng epoch:</p>
+        <pre style="background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; overflow-x: auto;">
+[Trạng thái Loss qua từng Epoch - Điểm tối ưu: Loss = 0.1]
+
+▶ State 1: LR = 5.0 (Quá lớn)
+Epoch 1: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.8)
+Epoch 2: ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ (Loss = 1.2) ✗ Vượt qua điểm tối ưu
+Epoch 3: ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ (Loss = 2.0) ✗ Phân kỳ
+
+▶ State 2: LR = 0.0001 (Quá nhỏ)
+Epoch 1: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.800)
+Epoch 2: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.799)
+Epoch 3: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.798) ⚠️ Hội tụ quá chậm
+
+▶ State 3: LR = 0.1 (Vừa đủ)
+Epoch 1: ■ ■ ■ ■ ■ ■ ■ □ □ □ (Loss = 0.80)
+Epoch 2: ■ ■ ■ ■ □ □ □ □ □ □ (Loss = 0.40) ✓
+Epoch 3: ■ □ □ □ □ □ □ □ □ □ (Loss = 0.12) ✓ Hội tụ tốt
+        </pre>
+
+        <h3>4.2 Bảng So Sánh Các Trạng Thái</h3>
+        <table border="1" style="width:100%; border-collapse: collapse; margin: 20px 0; text-align: left;">
+            <thead>
+                <tr style="background-color: #f1f5f9;">
+                    <th style="padding: 10px;">Trạng Thái</th>
+                    <th style="padding: 10px;">Input (LR \(\alpha\))</th>
+                    <th style="padding: 10px;">Xử Lý (Cập nhật)</th>
+                    <th style="padding: 10px;">Output (Loss)</th>
+                    <th style="padding: 10px;">Đánh Giá</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 10px;">Cách 1: LR Quá Lớn</td>
+                    <td style="padding: 10px;">\(\alpha = 5.0\)</td>
+                    <td style="padding: 10px;">\(w \leftarrow w - 5.0 \times \nabla J\)</td>
+                    <td style="padding: 10px;">Tăng vọt, nhảy qua lại</td>
+                    <td style="padding: 10px;">❌ Xấu (Phân kỳ)</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px;">Cách 2: LR Quá Nhỏ</td>
+                    <td style="padding: 10px;">\(\alpha = 0.0001\)</td>
+                    <td style="padding: 10px;">\(w \leftarrow w - 0.0001 \times \nabla J\)</td>
+                    <td style="padding: 10px;">Giảm từng chút một</td>
+                    <td style="padding: 10px;">⚠️ Trung bình (Chậm)</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px;">Cách 3: LR Chuẩn</td>
+                    <td style="padding: 10px;">\(\alpha = 0.1\)</td>
+                    <td style="padding: 10px;">\(w \leftarrow w - 0.1 \times \nabla J\)</td>
+                    <td style="padding: 10px;">Giảm đều và ổn định</td>
+                    <td style="padding: 10px;">✅ Tốt (Nhanh)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.3 Code Cú Pháp Tối Giản</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="flex: 1; background: #f8fafc; padding: 10px; border-radius: 8px;">
+                <strong>Cách 1 (❌ LR Lớn):</strong>
+                <pre style="margin-bottom: 0;"><code>w -= 5.0 * grad</code></pre>
+            </div>
+            <div style="flex: 1; background: #f8fafc; padding: 10px; border-radius: 8px;">
+                <strong>Cách 2 (⚠️ LR Nhỏ):</strong>
+                <pre style="margin-bottom: 0;"><code>w -= 0.0001 * grad</code></pre>
+            </div>
+            <div style="flex: 1; background: #f8fafc; padding: 10px; border-radius: 8px;">
+                <strong>Cách 3 (✅ LR Chuẩn):</strong>
+                <pre style="margin-bottom: 0;"><code>w -= 0.1 * grad</code></pre>
+            </div>
+        </div>
+        <p><strong>Kết quả / Độ phức tạp / Ghi chú bản chất:</strong> Độ phức tạp tính toán ở mỗi epoch là \(O(N)\) với \(N\) là số lượng mẫu. Tuy nhiên, nếu dùng LR nhỏ sẽ cần rất nhiều epoch \(\rightarrow\) Tổng thời gian đào tạo cực lớn. Bản chất của việc chọn LR là đánh đổi giữa tốc độ học và độ ổn định.</p>
+
+        <h3>4.4 Thực Tế: Real-world Use Case</h3>
+        <p><strong>Dữ liệu tốt vs Dữ liệu xấu:</strong></p>
+        <ul>
+            <li><strong>Dữ liệu tốt (Đã Normalize):</strong> Các features có cùng thang đo (ví dụ từ \(0 \rightarrow 1\)). Bề mặt hàm Loss mượt mà, dùng LR chuẩn (\(\alpha = 0.1\)) sẽ hội tụ rất nhanh.</li>
+            <li><strong>Dữ liệu xấu (Chưa Normalize):</strong> Feature A (giá nhà) hàng triệu, Feature B (số phòng) chỉ từ 1-5. Bề mặt hàm Loss méo mó, dùng \(\alpha = 0.1\) có thể gây phân kỳ trên Feature A. Phải dùng LR rất nhỏ, dẫn đến hội tụ cực kỳ chậm!</li>
+        </ul>
+
+        <h3>4.5 Bài Tập Nhỏ & Câu Hỏi Tự Kiểm Tra</h3>
+        <div class="note">
+            <strong>Câu hỏi:</strong> Nếu hàm Loss của bạn sau 5 epochs có giá trị lần lượt là: <code>0.8, 1.2, 2.5, 5.0, 10.2</code>... Bạn sẽ điều chỉnh Learning Rate như thế nào? Tại sao?
+            <br><br>
+            <em>Gợi ý:</em> Hãy nhìn lại bảng so sánh trạng thái để phân tích hướng đi của Loss!
+        </div>
     </div>
 </body>
 </html>
