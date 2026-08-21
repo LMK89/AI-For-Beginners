@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài Học: Perceptron - Nền Tảng Mạng Nơ-ron</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark-bg: #1f2937;
+            --dark-card: #111827;
+            --light-bg: #f9fafb;
+            --light-card: #ffffff;
+            --text-dark: #111827;
+            --text-light: #f3f4f6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--light-bg);
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        body.dark-mode {
+            background: var(--dark-bg);
+            color: var(--text-light);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.7;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .card {
+            background: var(--light-card);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: slideUp 0.6s ease;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .card {
+            background: var(--dark-card);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+            font-size: 1.8rem;
+        }
+
+        .concept-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        body.dark-mode .concept-box {
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        body.dark-mode .comparison-table th,
+        body.dark-mode .comparison-table td {
+            border-bottom-color: #374151;
+        }
+
+        .comparison-table th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        body.dark-mode .comparison-table tr:nth-child(even) {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 3px;
+        }
+
+        .badge.good {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge.medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .badge.bad {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .diagram {
+            background: var(--light-bg);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 2px solid var(--primary);
+            animation: pulse 2s infinite;
+        }
+
+        body.dark-mode .diagram {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .code-block {
+            background: var(--text-dark);
+            color: #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 15px 0;
+            line-height: 1.4;
+        }
+
+        .code-block .keyword {
+            color: #8b5cf6;
+        }
+
+        .code-block .string {
+            color: #f59e0b;
+        }
+
+        .demo-section {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(99, 102, 241, 0.1));
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .demo-controls input {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px;
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            font-size: 1rem;
+            background: var(--light-card);
+            color: var(--text-dark);
+        }
+
+        body.dark-mode .demo-controls input {
+            background: var(--dark-card);
+            color: var(--text-light);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .quiz-section {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+
+        .quiz-question {
+            margin: 20px 0;
+        }
+
+        .quiz-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .quiz-option input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .quiz-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .quiz-result.show {
+            display: block;
+        }
+
+        .quiz-result.correct {
+            background: rgba(16, 185, 129, 0.2);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .quiz-result.incorrect {
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 4px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .visualization {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .neuron-viz {
+            text-align: center;
+        }
+
+        .neuron-circle {
+            width: 80px;
+            height: 80px;
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 0 auto 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .highlight-good { color: var(--success); font-weight: 600; }
+        .highlight-bad { color: var(--danger); font-weight: 600; }
+        .highlight-neutral { color: var(--warning); font-weight: 600; }
+
+        .practice-exercise {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(99, 102, 241, 0.1));
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .practice-exercise h4 {
+            color: var(--warning);
+            margin-bottom: 15px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            opacity: 0.7;
+            margin-top: 40px;
+            border-top: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .comparison-table {
+                font-size: 0.9rem;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 10px;
+            }
+
+            .visualization {
+                flex-direction: column;
+            }
+
+            .demo-controls {
+                flex-direction: column;
+            }
+
+            .demo-controls input {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧠 PERCEPTRON</h1>
+            <p>Nền Tảng Của Mạng Nơ-ron Nhân Tạo</p>
+            <p style="font-size: 0.9rem; margin-top: 10px;">Bài học tương tác - Hãy khám phá cách máy học các quyết định nhị phân</p>
+        </div>
+
+        <!-- 1. Định Nghĩa -->
+        <div class="card">
+            <h2>📚 Perceptron là gì?</h2>
+            <div class="concept-box">
+                <strong>Định nghĩa:</strong> Perceptron là mô hình <span style="color: var(--primary);">phân loại nhị phân</span> đơn giản nhất, gồm <strong>một neuron</strong> có khả năng tách hai lớp dữ liệu bằng một <strong>hyperplane</strong> (đường/mặt phẳng).
+            </div>
+
+            <p><strong>Lịch sử:</strong> Được phát minh năm 1957 bởi Frank Rosenblatt từ Phòng Thí Nghiệm Aeronautical Cornel. Đó là nỗ lực đầu tiên để tạo ra máy tính thần kinh tương tự như các mô hình hiện đại.</p>
+
+            <p><strong>Công dụng:</strong></p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>✅ Phân loại dữ liệu thành 2 nhóm (0 hoặc 1, Dương hoặc Âm)</li>
+                <li>✅ Học từ ví dụ (dữ liệu huấn luyện)</li>
+                <li>✅ Điều chỉnh trọng số để cải thiện dự đoán</li>
+            </ul>
+        </div>
+
+        <!-- 2. Công Thức Toán Học -->
+        <div class="card">
+            <h2>⚙️ Công Thức Perceptron</h2>
+            <div class="concept-box">
+                <p><strong>Công thức tính toán:</strong></p>
+                <p style="font-size: 1.1rem; margin: 15px 0; text-align: center;">
+                    <code>y(x) = f(w<sup>T</sup>x + b)</code>
+                </p>
+                <ul style="margin-left: 20px; margin-top: 15px;">
+                    <li><strong>w</strong> = Vector trọng số (weights)</li>
+                    <li><strong>x</strong> = Vector đầu vào (features)</li>
+                    <li><strong>b</strong> = Bias (độ lệch)</li>
+                    <li><strong>f()</strong> = Hàm kích hoạt (Activation Function)</li>
+                </ul>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <h4>Hàm Kích Hoạt (Step Function):</h4>
+                <div class="diagram">
+                    f(x) = {
+                    <br/>    +1  if x ≥ 0
+                    <br/>    -1  if x < 0
+                    <br/>}
+                </div>
+            </div>
+
+            <p><strong>Ý nghĩa:</strong> Perceptron đơn giản hóa kết quả thành 2 giá trị (+1 hoặc -1), tương tự như một công tắc On/Off.</p>
+        </div>
+
+        <!-- 3. Bảng So Sánh -->
+        <div class="card">
+            <h2>📊 Bảng So Sánh: 3 Trạng Thái Hoạt Động của Perceptron</h2>
+
+            <div style="overflow-x: auto;">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Trạng Thái</th>
+                            <th>Input</th>
+                            <th>Quá Trình Tính Toán</th>
+                            <th>Output</th>
+                            <th>Đánh Giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1️⃣ Dự Đoán Đúng</strong></td>
+                            <td>x = [2, 3]<br/>w = [0.5, 0.6]</td>
+                            <td>sum = 0.5×2 + 0.6×3 = 2.8<br/>f(2.8) = +1 ✓</td>
+                            <td style="color: var(--success); font-weight: 600;">+1<br/>(Lớp Dương)</td>
+                            <td><span class="badge good">✅ ĐÚNG</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>2️⃣ Dự Đoán Sai</strong></td>
+                            <td>x = [1, 1]<br/>w = [0.5, 0.6]</td>
+                            <td>sum = 0.5×1 + 0.6×1 = 1.1<br/>f(1.1) = +1 ✗<br/>(Thực tế: -1)</td>
+                            <td style="color: var(--danger); font-weight: 600;">+1<br/>(Sai)</td>
+                            <td><span class="badge bad">❌ SAI</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>3️⃣ Điểm Ranh Giới</strong></td>
+                            <td>x = [-2, 2]<br/>w = [0.5, 0.6]</td>
+                            <td>sum = 0.5×(-2) + 0.6×2 = 0.2<br/>f(0.2) = +1 (Ngay trên 0)</td>
+                            <td style="color: var(--warning);">+1<br/>(Ranh Giới)</td>
+                            <td><span class="badge medium">⚠️ RỦI RO</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. Diagram Trực Quan -->
+        <div class="card">
+            <h2>🎯 Diagram: Quy Trình Hoạt Động Của Perceptron</h2>
+
+            <div class="diagram">
+                    Input (x₁, x₂, ...)
+                         ↓
+                    [Weights: w₁, w₂, ...]
+                         ↓
+            Weighted Sum: Σ(wᵢ × xᵢ) + b
+                         ↓
+                 f() Activation Function
+                         ↓
+            Output: +1 (Class A) hoặc -1 (Class B)
+            </div>
+
+            <h4 style="margin-top: 25px;">Visualization: Perceptron Phân Chia Dữ Liệu</h4>
+            <div class="diagram">
+                Không thẻ (Class -1)  |  Có thẻ (Class +1)
+                ○ ○ ○                 |  ● ● ●
+                ○ ○                   |  ● ●
+                ─────────────────────────────────── (Hyperplane)
+                         Boundary
+            </div>
+
+            <p style="margin-top: 15px;"><strong>Ý tưởng:</strong> Perceptron tìm đường phân chia (hyperplane) tốt nhất để tách hai lớp dữ liệu.</p>
+        </div>
+
+        <!-- 5. Quá Trình Huấn Luyện -->
+        <div class="card">
+            <h2>🔄 Quá Trình Học (Training) Của Perceptron</h2>
+
+            <div class="concept-box">
+                <strong>Mục tiêu:</strong> Điều chỉnh trọng số (w) sao cho perceptron dự đoán chính xác nhất.
+            </div>
+
+            <h4 style="margin: 20px 0;">Bước 1: Khởi Tạo Trọng Số</h4>
+            <div class="code-block">
+<span class="keyword">def</span> train_perceptron(data, labels, learning_rate=0.1, epochs=100):
+    w = [0, 0]  <span class="string"># Khởi tạo trọng số = 0</span>
+    b = 0       <span class="string"># Bias = 0</span>
+
+    <span class="keyword">for</span> epoch <span class="keyword">in</span> range(epochs):
+        <span class="keyword">for</span> x, y <span class="keyword">in</span> zip(data, labels):
+            <span class="string"># Tính output</span>
+            z = w[0]*x[0] + w[1]*x[1] + b
+            prediction = 1 <span class="keyword">if</span> z >= 0 <span class="keyword">else</span> -1
+
+            <span class="string"># Kiểm tra xem dự đoán có sai không</span>
+            <span class="keyword">if</span> prediction != y:
+                <span class="string"># Cập nhật trọng số</span>
+                w[0] += learning_rate * y * x[0]
+                w[1] += learning_rate * y * x[1]
+                b += learning_rate * y
+
+    <span class="keyword">return</span> w, b
+            </div>
+
+            <h4 style="margin: 20px 0;">Bước 2: Cập Nhật Trọng Số</h4>
+            <p>Công thức cập nhật (Gradient Descent):</p>
+            <div class="diagram">
+w_new = w_old + η × y × x
+b_new = b_old + η × y
+            </div>
+            <p style="margin-top: 10px;">Trong đó:</p>
+            <ul style="margin-left: 20px;">
+                <li><strong>η (eta)</strong> = Learning Rate (tốc độ học, thường 0.01 - 0.1)</li>
+                <li><strong>y</strong> = Nhãn thực tế (+1 hoặc -1)</li>
+                <li><strong>x</strong> = Dữ liệu đầu vào</li>
+            </ul>
+        </div>
+
+        <!-- 6. Demo Interactif -->
+        <div class="card">
+            <h2>🎮 Demo Interactif: Huấn Luyện Perceptron</h2>
+
+            <div class="demo-section">
+                <p><strong>Nhập dữ liệu để kiểm tra:</strong></p>
+                <div class="demo-controls">
+                    <input type="number" id="input1" placeholder="Giá trị Feature 1 (x₁)" step="0.1" value="2">
+                    <input type="number" id="input2" placeholder="Giá trị Feature 2 (x₂)" step="0.1" value="3">
+                    <button class="btn btn-primary" onclick="predictPerceptron()">🔮 Dự Đoán</button>
+                </div>
+                <div id="demo-result" style="margin-top: 15px;"></div>
+            </div>
+
+            <h4 style="margin: 20px 0;">Trọng Số Hiện Tại (Pre-trained):</h4>
+            <div class="visualization">
+                <div class="neuron-viz">
+                    <p>w₁ = 0.5</p>
+                    <div class="neuron-circle">w₁</div>
+                </div>
+                <div>➕</div>
+                <div class="neuron-viz">
+                    <p>w₂ = 0.6</p>
+                    <div class="neuron-circle">w₂</div>
+                </div>
+                <div>➕</div>
+                <div class="neuron-viz">
+                    <p>bias = 0.1</p>
+                    <div class="neuron-circle" style="width: 60px; height: 60px;">b</div>
+                </div>
+                <div style="font-size: 1.5rem;">→</div>
+                <div class="neuron-viz">
+                    <p>Output</p>
+                    <div class="neuron-circle" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);" id="output-neuron">?</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Use Cases Thực Tế -->
+        <div class="card">
+            <h2>🌍 Ứng Dụng Thực Tế Của Perceptron</h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div class="concept-box">
+                    <h4>1️⃣ Phân Loại Email</h4>
+                    <p><strong>Dự Đoán:</strong> Spam hay không spam?</p>
+                    <p><strong>Input:</strong> Số từ "click", "buy", "free"</p>
+                    <p><strong>Output:</strong> Spam (+1) hoặc Not Spam (-1)</p>
+                    <span class="badge good">✅ TỐTCHO BẤT ĐẦU</span>
+                </div>
+
+                <div class="concept-box">
+                    <h4>2️⃣ Chẩn Đoán Y Tế</h4>
+                    <p><strong>Dự Đoán:</strong> Có bệnh hay không?</p>
+                    <p><strong>Input:</strong> Nhiệt độ, nhịp tim, huyết áp</p>
+                    <p><strong>Output:</strong> Bệnh (+1) hoặc Khoẻ (-1)</p>
+                    <span class="badge medium">⚠️ CẦN CẢNH BÁO</span>
+                </div>
+
+                <div class="concept-box">
+                    <h4>3️⃣ Kiểm Soát Chất Lượng</h4>
+                    <p><strong>Dự Đoán:</strong> Sản phẩm tốt hay xấu?</p>
+                    <p><strong>Input:</strong> Kích thước, trọng lượng, màu sắc</p>
+                    <p><strong>Output:</strong> Đạt (+1) hoặc Hỏng (-1)</p>
+                    <span class="badge good">✅ THÍCH HỢP</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Dữ Liệu Tốt vs Xấu -->
+        <div class="card">
+            <h2>🔍 Dữ Liệu Tốt vs Dữ Liệu Xấu Cho Perceptron</h2>
+
+            <div class="comparison-table" style="margin: 20px 0;">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Loại Dữ Liệu</th>
+                            <th>Ví Dụ</th>
+                            <th>Kết Quả</th>
+                            <th>Lý Do</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="highlight-good">✅ TỐTCHO PERCEPTRON</span></td>
+                            <td>Dữ liệu tuyến tính có thể phân chia</td>
+                            <td>Dự đoán tốt, học nhanh</td>
+                            <td>Perceptron là bộ phân loại tuyến tính</td>
+                        </tr>
+                        <tr>
+                            <td><span class="highlight-bad">❌ KHÔNG TỐT</span></td>
+                            <td>Dữ liệu phi tuyến (XOR problem)</td>
+                            <td>Không thể học, luôn sai</td>
+                            <td>Perceptron không thể vẽ đường cong</td>
+                        </tr>
+                        <tr>
+                            <td><span class="highlight-neutral">⚠️ RỦI RO</span></td>
+                            <td>Dữ liệu mất cân bằng (99% lớp A, 1% lớp B)</td>
+                            <td>Thiên vị về lớp lớn hơn</td>
+                            <td>Cần cân bằng dữ liệu trước huấn luyện</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 style="margin: 20px 0;">Ví Dụ Cụ Thể:</h4>
+            <div class="concept-box">
+                <p><strong>Dữ Liệu TỐTCHO Perceptron:</strong></p>
+                <div class="code-block">
+x = [[1, 1], [2, 2], [-1, -1], [-2, -2]]
+y = [+1,    +1,    -1,      -1]
+
+<span class="string"># Dữ liệu tách rõ ràng, 1 đường thẳng là đủ ✓</span>
+                </div>
+            </div>
+
+            <div class="concept-box" style="margin-top: 15px;">
+                <p><strong>Dữ Liệu XẤU Cho Perceptron (XOR Problem):</strong></p>
+                <div class="code-block">
+x = [[0, 0], [0, 1], [1, 0], [1, 1]]
+y = [-1,    +1,    +1,    -1]
+
+<span class="string"># Không thể vẽ 1 đường thẳng để phân chia ✗</span>
+<span class="string"># Cần 1 đường cong → Cần mạng nơ-ron sâu hơn</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. Bài Tập Thực Hành -->
+        <div class="card">
+            <h2>✏️ Bài Tập Thực Hành</h2>
+
+            <div class="practice-exercise">
+                <h4>🎯 Bài Tập 1: Tính Toán Manual</h4>
+                <p><strong>Cho:</strong></p>
+                <ul style="margin-left: 20px; margin: 10px 0;">
+                    <li>w = [0.3, 0.7], b = 0.2</li>
+                    <li>x = [2, 1]</li>
+                </ul>
+                <p><strong>Hỏi:</strong> Output của perceptron là gì?</p>
+                <p style="margin-top: 10px; padding: 10px; background: rgba(99, 102, 241, 0.05); border-radius: 6px;">
+                    <strong>Gợi ý:</strong> z = w₁×x₁ + w₂×x₂ + b = 0.3×2 + 0.7×1 + 0.2 = ?
+                </p>
+                <button class="btn btn-primary" onclick="showAnswer1()">💡 Hiển Thị Đáp Án</button>
+                <div id="answer1" style="display: none; margin-top: 10px; padding: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 6px;">
+                    <p><strong>Đáp Án:</strong> z = 0.6 + 0.7 + 0.2 = 1.5 → f(1.5) = +1 ✓</p>
+                </div>
+            </div>
+
+            <div class="practice-exercise">
+                <h4>🎯 Bài Tập 2: Xác Định Loại Dữ Liệu</h4>
+                <p><strong>Bộ dữ liệu nào là TỐTCHO Perceptron?</strong></p>
+                <div class="quiz-question">
+                    <label class="quiz-option">
+                        <input type="radio" name="dataset" value="a">
+                        <strong>A:</strong> Dữ liệu tuyến tính, hai lớp tách rõ
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="dataset" value="b">
+                        <strong>B:</strong> Dữ liệu XOR (không tuyến tính)
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="dataset" value="c">
+                        <strong>C:</strong> 3 lớp dữ liệu hoặc hơn
+                    </label>
+                </div>
+                <button class="btn btn-success" onclick="checkDatasetAnswer()" style="margin-top: 10px;">✔️ Kiểm Tra</button>
+                <div id="dataset-result" class="quiz-result" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+
+        <!-- 10. Quiz Tương Tác -->
+        <div class="card">
+            <h2>❓ Kiểm Tra Kiến Thức</h2>
+
+            <div class="quiz-section">
+                <h4>📝 Quiz 1: Perceptron Được Phát Minh Khi Nào?</h4>
+                <div class="quiz-question">
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz1" value="a">
+                        1935
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz1" value="b">
+                        1957 ✓
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz1" value="c">
+                        1980
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz1" value="d">
+                        2010
+                    </label>
+                </div>
+                <button class="btn btn-primary" onclick="checkQuiz1()">📊 Kiểm Tra</button>
+                <div id="quiz1-result" class="quiz-result"></div>
+            </div>
+
+            <div class="quiz-section" style="margin-top: 25px;">
+                <h4>📝 Quiz 2: Perceptron Có Thể Phân Loại Bao Nhiêu Lớp?</h4>
+                <div class="quiz-question">
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz2" value="a">
+                        1 lớp
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz2" value="b">
+                        2 lớp ✓
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz2" value="c">
+                        3 lớp
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz2" value="d">
+                        Vô hạn lớp
+                    </label>
+                </div>
+                <button class="btn btn-primary" onclick="checkQuiz2()">📊 Kiểm Tra</button>
+                <div id="quiz2-result" class="quiz-result"></div>
+            </div>
+
+            <div class="quiz-section" style="margin-top: 25px;">
+                <h4>📝 Quiz 3: Hàm Kích Hoạt Perceptron Có Bao Nhiêu Output?</h4>
+                <div class="quiz-question">
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz3" value="a">
+                        Vô hạn giá trị
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz3" value="b">
+                        2 giá trị (+1 hoặc -1) ✓
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz3" value="c">
+                        0 - 1
+                    </label>
+                    <label class="quiz-option">
+                        <input type="radio" name="quiz3" value="d">
+                        Bất kỳ số thực nào
+                    </label>
+                </div>
+                <button class="btn btn-primary" onclick="checkQuiz3()">📊 Kiểm Tra</button>
+                <div id="quiz3-result" class="quiz-result"></div>
+            </div>
+        </div>
+
+        <!-- 11. Tóm Tắt -->
+        <div class="card">
+            <h2>📌 Tóm Tắt Kiến Thức Chính</h2>
+
+            <div class="concept-box">
+                <h4>🎓 Những Điều Bạn Đã Học:</h4>
+                <ul style="margin-left: 20px; margin-top: 10px; line-height: 2;">
+                    <li>✅ Perceptron là mô hình phân loại nhị phân đơn giản</li>
+                    <li>✅ Công thức: y = f(w<sup>T</sup>x + b)</li>
+                    <li>✅ Hàm kích hoạt Step: +1 nếu sum ≥ 0, -1 nếu sum < 0</li>
+                    <li>✅ Học bằng Gradient Descent: cập nhật trọng số từng bước</li>
+                    <li>✅ Chỉ phù hợp với dữ liệu TUYẾN TÍNH</li>
+                    <li>✅ Không thể giải XOR problem</li>
+                    <li>✅ Ứng dụng: Email spam, chẩn đoán, kiểm soát chất lượng</li>
+                </ul>
+            </div>
+
+            <div class="concept-box" style="margin-top: 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(99, 102, 241, 0.1));">
+                <h4>⚠️ Lưu Ý Quan Trọng:</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>🔴 Perceptron chỉ cho 2 lớp, không cho 3+ lớp</li>
+                    <li>🔴 Không giải được bài toán phi tuyến (XOR)</li>
+                    <li>✅ Dùng Multilayer Perceptron (MLP) hoặc Neural Networks cho bài toán phức tạp</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>🎓 Bài học tương tác - Perceptron là bước đầu tiên để hiểu Mạng Nơ-ron Nhân Tạo</p>
+            <p style="font-size: 0.9rem; margin-top: 10px;">Nguồn: AI-For-Beginners Course | Tác giả bài học: Claude (AI Tutor)</p>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.querySelector('.theme-toggle');
+            btn.textContent = document.body.classList.contains('dark-mode') ? '☀️ Light Mode' : '🌙 Dark Mode';
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        }
+
+        // Load saved theme
+        if (localStorage.getItem('theme') === 'dark') {
+            toggleTheme();
+        }
+
+        // Demo: Predict with Perceptron
+        function predictPerceptron() {
+            const x1 = parseFloat(document.getElementById('input1').value);
+            const x2 = parseFloat(document.getElementById('input2').value);
+
+            // Pre-trained weights
+            const w1 = 0.5, w2 = 0.6, b = 0.1;
+
+            // Calculate
+            const z = w1*x1 + w2*x2 + b;
+            const prediction = z >= 0 ? 1 : -1;
+
+            const resultDiv = document.getElementById('demo-result');
+            resultDiv.innerHTML = `
+                <div style="padding: 15px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1)); border-radius: 8px;">
+                    <p><strong>Tính Toán:</strong></p>
+                    <p>z = ${w1}×${x1} + ${w2}×${x2} + ${b} = <strong>${z.toFixed(2)}</strong></p>
+                    <p style="margin-top: 10px; font-size: 1.1rem;">
+                        f(${z.toFixed(2)}) = <span style="color: ${prediction === 1 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600;">
+                            ${prediction === 1 ? '+1 (Lớp Dương)' : '-1 (Lớp Âm)'}
+                        </span>
+                    </p>
+                </div>
+            `;
+            document.getElementById('output-neuron').textContent = prediction > 0 ? '+1' : '-1';
+        }
+
+        // Show Answer 1
+        function showAnswer1() {
+            document.getElementById('answer1').style.display = 'block';
+        }
+
+        // Check Dataset Answer
+        function checkDatasetAnswer() {
+            const selected = document.querySelector('input[name="dataset"]:checked');
+            if (!selected) {
+                alert('Hãy chọn 1 đáp án!');
+                return;
+            }
+
+            const result = document.getElementById('dataset-result');
+            if (selected.value === 'a') {
+                result.innerHTML = '✅ <strong>ĐÚNG!</strong> Dữ liệu tuyến tính là TỐTCHO Perceptron.';
+                result.classList.remove('incorrect');
+                result.classList.add('correct', 'show');
+            } else {
+                result.innerHTML = '❌ <strong>SAI!</strong> Đáp án đúng là A: Dữ liệu tuyến tính, hai lớp tách rõ.';
+                result.classList.remove('correct');
+                result.classList.add('incorrect', 'show');
+            }
+        }
+
+        // Quiz 1
+        function checkQuiz1() {
+            const selected = document.querySelector('input[name="quiz1"]:checked');
+            if (!selected) {
+                alert('Hãy chọn 1 đáp án!');
+                return;
+            }
+
+            const result = document.getElementById('quiz1-result');
+            if (selected.value === 'b') {
+                result.innerHTML = '✅ <strong>ĐÚNG!</strong> Frank Rosenblatt phát minh Perceptron năm 1957.';
+                result.classList.remove('incorrect');
+                result.classList.add('correct', 'show');
+            } else {
+                result.innerHTML = '❌ <strong>SAI!</strong> Đáp án đúng là 1957.';
+                result.classList.remove('correct');
+                result.classList.add('incorrect', 'show');
+            }
+        }
+
+        // Quiz 2
+        function checkQuiz2() {
+            const selected = document.querySelector('input[name="quiz2"]:checked');
+            if (!selected) {
+                alert('Hãy chọn 1 đáp án!');
+                return;
+            }
+
+            const result = document.getElementById('quiz2-result');
+            if (selected.value === 'b') {
+                result.innerHTML = '✅ <strong>ĐÚNG!</strong> Perceptron là mô hình phân loại NHỊ PHÂN (2 lớp).';
+                result.classList.remove('incorrect');
+                result.classList.add('correct', 'show');
+            } else {
+                result.innerHTML = '❌ <strong>SAI!</strong> Đáp án đúng là 2 lớp.';
+                result.classList.remove('correct');
+                result.classList.add('incorrect', 'show');
+            }
+        }
+
+        // Quiz 3
+        function checkQuiz3() {
+            const selected = document.querySelector('input[name="quiz3"]:checked');
+            if (!selected) {
+                alert('Hãy chọn 1 đáp án!');
+                return;
+            }
+
+            const result = document.getElementById('quiz3-result');
+            if (selected.value === 'b') {
+                result.innerHTML = '✅ <strong>ĐÚNG!</strong> Hàm Step của Perceptron chỉ output 2 giá trị: +1 hoặc -1.';
+                result.classList.remove('incorrect');
+                result.classList.add('correct', 'show');
+            } else {
+                result.innerHTML = '❌ <strong>SAI!</strong> Đáp án đúng là 2 giá trị.';
+                result.classList.remove('correct');
+                result.classList.add('incorrect', 'show');
+            }
+        }
+    </script>
+</body>
+</html>
