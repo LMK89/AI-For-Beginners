@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biểu diễn Kiến thức trong AI - Bài Học Tương Tác</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text: #1a1a1a;
+            --text-light: #666;
+            --border: #e0e0e0;
+            --primary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text: #e0e0e0;
+            --text-light: #a0a0a0;
+            --border: #404040;
+            --primary: #64b5f6;
+            --shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #2980b9 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .section {
+            margin: 3rem 0;
+            animation: slideUp 0.6s ease;
+        }
+
+        .section h2 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        .definition-box {
+            background: var(--bg-secondary);
+            border-left: 5px solid var(--primary);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .definition-box:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow);
+        }
+
+        .definition-box.highlight {
+            border-left-color: var(--success);
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            animation: slideUp 0.6s ease;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-size: 0.9rem;
+        }
+
+        .comparison-table th {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: var(--bg-secondary);
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .badge.good {
+            background: rgba(39, 174, 96, 0.2);
+            color: var(--success);
+        }
+
+        .badge.medium {
+            background: rgba(243, 156, 18, 0.2);
+            color: var(--warning);
+        }
+
+        .badge.bad {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--danger);
+        }
+
+        .code-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .code-block code {
+            color: var(--text);
+        }
+
+        .diagram {
+            background: var(--bg-secondary);
+            border: 1px dashed var(--border);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            overflow-x: auto;
+            border-radius: 5px;
+            animation: slideUp 0.6s ease;
+        }
+
+        .quiz-section {
+            background: var(--bg-secondary);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+            animation: slideUp 0.6s ease 0.3s both;
+        }
+
+        .quiz-section h3 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .quiz-option {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            padding: 1rem;
+            margin: 0.8rem 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option input[type="radio"] {
+            margin-right: 0.8rem;
+            cursor: pointer;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--primary);
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .quiz-option.selected {
+            border-color: var(--primary);
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .quiz-option.correct {
+            border-color: var(--success);
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .quiz-option.incorrect {
+            border-color: var(--danger);
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: var(--text-light);
+        }
+
+        .btn.secondary:hover {
+            background: var(--text);
+        }
+
+        .feedback {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            animation: slideDown 0.4s ease;
+            font-weight: 600;
+        }
+
+        .feedback.correct {
+            background: rgba(39, 174, 96, 0.2);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+
+        .feedback.incorrect {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--danger);
+            border-left: 4px solid var(--danger);
+        }
+
+        .example-data {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 5px;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .example-data h4 {
+            color: var(--primary);
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .data-item {
+            background: var(--bg);
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            border-left: 3px solid var(--primary);
+            border-radius: 3px;
+        }
+
+        .real-world {
+            background: rgba(52, 152, 219, 0.05);
+            border-left: 5px solid var(--primary);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 5px;
+        }
+
+        .real-world h4 {
+            color: var(--primary);
+            margin-bottom: 0.8rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-light);
+            margin-top: 3rem;
+            animation: fadeIn 0.8s ease 0.5s both;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .comparison-table {
+                font-size: 0.75rem;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 0.5rem;
+            }
+
+            .theme-toggle {
+                width: 45px;
+                height: 45px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle" title="Chuyển đổi chế độ tối/sáng">🌙</button>
+
+    <header>
+        <h1>🧠 Biểu diễn Kiến thức trong AI</h1>
+        <p>Knowledge Representation - Nền tảng của Hệ thống Chuyên gia</p>
+    </header>
+
+    <div class="container">
+        <!-- Định nghĩa cơ bản -->
+        <section class="section">
+            <h2>📚 Định nghĩa Cơ Bản</h2>
+            
+            <div class="definition-box highlight">
+                <strong>✅ Kiến thức (Knowledge)</strong> là thứ được lưu trữ trong đầu chúng ta, đại diện cho sự hiểu biết về thế giới. 
+                <br><br>
+                Kiến thức được tạo thành bằng cách <strong>học tập chủ động</strong>, tích hợp những mẩu thông tin mà chúng ta nhận được vào mô hình thế giới của mình.
+            </div>
+
+            <div class="definition-box">
+                <strong>🔄 Tháp DIKW</strong>: Mô hình phân cấp hiểu biết
+                <br><br>
+                <strong>📊 Data</strong> → được biểu diễn trên phương tiện vật lý (text, âm thanh)
+                <br>
+                <strong>💡 Information</strong> → cách chúng ta diễn giải dữ liệu trong đầu
+                <br>
+                <strong>🧠 Knowledge</strong> → thông tin tích hợp vào mô hình thế giới
+                <br>
+                <strong>✨ Wisdom</strong> → hiểu biết meta (khi nào dùng kiến thức)
+            </div>
+        </section>
+
+        <!-- 4 Cách Biểu Diễn Kiến Thức -->
+        <section class="section">
+            <h2>🎯 4 Cách Biểu Diễn Kiến Thức Khác Nhau</h2>
+
+            <!-- Cách 1: Algorithmic -->
+            <div class="card">
+                <h3>1️⃣ Biểu Diễn Thuật Toán (Algorithmic)</h3>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Kiến thức được biểu diễn dưới dạng một chương trình máy tính</p>
+                
+                <div class="code-block"><code>def is_carnivore(animal):
+    if animal.eats_meat:
+        return True
+    if animal.has_sharp_teeth and animal.has_claws:
+        return True
+    return False</code></div>
+
+                <div class="example-data">
+                    <h4>💾 Ví dụ Dữ Liệu:</h4>
+                    <div class="data-item"><strong>Tốt:</strong> Data có cấu trúc rõ ràng, luôn lặp lại (Mèo ăn thịt)</div>
+                    <div class="data-item"><strong>Xấu:</strong> Luật ngoại lệ nhiều, khó mã hóa hết (Cá heo ăn cá nhưng không phải cá)</div>
+                </div>
+
+                <p style="margin-top: 1rem;">
+                    <span class="badge good">✅ Ưu: Nhanh, dễ kiểm soát</span>
+                    <span class="badge bad">❌ Nhược: Cứng nhắc, khó mở rộng</span>
+                </p>
+            </div>
+
+            <!-- Cách 2: Semantic Network -->
+            <div class="card">
+                <h3>2️⃣ Mạng Ngữ Nghĩa (Semantic Network)</h3>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Mô phỏng mạng khái niệm liên kết trong đầu người</p>
+                
+                <div class="diagram">
+        Chim (Bird)
+         ├─ thuộc: Động vật có xương sống (Vertebrate)
+         ├─ có: Cánh (Wings)
+         └─ có: Lông vũ (Feathers)
+        
+        Canary (Chim hoắc ca)
+         ├─ là loại: Chim (Bird)
+         ├─ màu: Vàng (Yellow)
+         └─ có thể: Bay nhanh (Fast flight)
+        
+                Mối Liên Kết:
+        Canary → [is-a] → Bird → [has] → Wings</div>
+
+                <div class="example-data">
+                    <h4>💾 Ví dụ Dữ Liệu:</h4>
+                    <div class="data-item"><strong>Tốt:</strong> Hiển thị mối quan hệ phức tạp, dễ mở rộng (Thêm động vật mới)</div>
+                    <div class="data-item"><strong>Xấu:</strong> Có thể có mâu thuẫn, cần xử lý cẩn thận</div>
+                </div>
+
+                <p style="margin-top: 1rem;">
+                    <span class="badge good">✅ Ưu: Linh hoạt, gần với cách suy nghĩ con người</span>
+                    <span class="badge medium">⚠️ Nhược: Có thể chậm khi dữ liệu lớn</span>
+                </p>
+            </div>
+
+            <!-- Cách 3: Frame Representation -->
+            <div class="card">
+                <h3>3️⃣ Biểu Diễn Frame (Frame Representation)</h3>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Mỗi đối tượng là một khung với các khe (slots) chứa thông tin</p>
+                
+                <div class="code-block"><code># Frame cho Chim Hoắc Ca (Canary)
+class Canary:
+    is_a = "Bird"                    # Slot: loại
+    color = "Yellow"                 # Slot: màu sắc
+    can_fly = True                   # Slot: bay được
+    habitat = "South America"        # Slot: nơi sống
+    size = "Small"                   # Slot: kích thước
+    
+    # Giá trị mặc định
+    @default
+    wings = 2                        # Mặc định: 2 cánh</code></div>
+
+                <div class="example-data">
+                    <h4>💾 Ví dụ Dữ Liệu:</h4>
+                    <div class="data-item"><strong>Tốt:</strong> Dữ liệu có cấu trúc, dễ bảo trì (Tất cả chim có cánh)</div>
+                    <div class="data-item"><strong>Xấu:</strong> Slot trống, mâu thuẫn giữa các frame (Chim cánh cụt không bay)</div>
+                </div>
+
+                <p style="margin-top: 1rem;">
+                    <span class="badge good">✅ Ưu: Cấu trúc rõ ràng, giá trị mặc định hữu ích</span>
+                    <span class="badge medium">⚠️ Nhược: Khó xử lý phức tạp, thừa dữ liệu</span>
+                </p>
+            </div>
+
+            <!-- Cách 4: Logic-based -->
+            <div class="card">
+                <h3>4️⃣ Biểu Diễn Logic (Logic-based)</h3>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Sử dụng quy tắc logic hình thức (Production Rules)</p>
+                
+                <div class="code-block"><code>// Quy tắc 1: Nếu ăn thịt → là động vật ăn thịt
+IF eats_meat(X)
+THEN carnivore(X)
+
+// Quy tắc 2: Nếu (có răng sắc + có móng + mắt hướng về phía trước)
+IF has_sharp_teeth(X) AND has_claws(X) AND forward_eyes(X)
+THEN carnivore(X)
+
+// Quy tắc 3: Áp dụng cho Canary
+eats_insects(Canary)  →  eats_meat(Canary)  →  carnivore(Canary)</code></div>
+
+                <div class="example-data">
+                    <h4>💾 Ví dụ Dữ Liệu:</h4>
+                    <div class="data-item"><strong>Tốt:</strong> Dữ liệu tuân theo quy tắc logic, có thể chứng minh (Lập luận từng bước)</div>
+                    <div class="data-item"><strong>Xấu:</strong> Dữ liệu không đầy đủ, mâu thuẫn logic</div>
+                </div>
+
+                <p style="margin-top: 1rem;">
+                    <span class="badge good">✅ Ưu: Có thể chứng minh, giải thích được kết quả</span>
+                    <span class="badge bad">❌ Nhược: Tính toán phức tạp, có thể không hội tụ</span>
+                </p>
+            </div>
+        </section>
+
+        <!-- Bảng So Sánh -->
+        <section class="section">
+            <h2>📊 Bảng So Sánh 4 Cách</h2>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Cách Biểu Diễn</th>
+                        <th>Input</th>
+                        <th>Xử Lý</th>
+                        <th>Output</th>
+                        <th>Độ Phức Tạp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Algorithmic</strong></td>
+                        <td>Đặc tính động vật</td>
+                        <td>Chạy hàm logic</td>
+                        <td>Carnivore? (Yes/No)</td>
+                        <td>O(1) - ⚡ Nhanh</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Semantic Network</strong></td>
+                        <td>Nút & cạnh đồ thị</td>
+                        <td>Duyệt đồ thị (BFS/DFS)</td>
+                        <td>Tất cả thuộc tính liên quan</td>
+                        <td>O(V+E) - 🚶 Trung bình</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Frame</strong></td>
+                        <td>Tên frame + slots</td>
+                        <td>Tra cứu bảng hash</td>
+                        <td>Giá trị slot + mặc định</td>
+                        <td>O(1) - ⚡ Nhanh</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Logic-based</strong></td>
+                        <td>Sự kiện & quy tắc</td>
+                        <td>Suy diễn (Forward/Backward)</td>
+                        <td>Chứng minh logic + giải thích</td>
+                        <td>O(2^n) - 🐢 Chậm</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Forward vs Backward Inference -->
+        <section class="section">
+            <h2>🔄 2 Cách Suy Diễn: Forward vs Backward</h2>
+
+            <div class="card">
+                <h3>➡️ Forward Inference (Suy diễn Tới)</h3>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Bắt đầu với dữ liệu đầu vào, áp dụng quy tắc để có kết luận</p>
+
+                <div class="diagram">
+        Dữ Liệu Ban Đầu:
+        ├─ eats_insects(Canary) ✓
+        ├─ has_sharp_teeth(Canary) ✓
+        └─ has_claws(Canary) ✓
+                    ⬇️ [Áp dụng quy tắc]
+        Kết Luận:
+        ├─ eats_meat(Canary) ✓
+        ├─ has_sharp_teeth(Canary) ✓
+        └─ carnivore(Canary) ✓
+                </div>
+
+                <p><span class="badge good">✅ Tốt cho:</span> Chẩn đoán bệnh, phân loại động vật, kiểm tra dữ liệu đầu vào sẵn có</p>
+            </div>
+
+            <div class="card">
+                <h3>⬅️ Backward Inference (Suy diễn Lùi)</h3>
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Bắt đầu với mục tiêu cần đạt, tìm quy tắc & dữ liệu để chứng minh</p>
+
+                <div class="diagram">
+        Mục Tiêu:
+        carnivore(Canary) = ?
+                    ⬆️ [Tìm quy tắc]
+        Cần chứng minh:
+        ├─ eats_meat(Canary) = ?
+        ├─ has_sharp_teeth(Canary) = ?
+        └─ has_claws(Canary) = ?
+                    ⬆️ [Hỏi dữ liệu]
+        Dữ Liệu:
+        ✓ eats_insects(Canary) = TRUE
+        ✓ has_sharp_teeth(Canary) = TRUE
+        → Chứng minh thành công!
+                </div>
+
+                <p><span class="badge good">✅ Tốt cho:</span> Trò chơi suy luận logic, lý thuyết định lý, trả lời câu hỏi cụ thể</p>
+            </div>
+        </section>
+
+        <!-- Use Cases Thực Tế -->
+        <section class="section">
+            <h2>🌍 Use Cases Thực Tế</h2>
+
+            <div class="real-world">
+                <h4>🏥 Hệ thống Chẩn đoán Bệnh</h4>
+                <p><strong>Cách sử dụng:</strong> Forward Inference + Production Rules</p>
+                <p><strong>Quy tắc:</strong> IF (sốt cao OR protein phản ứng cao) THEN viêm nhiễm</p>
+                <p><strong>Input tốt:</strong> Kết quả xét nghiệm, biểu hiện lâm sàng rõ ràng</p>
+                <p><strong>Input xấu:</strong> Triệu chứng mơ hồ, dữ liệu không đầy đủ</p>
+            </div>
+
+            <div class="real-world">
+                <h4>🎮 Trò Chơi Tương Tác</h4>
+                <p><strong>Cách sử dụng:</strong> Backward Inference + Semantic Network</p>
+                <p><strong>Quy tắc:</strong> Người chơi hỏi "Động vật này là gì?", hệ thống hỏi lại câu hỏi</p>
+                <p><strong>Input tốt:</strong> Câu trả lời rõ ràng (Yes/No)</p>
+                <p><strong>Input xấu:</strong> Câu trả lời không rõ (Có thể, hơi..., không chắc...)</p>
+            </div>
+
+            <div class="real-world">
+                <h4>📚 Hệ Thống Gợi Ý (Recommender)</h4>
+                <p><strong>Cách sử dụng:</strong> Frame Representation + Semantic Network</p>
+                <p><strong>Quy tắc:</strong> Nếu người dùng thích sách A và sách A giống sách B → gợi ý sách B</p>
+                <p><strong>Input tốt:</strong> Lịch sử mua hàng, đánh giá rõ ràng</p>
+                <p><strong>Input xấu:</strong> Người dùng mới, dữ liệu thưa thớt</p>
+            </div>
+
+            <div class="real-world">
+                <h4>⚖️ Hệ Thống Tư Pháp</h4>
+                <p><strong>Cách sử dụng:</strong> Logic-based + Production Rules</p>
+                <p><strong>Quy tắc:</strong> IF (vi phạm luật AND có bằng chứng) THEN xử phạt</p>
+                <p><strong>Input tốt:</strong> Bằng chứng chắc chắn, mô tả rõ ràng sự kiện</p>
+                <p><strong>Input xấu:</strong> Bằng chứng gián tiếp, mâu thuẫn pháp lý</p>
+            </div>
+        </section>
+
+        <!-- Quiz Tương Tác -->
+        <section class="section">
+            <div class="quiz-section">
+                <h3>🧪 Quiz Kiểm Tra Kiến Thức</h3>
+
+                <!-- Câu 1 -->
+                <div style="margin-bottom: 2rem;">
+                    <p style="font-weight: 600; margin-bottom: 1rem;">
+                        <span class="icon">❓</span>Câu 1: Khi nào nên dùng Semantic Network?
+                    </p>
+                    <div class="quiz-options" id="quiz1">
+                        <label class="quiz-option">
+                            <input type="radio" name="q1" value="a">
+                            <strong>A)</strong> Khi mối quan hệ giữa các khái niệm phức tạp và cần mở rộng
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q1" value="b">
+                            <strong>B)</strong> Khi cần tốc độ xử lý cực nhanh (milliseconds)
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q1" value="c">
+                            <strong>C)</strong> Khi dữ liệu hoàn toàn cố định và không thay đổi
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q1" value="d">
+                            <strong>D)</strong> Khi chỉ có dữ liệu dạng số
+                        </label>
+                    </div>
+                    <button class="btn" onclick="checkAnswer('q1', 'a', 'Đúng! Semantic Network tuyệt vời cho các mối quan hệ phức tạp và dễ mở rộng.')">✅ Kiểm Tra</button>
+                    <div id="feedback1"></div>
+                </div>
+
+                <!-- Câu 2 -->
+                <div style="margin-bottom: 2rem;">
+                    <p style="font-weight: 600; margin-bottom: 1rem;">
+                        <span class="icon">❓</span>Câu 2: Frame Representation có ưu điểm gì?
+                    </p>
+                    <div class="quiz-options" id="quiz2">
+                        <label class="quiz-option">
+                            <input type="radio" name="q2" value="a">
+                            <strong>A)</strong> Giá trị mặc định (default values) và cấu trúc rõ ràng
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q2" value="b">
+                            <strong>B)</strong> Có thể chứng minh logic toán học
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q2" value="c">
+                            <strong>C)</strong> Linh hoạt tuyệt đối, không cần cấu trúc
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q2" value="d">
+                            <strong>D)</strong> Nhanh nhất so với tất cả cách khác
+                        </label>
+                    </div>
+                    <button class="btn" onclick="checkAnswer('q2', 'a', 'Đúng! Frame cung cấp cấu trúc rõ ràng với giá trị mặc định hữu ích.')">✅ Kiểm Tra</button>
+                    <div id="feedback2"></div>
+                </div>
+
+                <!-- Câu 3 -->
+                <div style="margin-bottom: 2rem;">
+                    <p style="font-weight: 600; margin-bottom: 1rem;">
+                        <span class="icon">❓</span>Câu 3: Forward Inference khác Backward Inference ở điểm nào?
+                    </p>
+                    <div class="quiz-options" id="quiz3">
+                        <label class="quiz-option">
+                            <input type="radio" name="q3" value="a">
+                            <strong>A)</strong> Forward: từ dữ liệu → kết luận | Backward: từ mục tiêu → chứng minh
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q3" value="b">
+                            <strong>B)</strong> Chúng hoàn toàn giống nhau, chỉ khác tên
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q3" value="c">
+                            <strong>C)</strong> Forward nhanh hơn, Backward chậm hơn
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q3" value="d">
+                            <strong>D)</strong> Chỉ có Forward được dùng trong thực tế
+                        </label>
+                    </div>
+                    <button class="btn" onclick="checkAnswer('q3', 'a', 'Hoàn hảo! Forward & Backward khác nhau ở hướng suy diễn: data→kết luận vs mục tiêu→chứng minh.')">✅ Kiểm Tra</button>
+                    <div id="feedback3"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bài Tập Nhỏ -->
+        <section class="section">
+            <h2>💼 Bài Tập Nhỏ</h2>
+
+            <div class="card">
+                <h3>Bài Tập: Thiết Kế Frame cho "Phương Tiện Giao Thông"</h3>
+                <p style="margin-bottom: 1.5rem;">Hãy tạo một Frame representation cho các loại phương tiện giao thông:</p>
+
+                <div class="code-block" style="background: var(--bg); border: 2px dashed var(--primary);">
+<code>class Vehicle:
+    # Điền vào các slot này:
+    
+    name = ___________              # Ví dụ: "Ô tô", "Xe máy"
+    is_a = ___________              # Loại: Phương tiện
+    wheels = ___________            # Số bánh
+    max_speed = ___________         # Tốc độ tối đa (km/h)
+    fuel_type = ___________         # Loại nhiên liệu
+    capacity = ___________          # Số chỗ ngồi
+    cost = ___________              # Giá tiền
+    
+    # Giá trị mặc định:
+    @default
+    requires_license = True
+    @default
+    pollutes = True</code>
+                </div>
+
+                <p style="margin-top: 1.5rem; font-style: italic; color: var(--text-light);">
+                    💡 Gợi ý: Điền vào 3 loại phương tiện khác nhau (Ô tô, Xe máy, Xe đạp)
+                </p>
+
+                <button class="btn" onclick="showHint()">💡 Xem Gợi Ý</button>
+                <div id="hint" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(243, 156, 18, 0.2); border-radius: 5px;">
+                    <strong>✨ Gợi Ý:</strong>
+                    <pre style="margin-top: 0.5rem; font-size: 0.9rem;">
+Vehicle-Ô tô: wheels=4, max_speed=200, capacity=5
+Vehicle-Xe máy: wheels=2, max_speed=120, capacity=2
+Vehicle-Xe đạp: wheels=2, max_speed=30, capacity=1</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Kết Luận -->
+        <section class="section">
+            <h2>🎯 Kết Luận</h2>
+            
+            <div class="definition-box">
+                <h3 style="color: var(--primary); margin-top: 0;">Khi Dùng Cách Nào?</h3>
+                
+                <p style="margin-top: 1rem;"><strong>✅ Algorithmic:</strong> Khi quy tắc ít, cố định, cần tốc độ</p>
+                <p><strong>✅ Semantic Network:</strong> Khi có mối quan hệ phức tạp, cần mở rộng linh hoạt</p>
+                <p><strong>✅ Frame:</strong> Khi dữ liệu cấu trúc rõ ràng, có giá trị mặc định chung</p>
+                <p><strong>✅ Logic-based:</strong> Khi cần chứng minh, giải thích kết luận</p>
+                
+                <p style="margin-top: 1.5rem; font-style: italic; color: var(--text-light);">
+                    🎓 Lưu ý: Trong thực tế, bạn thường kết hợp nhiều cách để có hệ thống mạnh mẽ nhất!
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>📖 Bài Học Tương Tác - AI For Beginners | 🧠 Biểu Diễn Kiến Thức</p>
+        <p>Tạo: 2026 | 🌐 Hỗ trợ Dark Mode & Responsive Design</p>
+    </footer>
+
+    <script>
+        // Dark Mode Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        // Khởi tạo theme từ localStorage
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        if (savedTheme === 'dark') {
+            html.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '☀️';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+
+        // Quiz Logic
+        function checkAnswer(quizId, correctAnswer, successMessage) {
+            const selected = document.querySelector(`input[name="${quizId}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback${quizId.substring(1)}`);
+
+            if (!selected) {
+                feedbackDiv.innerHTML = '<div class="feedback incorrect">⚠️ Vui lòng chọn một đáp án!</div>';
+                return;
+            }
+
+            if (selected.value === correctAnswer) {
+                feedbackDiv.innerHTML = `<div class="feedback correct">✅ ${successMessage}</div>`;
+                // Highlight correct option
+                document.querySelector(`input[name="${quizId}"][value="${correctAnswer}"]`).parentElement.classList.add('correct');
+            } else {
+                feedbackDiv.innerHTML = `<div class="feedback incorrect">❌ Sai rồi! Câu trả lời đúng là: <strong>${correctAnswer.toUpperCase()}</strong></div>`;
+                selected.parentElement.classList.add('incorrect');
+            }
+        }
+
+        // Hint function
+        function showHint() {
+            const hintDiv = document.getElementById('hint');
+            hintDiv.style.display = hintDiv.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Smooth scroll for internal links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
