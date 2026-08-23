@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perceptron - Bài Học Tương Tác</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        body[data-theme="dark"] {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        body[data-theme="dark"] .container {
+            background: #0f3460;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        body[data-theme="dark"] .header {
+            background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            animation: slideUp 0.6s ease-out forwards;
+            opacity: 0;
+        }
+
+        .section:nth-child(1) { animation-delay: 0.1s; }
+        .section:nth-child(2) { animation-delay: 0.2s; }
+        .section:nth-child(3) { animation-delay: 0.3s; }
+        .section:nth-child(4) { animation-delay: 0.4s; }
+        .section:nth-child(5) { animation-delay: 0.5s; }
+        .section:nth-child(6) { animation-delay: 0.6s; }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        body[data-theme="dark"] .section h2 {
+            color: #a78bfa;
+            border-color: #a78bfa;
+        }
+
+        .section h3 {
+            color: #764ba2;
+            font-size: 1.3em;
+            margin: 20px 0 10px 0;
+        }
+
+        body[data-theme="dark"] .section h3 {
+            color: #c4b5fd;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        body[data-theme="dark"] table {
+            background: #1a1a2e;
+        }
+
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        body[data-theme="dark"] table th {
+            background: #16213e;
+        }
+
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        body[data-theme="dark"] table td {
+            border-color: #333;
+        }
+
+        table tr:hover {
+            background: #e8eaf6;
+        }
+
+        body[data-theme="dark"] table tr:hover {
+            background: #0f3460;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            border-left: 4px solid #667eea;
+        }
+
+        .diagram {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.6;
+            overflow-x: auto;
+            border: 2px solid #667eea;
+        }
+
+        body[data-theme="dark"] .diagram {
+            background: #1a1a2e;
+            border-color: #a78bfa;
+            color: #e0e0e0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .status-good { background: #4caf50; color: white; }
+        .status-warn { background: #ff9800; color: white; }
+        .status-bad { background: #f44336; color: white; }
+
+        .interactive-demo {
+            background: #f0f4ff;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #667eea;
+        }
+
+        body[data-theme="dark"] .interactive-demo {
+            background: #1a1a2e;
+            border-color: #a78bfa;
+        }
+
+        .demo-input {
+            margin: 15px 0;
+        }
+
+        .demo-input label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        body[data-theme="dark"] .demo-input label {
+            color: #a78bfa;
+        }
+
+        .demo-input input[type="number"],
+        .demo-input input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        body[data-theme="dark"] .demo-input input[type="number"],
+        body[data-theme="dark"] .demo-input input[type="text"] {
+            background: #0f3460;
+            border-color: #667eea;
+            color: #e0e0e0;
+        }
+
+        .demo-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        body[data-theme="dark"] .btn-secondary {
+            background: #16213e;
+            color: #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        body[data-theme="dark"] .btn-secondary:hover {
+            background: #0f3460;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 1.5em;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        body[data-theme="dark"] .theme-toggle {
+            background: #16213e;
+            border-color: #a78bfa;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .demo-result {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border-left: 4px solid #4caf50;
+            display: none;
+        }
+
+        body[data-theme="dark"] .demo-result {
+            background: #1a3a1a;
+            border-color: #66bb6a;
+        }
+
+        .quiz-section {
+            background: #fff3e0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ff9800;
+        }
+
+        body[data-theme="dark"] .quiz-section {
+            background: #3a2a1a;
+            border-color: #ffb74d;
+        }
+
+        .quiz-option {
+            margin: 10px 0;
+        }
+
+        .quiz-option input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .quiz-option label {
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .visualization {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .viz-card {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #667eea;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        body[data-theme="dark"] .viz-card {
+            background: #1a1a2e;
+            border-color: #a78bfa;
+        }
+
+        .viz-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        body[data-theme="dark"] .viz-title {
+            color: #a78bfa;
+        }
+
+        .highlight {
+            background-color: #fff9c4;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        body[data-theme="dark"] .highlight {
+            background-color: #3a3a1a;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .footer {
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #ddd;
+            font-size: 0.9em;
+        }
+
+        body[data-theme="dark"] .footer {
+            background: #16213e;
+            color: #999;
+            border-color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8em; }
+            .content { padding: 20px; }
+            .section h2 { font-size: 1.4em; }
+            .demo-buttons { flex-direction: column; }
+            button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-toggle" onclick="toggleTheme()">🌙</div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Perceptron</h1>
+            <p>Mô Hình Phân Loại Nhị Phân Đầu Tiên</p>
+        </div>
+
+        <div class="content">
+            <!-- PHẦN 1: KHÁI NIỆM CƠ BẢN -->
+            <div class="section">
+                <h2>📚 Khái Niệm Cơ Bản</h2>
+                <p><strong>Perceptron</strong> là một thuật toán <span class="highlight">phân loại nhị phân</span> (binary classification) - chỉ có thể phân chia dữ liệu thành 2 lớp (+1 hoặc -1).</p>
+
+                <p style="margin-top: 15px;"><strong>Ý tưởng chính:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Có một đường ranh giới (hyperplane) chia dữ liệu thành 2 phần</li>
+                    <li>Dùng trọng số (weights) để tìm ra đường ranh giới tối ưu nhất</li>
+                    <li>Huấn luyện bằng cách điều chỉnh trọng số theo sai số (error)</li>
+                </ul>
+
+                <p style="margin-top: 15px;"><strong>Công thức Perceptron:</strong></p>
+                <div class="diagram">
+y = f(w·x + b)
+
+Trong đó:
+- w = vector trọng số (weights)
+- x = vector đầu vào (features)
+- b = bias (hệ số dịch)
+- f = hàm kích hoạt bậc thang (step function)
+                </div>
+            </div>
+
+            <!-- PHẦN 2: 4 TRẠNG THÁI HUẤ LUYỆN -->
+            <div class="section">
+                <h2>🔄 4 Trạng Thái Huấn Luyện Perceptron</h2>
+
+                <h3>Bảng So Sánh Chi Tiết:</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Trạng Thái</th>
+                            <th>Input</th>
+                            <th>Xử Lý</th>
+                            <th>Output</th>
+                            <th>Đánh Giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>① Khởi Tạo</strong></td>
+                            <td>Dữ liệu train</td>
+                            <td>w = [0,0,0], bias = 0</td>
+                            <td>Trọng số = 0</td>
+                            <td><span class="status-badge status-warn">⚠️ Ngẫu nhiên</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>② Dự Đoán Sai</strong></td>
+                            <td>x_i tích cực (đúng = +1)</td>
+                            <td>Nếu y ≤ 0 → cộng w</td>
+                            <td>w = w + η·x</td>
+                            <td><span class="status-badge status-good">✅ Điều chỉnh</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>③ Dự Đoán Sai</strong></td>
+                            <td>x_i tiêu cực (đúng = -1)</td>
+                            <td>Nếu y > 0 → trừ w</td>
+                            <td>w = w - η·x</td>
+                            <td><span class="status-badge status-good">✅ Điều chỉnh</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>④ Hội Tụ</strong></td>
+                            <td>Lặp nhiều vòng</td>
+                            <td>Không còn sai số</td>
+                            <td>w = [w1, w2, w3, ...]</td>
+                            <td><span class="status-badge status-good">✅ Hoàn thành</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>📊 Diagram Quy Trình Huấn Luyện:</h3>
+                <div class="diagram">
+┌─────────────────────┐
+│  Dữ liệu Training   │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ 1. Khởi tạo w = [0] │
+└──────────┬──────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ Lặp N vòng       │
+    │ (num_iterations)│
+    └────────┬─────────┘
+             │
+      ┌──────▼──────┐
+      │ Chọn sample │
+      └──────┬──────┘
+             │
+      ┌──────▼────────────┐
+      │ Tính: z = w·x     │
+      └──────┬─────────────┘
+             │
+      ┌──────▼──────────────┐
+      │ So sánh z với 0     │
+      └──┬──────────────┬───┘
+         │              │
+    ✓ Đúng        ✗ Sai
+         │              │
+      Bỏ qua   Cập nhật w
+         │              │
+         │         w = w ± η·x
+         │              │
+         └──────┬───────┘
+                │
+         ┌──────▼──────┐
+         │ Hội tụ?     │
+         └─┬────────┬──┘
+           │Không   │Có
+           │        │
+         Tiếp tục  ✓ Xong
+                </div>
+            </div>
+
+            <!-- PHẦN 3: CÁC TRƯỜNG HỢP DATA -->
+            <div class="section">
+                <h2>💾 Data Tốt vs Data Xấu</h2>
+
+                <h3>Data Tốt cho Perceptron ✅</h3>
+                <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4caf50;">
+                    <p><strong>Dữ liệu tuyến tính có thể phân tách:</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Có đường thẳng/mặt phẳng chia hai lớp</li>
+                        <li>Ví dụ: Spam detection (email spam vs không spam)</li>
+                        <li>Ví dụ: Nhận dạng hình tròn vs hình vuông đơn giản</li>
+                    </ul>
+                </div>
+
+                <h3>Data Trung Bình ⚠️</h3>
+                <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ff9800;">
+                    <p><strong>Dữ liệu tuyến tính nhưng có nhiễu:</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Phần lớn điểm phân tách tốt nhưng có vài ngoại lệ</li>
+                        <li>Perceptron sẽ cố gắng nhưng kết quả không hoàn hảo</li>
+                        <li>Cần tăng số iteration hoặc điều chỉnh learning rate</li>
+                    </ul>
+                </div>
+
+                <h3>Data Xấu cho Perceptron ❌</h3>
+                <div style="background: #ffebee; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f44336;">
+                    <p><strong>Dữ liệu không tuyến tính có thể phân tách:</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Không có đường thẳng nào chia được 2 lớp (XOR problem)</li>
+                        <li>Ví dụ: Hai lớp chồng lấp nhau phức tạp</li>
+                        <li>Giải pháp: Dùng mạng nơ-ron nhiều lớp (MLP)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- PHẦN 4: CODE EXAMPLE -->
+            <div class="section">
+                <h2>💻 Code Python - Triển Khai Perceptron</h2>
+
+                <h3>Code Đơn Giản (Easy):</h3>
+                <div class="code-block">
+import numpy as np
+
+class SimplePerceptron:
+    def __init__(self, learning_rate=0.1):
+        self.lr = learning_rate
+        self.weights = None
+
+    def train(self, X, y, epochs=100):
+        n_features = X.shape[1]
+        self.weights = np.zeros(n_features)
+
+        for epoch in range(epochs):
+            for xi, target in zip(X, y):
+                # Tính dự đoán: z = w·x
+                z = np.dot(self.weights, xi)
+
+                # Hàm kích hoạt bậc thang
+                prediction = 1 if z >= 0 else -1
+
+                # Cập nhật nếu dự đoán sai
+                if prediction != target:
+                    self.weights += self.lr * target * xi
+
+    def predict(self, X):
+        return np.sign(np.dot(X, self.weights))
+
+# Ví dụ sử dụng
+X = np.array([[0, 0], [1, 1], [1, 0], [0, 1]])
+y = np.array([-1, 1, 1, 1])
+
+model = SimplePerceptron()
+model.train(X, y, epochs=50)
+print("Trọng số:", model.weights)
+print("Dự đoán:", model.predict(X))
+                </div>
+            </div>
+
+            <!-- PHẦN 5: DEMO TƯƠNG TÁC -->
+            <div class="section">
+                <h2>🎮 Demo Tương Tác</h2>
+
+                <div class="interactive-demo">
+                    <h3>Huấn Luyện Perceptron Với Dữ Liệu Của Bạn</h3>
+
+                    <div class="demo-input">
+                        <label>Learning Rate (η):</label>
+                        <input type="number" id="learningRate" value="0.1" min="0.01" max="1" step="0.1">
+                        <small style="color: #999;">Tốc độ học: càng cao = học nhanh nhưng dễ bất ổn</small>
+                    </div>
+
+                    <div class="demo-input">
+                        <label>Số Iteration (vòng lặp):</label>
+                        <input type="number" id="iterations" value="50" min="1" max="500" step="10">
+                        <small style="color: #999;">Lặp bao nhiêu lần để huấn luyện</small>
+                    </div>
+
+                    <div class="demo-input">
+                        <label>Dữ Liệu Input (x1, x2):</label>
+                        <input type="text" id="dataInput" placeholder="Ví dụ: 1,1 hoặc 0.5,0.5" value="1,1">
+                    </div>
+
+                    <div class="demo-input">
+                        <label>Nhãn Output (y):</label>
+                        <select id="dataLabel" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px;">
+                            <option value="1">+1 (Lớp Dương)</option>
+                            <option value="-1">-1 (Lớp Âm)</option>
+                        </select>
+                    </div>
+
+                    <div class="demo-buttons">
+                        <button class="btn-primary" onclick="addData()">➕ Thêm Dữ Liệu</button>
+                        <button class="btn-primary" onclick="trainPerceptron()">🚀 Huấn Luyện</button>
+                        <button class="btn-secondary" onclick="resetDemo()">🔄 Làm Mới</button>
+                    </div>
+
+                    <div id="demoResult" class="demo-result"></div>
+
+                    <div id="trainingData" style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; display: none;">
+                        <h4>📊 Dữ Liệu Đã Thêm:</h4>
+                        <div id="dataList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PHẦN 6: QUIZ TỰ KIỂM TRA -->
+            <div class="section">
+                <h2>❓ Quiz Tự Kiểm Tra</h2>
+
+                <div class="quiz-section">
+                    <h3>Câu 1: Perceptron có thể làm gì?</h3>
+                    <div class="quiz-option">
+                        <input type="radio" name="quiz1" id="q1a" value="a">
+                        <label for="q1a">A. Phân loại dữ liệu thành nhiều lớp</label>
+                    </div>
+                    <div class="quiz-option">
+                        <input type="radio" name="quiz1" id="q1b" value="b">
+                        <label for="q1b"><strong>B. Phân loại dữ liệu thành 2 lớp</strong> ✓</label>
+                    </div>
+                    <div class="quiz-option">
+                        <input type="radio" name="quiz1" id="q1c" value="c">
+                        <label for="q1c">C. Dự báo giá trị liên tục</label>
+                    </div>
+                </div>
+
+                <div class="quiz-section">
+                    <h3>Câu 2: Công thức cập nhật trọng số là gì?</h3>
+                    <div class="quiz-option">
+                        <input type="radio" name="quiz2" id="q2a" value="a">
+                        <label for="q2a">A. w = w + η·x</label>
+                    </div>
+                    <div class="quiz-option">
+                        <input type="radio" name="quiz2" id="q2b" value="b">
+                        <label for="q2b"><strong>B. w = w ± η·target·x</strong> ✓</label>
+                    </div>
+                    <div class="quiz-option">
+                        <input type="radio" name="quiz2" id="q2c" value="c">
+                        <label for="q2c">C. w = x + target</label>
+                    </div>
+                </div>
+
+                <div class="quiz-section">
+                    <h3>Câu 3: Data nào là KHÔNG tốt cho Perceptron?</h3>
+                    <div class="quiz-option">
+                        <input type="radio" name="quiz3" id="q3a" value="a">
+                        <label for="q3a">A. Dữ liệu tuyến tính phân tách</label>
+                    </div>
+                    <div class="quiz-option">
+                        <input type="radio" name="quiz3" id="q3b" value="b">
+                        <label for="q3b"><strong>B. Dữ liệu XOR (không tuyến tính)</strong> ✓</label>
+                    </div>
+                    <div class="quiz-option">
+                        <input type="radio" name="quiz3" id="q3c" value="c">
+                        <label for="q3c">C. Dữ liệu có 2 lớp rõ ràng</label>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
+                    <p><strong>💡 Gợi ý:</strong> Perceptron chỉ hoạt động tốt với dữ liệu <span class="highlight">tuyến tính phân tách được</span>. Nếu 2 lớp chồng lấp (như XOR), bạn cần dùng mạng nơ-ron sâu (Deep Learning).</p>
+                </div>
+            </div>
+
+            <!-- PHẦN 7: USE CASE THỰC TẾ -->
+            <div class="section">
+                <h2>🌍 Use Case Thực Tế</h2>
+
+                <div class="visualization">
+                    <div class="viz-card">
+                        <div class="viz-title">📧 Email Spam Filter</div>
+                        <p><strong>Input:</strong> Từ khóa, độ dài, số ký tự đặc biệt</p>
+                        <p><strong>Output:</strong> Spam (+1) vs Normal (-1)</p>
+                        <p><strong>Kết quả:</strong> ✅ Tốt</p>
+                    </div>
+                    <div class="viz-card">
+                        <div class="viz-title">🏦 Phê Duyệt Loan</div>
+                        <p><strong>Input:</strong> Thu nhập, nợ, tuổi</p>
+                        <p><strong>Output:</strong> Phê duyệt (+1) vs Từ chối (-1)</p>
+                        <p><strong>Kết quả:</strong> ✅ Tốt</p>
+                    </div>
+                    <div class="viz-card">
+                        <div class="viz-title">🎯 Phân Loại Ảnh Đơn Giản</div>
+                        <p><strong>Input:</strong> Pixel ảnh 20×20</p>
+                        <p><strong>Output:</strong> Hình tròn (+1) vs Không (-1)</p>
+                        <p><strong>Kết quả:</strong> ⚠️ Trung bình</p>
+                    </div>
+                </div>
+
+                <h3>Ví Dụ Chi Tiết: Spam Email Detection</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Từ "Cliquez"</th>
+                            <th>Liên kết</th>
+                            <th>Thực Tế</th>
+                            <th>Dự Đoán</th>
+                            <th>Kết Quả</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Email #1</td>
+                            <td>Có (1)</td>
+                            <td>5 link (1)</td>
+                            <td>Spam (+1)</td>
+                            <td>+1</td>
+                            <td>✅ Đúng</td>
+                        </tr>
+                        <tr>
+                            <td>Email #2</td>
+                            <td>Không (0)</td>
+                            <td>0 link (0)</td>
+                            <td>Normal (-1)</td>
+                            <td>-1</td>
+                            <td>✅ Đúng</td>
+                        </tr>
+                        <tr>
+                            <td>Email #3</td>
+                            <td>Không (0)</td>
+                            <td>1 link (0.2)</td>
+                            <td>Normal (-1)</td>
+                            <td>-1</td>
+                            <td>✅ Đúng</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PHẦN 8: TÓM TẮT -->
+            <div class="section">
+                <h2>✨ Tóm Tắt</h2>
+
+                <div style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); padding: 20px; border-radius: 8px;">
+                    <h3>🎯 Điểm Chính:</h3>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Perceptron</strong> = Mô hình phân loại nhị phân đơn giản nhất</li>
+                        <li><strong>Cách hoạt động:</strong> Tìm đường ranh giới tuyến tính chia 2 lớp</li>
+                        <li><strong>Huấn luyện:</strong> Điều chỉnh trọng số khi dự đoán sai</li>
+                        <li><strong>Ưu điểm:</strong> Đơn giản, nhanh, hiểu được</li>
+                        <li><strong>Nhược điểm:</strong> Chỉ làm việc với data tuyến tính phân tách</li>
+                        <li><strong>Kế Tiếp:</strong> Multi-layer Perceptron (MLP) cho dữ liệu phức tạp</li>
+                    </ul>
+                </div>
+
+                <h3 style="margin-top: 20px;">📖 Bài Học Tiếp Theo:</h3>
+                <ul style="margin-left: 20px;">
+                    <li>Multi-layer Perceptron (MLP) - Mạng nơ-ron nhiều lớp</li>
+                    <li>Hàm Kích Hoạt (Activation Functions) - ReLU, Sigmoid, Tanh</li>
+                    <li>Backpropagation - Lan truyền ngược để tính gradient</li>
+                    <li>Convolutional Neural Networks (CNN) - Cho xử lý ảnh</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🎓 Bài Học Perceptron - Tương Tác & Học Tập | Code ID: PER-2025-08-23-7k9m2</p>
+        </div>
+    </div>
+
+    <script>
+        let trainingData = [];
+        let weights = null;
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load theme preference
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            }
+        });
+
+        function addData() {
+            const input = document.getElementById('dataInput').value;
+            const label = parseInt(document.getElementById('dataLabel').value);
+
+            if (!input || !input.includes(',')) {
+                alert('Vui lòng nhập 2 giá trị cách nhau bằng dấu phẩy (ví dụ: 1,1)');
+                return;
+            }
+
+            const parts = input.split(',').map(x => parseFloat(x.trim()));
+            if (parts.length !== 2 || parts.some(isNaN)) {
+                alert('Input không hợp lệ. Nhập 2 số cách nhau bằng dấu phẩy.');
+                return;
+            }
+
+            trainingData.push({x: parts, y: label});
+
+            document.getElementById('trainingData').style.display = 'block';
+            const dataList = document.getElementById('dataList');
+            dataList.innerHTML = trainingData.map((d, i) =>
+                `<p>Dữ liệu #${i+1}: x=[${d.x[0]}, ${d.x[1]}], y=${d.y > 0 ? '+1 (Dương)' : '-1 (Âm)'}</p>`
+            ).join('');
+
+            document.getElementById('dataInput').value = '';
+            document.getElementById('demoResult').style.display = 'none';
+        }
+
+        function trainPerceptron() {
+            if (trainingData.length < 2) {
+                alert('Cần ít nhất 2 dữ liệu để huấn luyện!');
+                return;
+            }
+
+            const lr = parseFloat(document.getElementById('learningRate').value);
+            const epochs = parseInt(document.getElementById('iterations').value);
+
+            // Khởi tạo weights
+            weights = [0, 0, 0]; // [w1, w2, bias]
+
+            let losses = [];
+            for (let epoch = 0; epoch < epochs; epoch++) {
+                let epochError = 0;
+
+                for (let d of trainingData) {
+                    const z = weights[0] * d.x[0] + weights[1] * d.x[1] + weights[2];
+                    const pred = z >= 0 ? 1 : -1;
+
+                    if (pred !== d.y) {
+                        weights[0] += lr * d.y * d.x[0];
+                        weights[1] += lr * d.y * d.x[1];
+                        weights[2] += lr * d.y;
+                        epochError++;
+                    }
+                }
+                losses.push(epochError);
+            }
+
+            // Hiển thị kết quả
+            const resultDiv = document.getElementById('demoResult');
+            const accuracy = ((trainingData.length - losses[losses.length - 1]) / trainingData.length * 100).toFixed(1);
+
+            resultDiv.innerHTML = `
+                <h4>✅ Huấn Luyện Hoàn Thành!</h4>
+                <p><strong>Trọng Số Cuối Cùng:</strong> w1=${weights[0].toFixed(3)}, w2=${weights[1].toFixed(3)}, bias=${weights[2].toFixed(3)}</p>
+                <p><strong>Độ Chính Xác:</strong> ${accuracy}%</p>
+                <p><strong>Sai Số Cuối:</strong> ${losses[losses.length - 1]} / ${trainingData.length} mẫu</p>
+                <hr>
+                <h4>📊 Dự Đoán Cho Từng Mẫu:</h4>
+                ${trainingData.map((d, i) => {
+                    const z = weights[0] * d.x[0] + weights[1] * d.x[1] + weights[2];
+                    const pred = z >= 0 ? 1 : -1;
+                    const correct = pred === d.y ? '✅' : '❌';
+                    return `<p>${correct} Mẫu #${i+1}: x=[${d.x[0]}, ${d.x[1]}] → Dự đoán: ${pred}, Thực tế: ${d.y}</p>`;
+                }).join('')}
+            `;
+            resultDiv.style.display = 'block';
+        }
+
+        function resetDemo() {
+            trainingData = [];
+            weights = null;
+            document.getElementById('dataInput').value = '';
+            document.getElementById('demoResult').style.display = 'none';
+            document.getElementById('trainingData').style.display = 'none';
+            document.getElementById('dataList').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

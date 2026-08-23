@@ -1,0 +1,39 @@
+{
+  "id": "PER-2025-08-23-7k9m2",
+  "title": "Perceptron - Model Phân Loại Nhị Phân",
+  "description": "Bài học tương tác về Perceptron: khái niệm cơ bản, quy trình huấn luyện 4 trạng thái, data tốt vs xấu, code Python, demo tương tác, và use case thực tế.",
+  "language": "vi",
+  "level": "beginner",
+  "duration_minutes": 45,
+  "topic": "Neural Networks",
+  "lesson_number": "3-NeuralNetworks/03-Perceptron",
+  "source": "AI-For-Beginners",
+  "created_date": "2025-08-23T09:30:00Z",
+  "teacher": "Claude AI",
+  "features": [
+    "interactive-demo",
+    "animation",
+    "dark-mode",
+    "responsive-design",
+    "code-examples",
+    "quizzes",
+    "visualizations"
+  ],
+  "learning_objectives": [
+    "Hiểu khái niệm Perceptron là gì",
+    "Biết quy trình huấn luyện Perceptron",
+    "Phân biệt data tốt vs data xấu cho Perceptron",
+    "Viết code Python triển khai Perceptron",
+    "Ứng dụng Perceptron vào các bài toán thực tế"
+  ],
+  "sections": [
+    "Khái Niệm Cơ Bản",
+    "4 Trạng Thái Huấn Luyện",
+    "Data Tốt vs Data Xấu",
+    "Code Python",
+    "Demo Tương Tác",
+    "Quiz Tự Kiểm Tra",
+    "Use Case Thực Tế",
+    "Tóm Tắt"
+  ]
+}
