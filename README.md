@@ -2,6 +2,14 @@
 
 Chào mừng bạn đến với khóa học AI tinh gọn! Đây là phiên bản đã được đơn giản hóa để bạn có thể tập trung hoàn toàn vào việc học mà không bị rối bởi các file kỹ thuật phức tạp.
 
+## 🌐 Xem bài học online
+
+👉 **https://lmk89.github.io/AI-For-Beginners/**
+
+Toàn bộ bài học dạng HTML tương tác được đăng tại đây. Trang chủ (`index.html`) liệt kê đầy đủ các bài, bắt đầu bằng Bản đồ lộ trình học tập.
+
+> **Cấu hình:** GitHub Pages phục vụ trực tiếp từ branch `main`, thư mục gốc (`/`). Chỉ cần push lên `main` là site tự cập nhật sau 1–2 phút, không cần chạy GitHub Actions.
+
 ## 🚀 Bắt đầu từ đâu?
 
 Đừng quá lo lắng về toán học hay lập trình phức tạp. Hãy đi theo lộ trình này:
