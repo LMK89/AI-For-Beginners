@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài Giảng: Nhúng Từ (Word Embeddings) - Lớp AI Cho Người Mới</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+        }
+
+        [data-theme="dark"] {
+            --dark: #f9fafb;
+            --light: #1f2937;
+            --border: #4b5563;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--light);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        [data-theme="dark"] .card {
+            background: #2d3748;
+            border-color: #4b5563;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] .comparison-table {
+            background: #2d3748;
+        }
+
+        .comparison-table th {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        [data-theme="dark"] .comparison-table td {
+            border-bottom-color: #4b5563;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .diagram {
+            background: #f0f4ff;
+            border: 2px dashed var(--primary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            white-space: pre;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+
+        [data-theme="dark"] .diagram {
+            background: #2d3748;
+            border-color: var(--secondary);
+        }
+
+        .code-block {
+            background: #1f2937;
+            color: #10b981;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+
+        .highlight {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin: 0 2px;
+        }
+
+        .good {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        [data-theme="dark"] .good {
+            background: #166534;
+            color: #dcfce7;
+        }
+
+        .bad {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        [data-theme="dark"] .bad {
+            background: #991b1b;
+            color: #fee2e2;
+        }
+
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        [data-theme="dark"] .warning {
+            background: #92400e;
+            color: #fef3c7;
+        }
+
+        .emoji {
+            font-size: 1.3em;
+            margin-right: 8px;
+        }
+
+        .quiz {
+            background: #fef3c7;
+            border-left: 4px solid var(--warning);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        [data-theme="dark"] .quiz {
+            background: #92400e;
+        }
+
+        .quiz-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .quiz-options {
+            margin-top: 15px;
+        }
+
+        .quiz-option {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .quiz-option input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .quiz-option label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px 5px 10px 0;
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.correct {
+            background: #dcfce7;
+            color: #166534;
+            border: 2px solid var(--success);
+        }
+
+        [data-theme="dark"] .result.correct {
+            background: #166534;
+            color: #dcfce7;
+        }
+
+        .result.incorrect {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid var(--danger);
+        }
+
+        [data-theme="dark"] .result.incorrect {
+            background: #991b1b;
+            color: #fee2e2;
+        }
+
+        .example-flow {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto 1fr;
+            gap: 10px;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .flow-box {
+            background: #f0f4ff;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        [data-theme="dark"] .flow-box {
+            background: #2d3748;
+            border-color: var(--secondary);
+        }
+
+        .flow-arrow {
+            font-size: 1.5em;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .topic {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        footer {
+            background: var(--dark);
+            color: var(--light);
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5em;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .comparison-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            background: white;
+        }
+
+        [data-theme="dark"] .comparison-card {
+            background: #2d3748;
+        }
+
+        .comparison-card h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .pros-cons {
+            margin-top: 10px;
+        }
+
+        .pro, .con {
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .pro {
+            background: #dcfce7;
+            border-left: 3px solid var(--success);
+            color: #166534;
+        }
+
+        [data-theme="dark"] .pro {
+            background: #166534;
+            color: #dcfce7;
+        }
+
+        .con {
+            background: #fee2e2;
+            border-left: 3px solid var(--danger);
+            color: #991b1b;
+        }
+
+        [data-theme="dark"] .con {
+            background: #991b1b;
+            color: #fee2e2;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+    <div class="container">
+        <header>
+            <h1>🎯 Nhúng Từ (Word Embeddings)</h1>
+            <p>Khám phá cách máy tính hiểu ý nghĩa của từ!</p>
+        </header>
+
+        <div class="content">
+            <!-- Section 1: Giới thiệu -->
+            <div class="section">
+                <h2 class="section-title"><span class="emoji">📚</span>Giới Thiệu</h2>
+                <div class="topic">
+                    <p><strong>Vấn đề:</strong> Làm sao máy tính hiểu được ý nghĩa của từ "chó" và "mèo" tương tự nhau hơn là "chó" và "ghế"?</p>
+                    <br>
+                    <p><strong>Giải pháp:</strong> Biểu diễn từ dưới dạng <span class="highlight good">vector số (embeddings)</span> thay vì chỉ là một ID hoặc từ.</p>
+                </div>
+            </div>
+
+            <!-- Section 2: So Sánh Hai Cách -->
+            <div class="section">
+                <h2 class="section-title"><span class="emoji">🔄</span>One-Hot Encoding vs Embeddings</h2>
+
+                <div class="card">
+                    <h3>📊 Bảng So Sánh</h3>
+                    <table class="comparison-table">
+                        <tr>
+                            <th>Đặc Điểm</th>
+                            <th>One-Hot Encoding</th>
+                            <th>Embeddings</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Kích Thước</strong></td>
+                            <td><span class="highlight bad">Vocab_size (hàng chục ngàn)</span></td>
+                            <td><span class="highlight good">Nhỏ (128-300)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dạng Vector</strong></td>
+                            <td><span class="highlight bad">Sparse (nhiều số 0)</span></td>
+                            <td><span class="highlight good">Dense (số thực)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ý Nghĩa Ngữ Nghĩa</strong></td>
+                            <td><span class="highlight bad">Không có</span></td>
+                            <td><span class="highlight good">Có (từ tương tự gần nhau)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tốc Độ</strong></td>
+                            <td><span class="highlight bad">Chậm</span></td>
+                            <td><span class="highlight good">Nhanh</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bộ Nhớ</strong></td>
+                            <td><span class="highlight bad">Tiêu tốn nhiều</span></td>
+                            <td><span class="highlight good">Tiết kiệm</span></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Visual Comparison -->
+                <div class="card">
+                    <h3>🎨 Hình Minh Họa</h3>
+
+                    <div class="diagram">ONE-HOT ENCODING (Cách Cũ - Lãng Phí):
+
+Từ "chó":       [1, 0, 0, 0, 0, 0, ...]  (10,000 phần tử!)
+                ✓ ■ □ □ □ □ ...
+
+Từ "mèo":       [0, 1, 0, 0, 0, 0, ...]
+                □ ■ □ □ □ □ ...
+
+Từ "ghế":       [0, 0, 1, 0, 0, 0, ...]
+                □ □ ■ □ □ □ ...
+
+❌ Không thấy sự tương đồng! "chó" và "mèo" không liên quan!
+
+
+EMBEDDINGS (Cách Mới - Thông Minh):
+
+Từ "chó":   [0.2, -0.5, 0.8, 0.1, ...]  (chỉ 128 phần tử!)
+Từ "mèo":   [0.1, -0.6, 0.7, 0.2, ...]  ← Rất gần với "chó"!
+Từ "ghế":   [-0.9, 0.3, -0.2, 0.5, ...]  ← Rất xa so với "chó"!
+
+✅ Từ tương tự = Vector gần nhau!</div>
+
+                    <div class="code-block">
+# Python: So Sánh
+import numpy as np
+from scipy.spatial.distance import cosine
+
+# One-Hot (cũ)
+dog_onehot = np.zeros(10000)
+dog_onehot[5] = 1
+
+# Embeddings (mới)
+dog_embed = np.array([0.2, -0.5, 0.8, 0.1, 0.3])
+cat_embed = np.array([0.1, -0.6, 0.7, 0.2, 0.4])
+chair_embed = np.array([-0.9, 0.3, -0.2, 0.5, -0.1])
+
+# Tính khoảng cách
+dist_dog_cat = cosine(dog_embed, cat_embed)    # ≈ 0.08 (gần!)
+dist_dog_chair = cosine(dog_embed, chair_embed) # ≈ 0.92 (xa!)
+
+print(f"Khoảng cách chó-mèo: {dist_dog_cat:.2f}")
+print(f"Khoảng cách chó-ghế: {dist_dog_chair:.2f}")
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Word2Vec -->
+            <div class="section">
+                <h2 class="section-title"><span class="emoji">🧠</span>Word2Vec - Học Embeddings Có Ý Nghĩa</h2>
+
+                <div class="topic">
+                    <p><strong>Ý tưởng chính:</strong> Học embeddings từ <span class="highlight good">ngữ cảnh của từ</span>!</p>
+                    <p>Nếu hai từ thường xuất hiện trong cùng ngữ cảnh → Chúng có ý nghĩa tương tự!</p>
+                </div>
+
+                <div class="card">
+                    <h3>🎯 Hai Kiến Trúc Chính</h3>
+
+                    <div class="comparison-cards">
+                        <div class="comparison-card">
+                            <h4>1️⃣ CBoW (Continuous Bag-of-Words)</h4>
+                            <p><strong>Cách hoạt động:</strong></p>
+                            <p>Dự đoán từ từ các từ xung quanh</p>
+                            <div class="diagram">Câu: "con chó đen rất thông minh"
+
+Input:  [đen, rất] (từ xung quanh)
+           ↓
+        [Embedding Layer]
+           ↓
+      [Average/Sum]
+           ↓
+Output:  Dự đoán "thông" 🎯
+
+✅ Nhanh, tốt cho từ thường gặp</div>
+                            <div class="pros-cons">
+                                <div class="pro">✅ Nhanh, hiệu quả</div>
+                                <div class="pro">✅ Tốt cho từ phổ biến</div>
+                                <div class="con">❌ Bỏ qua thứ tự từ</div>
+                            </div>
+                        </div>
+
+                        <div class="comparison-card">
+                            <h4>2️⃣ Skip-Gram</h4>
+                            <p><strong>Cách hoạt động:</strong></p>
+                            <p>Từ đơn dự đoán các từ xung quanh</p>
+                            <div class="diagram">Câu: "con chó đen rất thông minh"
+
+Input:  "chó"
+          ↓
+   [Embedding Layer]
+          ↓
+Output:  Dự đoán [con, đen]
+         (các từ lân cận) 🎯
+
+✅ Tốt cho từ hiếm</div>
+                            <div class="pros-cons">
+                                <div class="pro">✅ Tốt cho từ hiếm</div>
+                                <div class="pro">✅ Chất lượng cao</div>
+                                <div class="con">❌ Chậm hơn CBoW</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+# Python: Dùng Word2Vec
+from gensim.models import Word2Vec
+
+# Dữ liệu huấn luyện
+texts = [
+    ['con', 'chó', 'vàng', 'rất', 'thông', 'minh'],
+    ['con', 'mèo', 'đen', 'rất', 'lanh', 'lợi'],
+    ['cái', 'ghế', 'gỗ', 'rất', 'chắc', 'chắn']
+]
+
+# Tạo Word2Vec model
+# sg=0: CBoW | sg=1: Skip-Gram
+model = Word2Vec(texts, vector_size=100, window=2, sg=1, min_count=1)
+
+# Xem embedding của từ "chó"
+print(model.wv['chó'])
+# Output: [-0.234, 0.456, -0.123, ... ] (100 số)
+
+# Kiểm tra từ tương tự
+print(model.wv.most_similar('chó', topn=3))
+# Output: [('mèo', 0.87), ('vàng', 0.65), ...]
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Ứng Dụng Thực Tế -->
+            <div class="section">
+                <h2 class="section-title"><span class="emoji">🌍</span>Ứng Dụng Thực Tế</h2>
+
+                <div class="card">
+                    <h3>📱 Các Trường Hợp Sử Dụng Thực Tế</h3>
+
+                    <div class="topic">
+                        <p><strong>1️⃣ Tìm Kiếm & Gợi Ý (Search & Recommendation):</strong></p>
+                        <p>Khi bạn tìm "mèo mơn đơi" → Hệ thống tìm các sản phẩm có embedding gần với "mèo".</p>
+                    </div>
+
+                    <div class="topic">
+                        <p><strong>2️⃣ Phân Loại Văn Bản (Text Classification):</strong></p>
+                        <p>Phân biệt email spam vs email bình thường dựa trên embeddings của từ.</p>
+                    </div>
+
+                    <div class="topic">
+                        <p><strong>3️⃣ Dịch Máy & Chatbot:</strong></p>
+                        <p>Embeddings giúp máy hiểu ý nghĩa để dịch chính xác: "tôi yêu chó" = "I love dogs".</p>
+                    </div>
+
+                    <div class="topic">
+                        <p><strong>4️⃣ Tương Đồng Từ (Word Similarity):</strong></p>
+                        <p>Tìm từ gần giống nhất: "vua" - "đàn ông" + "phụ nữ" = "nữ hoàng" 👑</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Dữ Liệu Tốt vs Xấu -->
+            <div class="section">
+                <h2 class="section-title"><span class="emoji">💾</span>Dữ Liệu Tốt vs Xấu Cho Embeddings</h2>
+
+                <div class="comparison-cards">
+                    <div class="comparison-card">
+                        <h4>✅ Dữ Liệu TỐT</h4>
+                        <div class="code-block">
+# Corpus (Tập huấn luyện) TỐT
+"Hôm nay trời nắng, con chó
+ chạy ra sân và cắn chiếc dớp."
+
+"Con mèo ngồi trên ghế xem
+ con chó chơi đùa."
+
+"Chó là con vật trung thành,
+ mèo là con vật độc lập."
+                        </div>
+                        <div class="pros-cons">
+                            <div class="pro">✅ Nhiều từ (>1M tokens)</div>
+                            <div class="pro">✅ Đa dạng chủ đề</div>
+                            <div class="pro">✅ Từ tự nhiên, không lỗi</div>
+                            <div class="pro">✅ Cân bằng: chó, mèo, ghế xuất hiện nhiều lần</div>
+                        </div>
+                    </div>
+
+                    <div class="comparison-card">
+                        <h4>❌ Dữ Liệu XẤU</h4>
+                        <div class="code-block">
+# Corpus XẤU
+"xxxxx yyyyy zzzzz"
+
+"chó" (chỉ một từ, không có ngữ cảnh)
+
+"CON CHÓ CON MÈO CON GHẾ"
+(chỉ là danh sách, không có ý nghĩa)
+
+"chó đang... người nói..." (từ hiếm)
+                        </div>
+                        <div class="pros-cons">
+                            <div class="con">❌ Quá ít từ (<100K)</div>
+                            <div class="con">❌ Dữ liệu nhiễu, lỗi</div>
+                            <div class="con">❌ Từ xuất hiện rất ít lần</div>
+                            <div class="con">❌ Không có ngữ cảnh</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Bài Tập Nhỏ -->
+            <div class="section">
+                <h2 class="section-title"><span class="emoji">✏️</span>Bài Tập Thực Hành</h2>
+
+                <div class="card">
+                    <div class="quiz">
+                        <div class="quiz-title">❓ Câu Hỏi 1: Kích Thước Vector</div>
+                        <p>Nếu từ vựng có 50,000 từ, one-hot encoding sẽ tạo vector kích thước bao nhiêu?</p>
+                        <div class="quiz-options">
+                            <div class="quiz-option">
+                                <input type="radio" id="q1a" name="quiz1" value="incorrect">
+                                <label for="q1a">A) 128</label>
+                            </div>
+                            <div class="quiz-option">
+                                <input type="radio" id="q1b" name="quiz1" value="correct">
+                                <label for="q1b">B) 50,000</label>
+                            </div>
+                            <div class="quiz-option">
+                                <input type="radio" id="q1c" name="quiz1" value="incorrect">
+                                <label for="q1c">C) 300</label>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="checkQuiz1()">Kiểm Tra ✓</button>
+                        <div id="result1" class="result"></div>
+                    </div>
+
+                    <div class="quiz">
+                        <div class="quiz-title">❓ Câu Hỏi 2: Skip-Gram vs CBoW</div>
+                        <p>Bạn có một tập dữ liệu nhỏ với nhiều từ hiếm. Nên dùng cách nào?</p>
+                        <div class="quiz-options">
+                            <div class="quiz-option">
+                                <input type="radio" id="q2a" name="quiz2" value="correct">
+                                <label for="q2a">A) Skip-Gram (tốt với từ hiếm)</label>
+                            </div>
+                            <div class="quiz-option">
+                                <input type="radio" id="q2b" name="quiz2" value="incorrect">
+                                <label for="q2b">B) CBoW (chỉ để so sánh)</label>
+                            </div>
+                            <div class="quiz-option">
+                                <input type="radio" id="q2c" name="quiz2" value="incorrect">
+                                <label for="q2c">C) One-Hot Encoding (cũ hơn)</label>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="checkQuiz2()">Kiểm Tra ✓</button>
+                        <div id="result2" class="result"></div>
+                    </div>
+
+                    <div class="quiz">
+                        <div class="quiz-title">❓ Câu Hỏi 3: Thứ Tự Của Các Từ</div>
+                        <p>Điều gì khác nhau giữa CBoW và Skip-Gram về cách xử lý thứ tự từ?</p>
+                        <div class="quiz-options">
+                            <div class="quiz-option">
+                                <input type="radio" id="q3a" name="quiz3" value="incorrect">
+                                <label for="q3a">A) CBoW giữ thứ tự, Skip-Gram không</label>
+                            </div>
+                            <div class="quiz-option">
+                                <input type="radio" id="q3b" name="quiz3" value="correct">
+                                <label for="q3b">B) Cả hai đều không giữ thứ tự (chỉ dùng ngữ cảnh)</label>
+                            </div>
+                            <div class="quiz-option">
+                                <input type="radio" id="q3c" name="quiz3" value="incorrect">
+                                <label for="q3c">C) Skip-Gram giữ thứ tự chính xác</label>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="checkQuiz3()">Kiểm Tra ✓</button>
+                        <div id="result3" class="result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 7: Tóm Tắt -->
+            <div class="section">
+                <h2 class="section-title"><span class="emoji">📌</span>Tóm Tắt Bài Học</h2>
+
+                <div class="card">
+                    <div class="diagram">┌─ EMBEDDINGS ─────────────────────────────┐
+│                                           │
+├─ One-Hot: [1,0,0,...] (10,000 số)       │
+│           → Lãng phí bộ nhớ             │
+│                                           │
+├─ Embeddings: [0.2, -0.5, 0.8] (300 số) │
+│             → Hiệu quả, có ý nghĩa      │
+│                                           │
+├─ Word2Vec học từ NGỮ CẢN                │
+│   → CBoW: từ → ngữ cảnh (nhanh)        │
+│   → Skip-Gram: ngữ cảnh → từ (chất lượng│
+│                                           │
+└─ TỪ TƯƠNG TỰ = VECTOR GẦN NHAU ─────────┘</div>
+
+                    <h3 style="margin-top: 20px; color: var(--primary);">🎓 Những Điều Cần Nhớ:</h3>
+                    <ul style="margin-left: 20px; margin-top: 10px; line-height: 2;">
+                        <li><span class="highlight good">✅ Embeddings</span> giảm kích thước từ hàng chục ngàn → ~300</li>
+                        <li><span class="highlight good">✅ Từ tương tự</span> sẽ có vector gần nhau</li>
+                        <li><span class="highlight good">✅ Word2Vec</span> học từ ngữ cảnh xung quanh</li>
+                        <li><span class="highlight good">✅ Dữ liệu nhiều</span> = Embeddings tốt hơn</li>
+                        <li><span class="highlight warning">⚠️ Skip-Gram</span> tốt với từ hiếm, nhưng chậm hơn CBoW</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Section 8: Câu Hỏi Tự Kiểm Tra -->
+            <div class="section">
+                <h2 class="section-title"><span class="emoji">🤔</span>Tự Kiểm Tra Hiểu Bài</h2>
+
+                <div class="card">
+                    <ol style="line-height: 2; margin-left: 20px;">
+                        <li>Tại sao Embeddings lại tốt hơn One-Hot Encoding?</li>
+                        <li>Word2Vec học ý nghĩa từ đâu?</li>
+                        <li>Phân biệt CBoW vs Skip-Gram</li>
+                        <li>Làm sao biết dữ liệu huấn luyện có đủ tốt không?</li>
+                        <li>Sao "vua" - "đàn ông" + "phụ nữ" ≈ "nữ hoàng"?</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>📚 Bài giảng tương tác - AI Cho Người Mới | Tạo bởi Claude AI | ngày 2026-08-19</p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeButton(newTheme);
+        }
+
+        function updateThemeButton(theme) {
+            const btn = document.querySelector('.theme-toggle');
+            btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        function checkQuiz1() {
+            const selected = document.querySelector('input[name="quiz1"]:checked');
+            if (!selected) {
+                alert('Vui lòng chọn một đáp án!');
+                return;
+            }
+
+            const result = document.getElementById('result1');
+            if (selected.value === 'correct') {
+                result.className = 'result show correct';
+                result.innerHTML = '✅ <strong>Chính xác!</strong> One-Hot Encoding tạo vector với kích thước = số từ trong từ vựng (50,000)';
+            } else {
+                result.className = 'result show incorrect';
+                result.innerHTML = '❌ Chưa đúng! Embeddings (128 hay 300) là cách mới. One-Hot Encoding là vector có kích thước = 50,000.';
+            }
+        }
+
+        function checkQuiz2() {
+            const selected = document.querySelector('input[name="quiz2"]:checked');
+            if (!selected) {
+                alert('Vui lòng chọn một đáp án!');
+                return;
+            }
+
+            const result = document.getElementById('result2');
+            if (selected.value === 'correct') {
+                result.className = 'result show correct';
+                result.innerHTML = '✅ <strong>Tuyệt vời!</strong> Skip-Gram được thiết kế để hoạt động tốt với các từ hiếm vì nó dự đoán nhiều từ xung quanh từ đơn.';
+            } else {
+                result.className = 'result show incorrect';
+                result.innerHTML = '❌ Chưa đúng! CBoW nhanh hơn nhưng không tốt với từ hiếm. Skip-Gram chậm hơn nhưng chất lượng cao hơn.';
+            }
+        }
+
+        function checkQuiz3() {
+            const selected = document.querySelector('input[name="quiz3"]:checked');
+            if (!selected) {
+                alert('Vui lòng chọn một đáp án!');
+                return;
+            }
+
+            const result = document.getElementById('result3');
+            if (selected.value === 'correct') {
+                result.className = 'result show correct';
+                result.innerHTML = '✅ <strong>Hoàn toàn đúng!</strong> Cả CBoW và Skip-Gram đều bỏ qua thứ tự từ, chỉ tập trung vào ngữ cảnh (các từ xung quanh).';
+            } else {
+                result.className = 'result show incorrect';
+                result.innerHTML = '❌ Chưa đúng! Cả CBoW và Skip-Gram đều không giữ thứ tự chính xác - chúng chỉ sử dụng ngữ cảnh. Để giữ thứ tự, cần dùng RNN hoặc Transformers.';
+            }
+        }
+
+        // Tải theme từ localStorage khi trang load
+        window.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            updateThemeButton(theme);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinh Phục Logistic Regression - Lộ Trình Học Tập Trực Quan</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- MathJax for rendering LaTeX equations -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #080710;
+            --sidebar-bg: rgba(15, 14, 28, 0.75);
+            --card-bg: rgba(22, 21, 45, 0.6);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            --accent-purple: #a855f7;
+            --accent-indigo: #6366f1;
+            --accent-pink: #ec4899;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --glow-color: rgba(168, 85, 247, 0.35);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(8, 7, 16, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(168, 85, 247, 0.6);
+        }
+
+        /* Sidebar Styling */
+        aside {
+            width: 300px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--card-border);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo-icon {
+            background: var(--primary-gradient);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.85rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item a:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
+            padding-left: 1.25rem;
+        }
+
+        .nav-item.active a {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: rgba(168, 85, 247, 0.3);
+            color: var(--text-main);
+            font-weight: 600;
+            box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.1);
+        }
+
+        /* Main Workspace */
+        main {
+            margin-left: 300px;
+            padding: 3rem 4rem;
+            width: calc(100% - 300px);
+            max-width: 1200px;
+        }
+
+        header {
+            margin-bottom: 3.5rem;
+            position: relative;
+        }
+
+        .badge {
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--accent-purple);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            padding: 0.4rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #ffffff, #d8b4fe, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .lead-text {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            line-height: 1.6;
+            max-width: 800px;
+        }
+
+        /* Glassmorphism Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2.25rem;
+            margin-bottom: 2.5rem;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(168, 85, 247, 0.25);
+            box-shadow: 0 15px 35px rgba(168, 85, 247, 0.05);
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #ffffff;
+        }
+
+        h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 1.75rem 0 1rem 0;
+            color: #e9d5ff;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 1.25rem;
+        }
+
+        /* Math and Highlight boxes */
+        .math-box {
+            background: rgba(10, 10, 24, 0.5);
+            border-left: 4px solid var(--accent-indigo);
+            padding: 1.25rem 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .info-tip {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px dashed rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .info-tip i {
+            color: var(--accent-indigo);
+            font-size: 1.2rem;
+            margin-top: 0.15rem;
+        }
+
+        .info-tip p {
+            margin-bottom: 0;
+            font-size: 0.95rem;
+            color: #d1d5db;
+        }
+
+        /* Checklist Interactive */
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 1.5rem;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .check-item:hover {
+            background: rgba(168, 85, 247, 0.04);
+            border-color: rgba(168, 85, 247, 0.15);
+            transform: translateX(3px);
+        }
+
+        .check-checkbox {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .check-item.completed .check-checkbox {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+
+        .check-checkbox i {
+            color: white;
+            font-size: 0.75rem;
+            display: none;
+        }
+
+        .check-item.completed .check-checkbox i {
+            display: block;
+        }
+
+        .check-content {
+            flex-grow: 1;
+        }
+
+        .check-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 0.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .check-item.completed .check-title {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .check-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Tab Switcher */
+        .tabs {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.75rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: var(--primary-gradient);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        /* Playground / Interactive Simulator Styles */
+        .playground-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .playground-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-panel {
+            background: rgba(10, 10, 24, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .visual-panel {
+            background: rgba(10, 10, 24, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 250px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e9d5ff;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-purple);
+            transition: transform 0.1s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-toggle {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-toggle.active {
+            background: var(--accent-pink);
+            border-color: var(--accent-pink);
+            box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
+        }
+
+        .math-result {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.1);
+            text-align: center;
+        }
+
+        /* SVG and Dynamic graph styling */
+        .sigmoid-graph {
+            width: 100%;
+            height: 200px;
+        }
+
+        .graph-line {
+            fill: none;
+            stroke: #a855f7;
+            stroke-width: 3;
+        }
+
+        .graph-dot {
+            fill: #ec4899;
+            stroke: white;
+            stroke-width: 2;
+            filter: drop-shadow(0 0 6px var(--accent-pink));
+        }
+
+        /* Loss visual bar */
+        .loss-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .loss-bar-outer {
+            width: 100%;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .loss-bar-inner {
+            height: 100%;
+            width: 50%;
+            background: var(--success-color);
+            transition: width 0.25s ease, background-color 0.25s ease;
+        }
+
+        /* Code block panel */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111022;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px 12px 0 0;
+            border: 1px solid var(--card-border);
+            border-bottom: none;
+        }
+
+        .code-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #d1d5db;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-title span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f87171;
+            display: inline-block;
+        }
+
+        .code-title span:nth-child(2) { background: #fbbf24; }
+        .code-title span:nth-child(3) { background: #34d399; }
+
+        pre {
+            background: #090815;
+            border: 1px solid var(--card-border);
+            border-radius: 0 0 12px 12px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        .keyword { color: #f472b6; }
+        .func { color: #60a5fa; }
+        .comment { color: #6b7280; font-style: italic; }
+        .string { color: #34d399; }
+        .number { color: #fbbf24; }
+
+        /* General Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+            transition: all 0.25s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(168, 85, 247, 0.45);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .mobile-header {
+            display: none;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(8, 7, 16, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 99;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Responsive Styles (e.g. iPhone 11 & other mobiles/tablets) */
+        @media (max-width: 968px) {
+            body {
+                flex-direction: column;
+            }
+
+            .mobile-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.85rem 1.25rem;
+                background: var(--sidebar-bg);
+                backdrop-filter: blur(20px);
+                border-bottom: 1px solid var(--card-border);
+                position: sticky;
+                top: 0;
+                z-index: 101;
+                width: 100%;
+            }
+
+            .menu-toggle-btn {
+                background: none;
+                border: none;
+                color: var(--text-main);
+                font-size: 1.5rem;
+                cursor: pointer;
+                padding: 0.25rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: color 0.2s;
+            }
+
+            .menu-toggle-btn:hover {
+                color: var(--accent-purple);
+            }
+
+            aside {
+                left: -300px;
+                width: 280px;
+                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 102;
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+                border-right: 1px solid rgba(255, 255, 255, 0.05);
+                padding-top: 1.5rem;
+            }
+
+            aside.open {
+                left: 0;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 1.5rem 1rem;
+                width: 100%;
+            }
+
+            header {
+                margin-bottom: 2rem;
+            }
+
+            h1 {
+                font-size: 2.1rem;
+                line-height: 1.2;
+            }
+
+            .lead-text {
+                font-size: 1rem;
+            }
+
+            .card {
+                padding: 1.25rem;
+                border-radius: 16px;
+                margin-bottom: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.45rem;
+            }
+
+            h3 {
+                font-size: 1.2rem;
+                margin: 1.25rem 0 0.75rem 0;
+            }
+
+            .math-box {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+
+            .playground-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+
+            .control-panel, .visual-panel {
+                padding: 1.1rem;
+                border-radius: 12px;
+            }
+
+            pre {
+                padding: 1rem;
+            }
+
+            code {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="logo-area" style="margin-bottom: 0;">
+            <div class="logo-icon" style="width: 32px; height: 32px; border-radius: 8px; font-size: 1rem; box-shadow: none;"><i class="fa-solid fa-brain"></i></div>
+            <div class="logo-text" style="font-size: 1.1rem;">KHANG LESSON</div>
+        </div>
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars" id="menu-icon"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside>
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-brain"></i></div>
+            <div class="logo-text">KHANG LESSON</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active"><a href="#lo-trinh"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình Học Tập</a></li>
+            <li class="nav-item"><a href="#thuyet-1"><i class="fa-solid fa-bezier-curve"></i> 1. Hàm Sigmoid</a></li>
+            <li class="nav-item"><a href="#thuyet-2"><i class="fa-solid fa-chart-line"></i> 2. Hàm BCE Loss</a></li>
+            <li class="nav-item"><a href="#thuyet-3"><i class="fa-solid fa-compass"></i> 3. Gradient Descent</a></li>
+            <li class="nav-item"><a href="#lap-trinh"><i class="fa-solid fa-code"></i> 4. Lập Trình Scratch</a></li>
+            <li class="nav-item"><a href="#playground"><i class="fa-solid fa-gamepad"></i> 5. Bộ Mô Phỏng</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+        <header>
+            <div class="badge"><i class="fa-solid fa-graduation-cap"></i> Phân loại Nhị phân (Binary Classification)</div>
+            <h1>Chinh Phục Logistic Regression</h1>
+            <p class="lead-text">Chào mừng Khang! Trang tài liệu tương tác này giúp bạn hiểu rõ toán học và trực quan hóa từng thành phần của thuật toán Logistic Regression. Hãy cùng khám phá lộ trình học tập tối giản mà sâu sắc.</p>
+        </header>
+
+        <!-- LỘ TRÌNH HỌC TẬP CARD -->
+        <section id="lo-trinh" class="card">
+            <h2><i class="fa-solid fa-calendar-alt" style="color: var(--accent-purple);"></i> Kế Hoạch Học Tập & Nhật Ký Tiến Độ</h2>
+            <p>Dưới đây là checklist các bước cần đạt được trong 1-2 ngày. Click chọn để lưu lại tiến độ học tập của bạn!</p>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('day1')">📅 Ngày 1: Lý Thuyết & Toán</button>
+                <button class="tab-btn" onclick="switchTab('day2')">📅 Ngày 2: Code Scratch & Đánh Giá</button>
+            </div>
+
+            <!-- Day 1 Content Checklist -->
+            <div id="day1" class="tab-content active">
+                <div class="checklist">
+                    <div class="check-item" onclick="toggleCheck(this, 'c1')">
+                        <div class="check-checkbox" id="c1"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Tư duy Phân loại (Classification) vs Tuyến tính</div>
+                            <div class="check-desc">Hiểu tại sao Hồi quy tuyến tính thông thường không phù hợp cho bài toán phân loại có kết quả nhị phân (0 hoặc 1).</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'c2')">
+                        <div class="check-checkbox" id="c2"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Hàm kích hoạt Sigmoid (Logistic Function)</div>
+                            <div class="check-desc">Nắm công thức $\sigma(z) = 1 / (1 + e^{-z})$ và đặc điểm ánh xạ số thực bất kỳ vào khoảng $(0, 1)$.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'c3')">
+                        <div class="check-checkbox" id="c3"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Hàm Mất Mát: Binary Cross-Entropy Loss</div>
+                            <div class="check-desc">Giải thích tại sao không dùng MSE, nắm vững ý nghĩa Log Loss phạt cực lớn khi mô hình tự tin sai nhãn.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'c4')">
+                        <div class="check-checkbox" id="c4"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Toán học tối ưu: Đạo hàm Gradient</div>
+                            <div class="check-desc">Nắm quy luật Gradient Descent và công thức tính đạo hàm riêng cho $W$ và $b$ để cập nhật trọng số.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Day 2 Content Checklist -->
+            <div id="day2" class="tab-content">
+                <div class="checklist">
+                    <div class="check-item" onclick="toggleCheck(this, 'c5')">
+                        <div class="check-checkbox" id="c5"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Thiết lập môi trường làm việc</div>
+                            <div class="check-desc">Mở file Jupyter Notebook <code>Logistic_Regression_Scratch.ipynb</code> trên máy tính để chuẩn bị code.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'c6')">
+                        <div class="check-checkbox" id="c6"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Tự lập trình các hàm con cốt lõi</div>
+                            <div class="check-desc">Tự điền code cho hàm <code>sigmoid()</code>, <code>compute_loss()</code> trong Notebook.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'c7')">
+                        <div class="check-checkbox" id="c7"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Hoàn thành class LogisticRegressionScratch</div>
+                            <div class="check-desc">Lập trình vòng lặp huấn luyện, tính gradient cập nhật trọng số trong hàm <code>fit()</code> và dự đoán lớp trong <code>predict()</code>.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'c8')">
+                        <div class="check-checkbox" id="c8"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Chạy thực nghiệm & Đánh giá hiệu năng</div>
+                            <div class="check-desc">Quan sát đồ thị hàm Loss giảm dần, đo lường Accuracy trên tập kiểm thử (Test set). Trả lời các câu hỏi suy ngẫm cuối bài.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HÀM SIGMOID CARD -->
+        <section id="thuyet-1" class="card">
+            <h2><i class="fa-solid fa-bezier-curve" style="color: var(--accent-indigo);"></i> 1. Từ Tuyến Tính sang Xác Suất (Hàm Sigmoid)</h2>
+            <p>Trong học máy, chúng ta tính toán đầu ra tuyến tính trước: $z = w^T x + b$. Đầu ra $z$ này có thể nằm bất kỳ đâu từ $-\infty$ tới $+\infty$.</p>
+            <p>Để đưa về dạng xác suất (nằm giữa 0 và 1), chúng ta sử dụng <strong>Hàm kích hoạt Sigmoid</strong>:</p>
+
+            <div class="math-box">
+                $$\sigma(z) = \frac{1}{1 + e^{-z}}$$
+            </div>
+
+            <div class="info-tip">
+                <i class="fa-solid fa-lightbulb"></i>
+                <p><strong>Tính chất vật lý của Sigmoid:</strong> Nó biến số dương lớn thành số gần bằng 1, số âm lớn thành gần bằng 0, và giá trị đúng bằng 0 sẽ tương ứng xác suất $0.5$. Đây cũng chính là ngưỡng quyết định (decision threshold) mặc định của phân loại nhị phân.</p>
+            </div>
+        </section>
+
+        <!-- HÀM BCE LOSS CARD -->
+        <section id="thuyet-2" class="card">
+            <h2><i class="fa-solid fa-chart-line" style="color: var(--accent-pink);"></i> 2. Hàm Mất Mát: Binary Cross-Entropy Loss</h2>
+            <p>Để huấn luyện mô hình, ta cần đo lường độ sai lệch. Hàm mất mát <strong>Binary Cross-Entropy (BCE)</strong> hay còn gọi là <strong>Log Loss</strong> đo lường xác suất sai lệch:</p>
+
+            <div class="math-box">
+                $$J(w, b) = -\frac{1}{m} \sum_{i=1}^{m} \left[ y^{(i)} \log(\hat{y}^{(i)}) + (1 - y^{(i)}) \log(1 - \hat{y}^{(i)}) \right]$$
+            </div>
+
+            <p>Hãy phân tích sâu sắc công thức này:</p>
+            <ul>
+                <li style="margin-left: 2rem; margin-bottom: 0.5rem; color: var(--text-muted);">Khi nhãn thật $y = 1$: Loss sẽ là $-\log(\hat{y})$. Nếu dự đoán $\hat{y} \to 1$, Loss sẽ $\to 0$. Nếu dự đoán $\hat{y} \to 0$, Loss sẽ tăng lên $+\infty$.</li>
+                <li style="margin-left: 2rem; margin-bottom: 0.5rem; color: var(--text-muted);">Khi nhãn thật $y = 0$: Loss sẽ là $-\log(1 - \hat{y})$. Nếu dự đoán $\hat{y} \to 0$, Loss sẽ $\to 0$. Nếu dự đoán $\hat{y} \to 1$, Loss sẽ tăng lên $+\infty$.</li>
+            </ul>
+        </section>
+
+        <!-- GRADIENT DESCENT CARD -->
+        <section id="thuyet-3" class="card">
+            <h2><i class="fa-solid fa-compass" style="color: #38bdf8;"></i> 3. Thuật toán Tối ưu hóa: Gradient Descent</h2>
+            <p>Để cực tiểu hóa hàm lỗi $J(w, b)$, chúng ta tính đạo hàm riêng (độ dốc) theo từng tham số để điều chỉnh chúng ngược chiều gradient:</p>
+
+            <div class="math-box">
+                $$\frac{\partial J}{\partial w} = \frac{1}{m} X^T (\hat{y} - y), \quad \frac{\partial J}{\partial b} = \frac{1}{m} \sum_{i=1}^{m} (\hat{y}^{(i)} - y^{(i)})$$
+            </div>
+
+            <p>Sau đó cập nhật trọng số với tham số học tập (Learning Rate) $\alpha$:</p>
+            <div class="math-box">
+                $$w := w - \alpha \frac{\partial J}{\partial w}, \quad b := b - \alpha \frac{\partial J}{\partial b}$$
+            </div>
+        </section>
+
+        <!-- BỘ MÔ PHỎNG TRỰC QUAN CARD -->
+        <section id="playground" class="card">
+            <h2><i class="fa-solid fa-gamepad" style="color: var(--accent-purple);"></i> 5. Bộ Mô Phỏng Tương Tác Trực Quan</h2>
+            <p>Hãy thử tương tác trực tiếp với hàm số để cảm nhận trực giác rõ ràng nhất!</p>
+
+            <!-- Sigmoid Playground -->
+            <h3>📊 Mô Phỏng Hàm Kích Hoạt Sigmoid</h3>
+            <p>Di chuyển thanh trượt để thay đổi giá trị đầu ra tuyến tính $z$ và xem xác suất đầu ra $\sigma(z)$ thay đổi như thế nào trên biểu đồ.</p>
+            
+            <div class="playground-grid">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Giá trị đầu vào tuyến tính $z$ (Input)</span>
+                            <span id="z-val-display" style="font-family: monospace; color: var(--accent-purple); font-weight: bold;">0.00</span>
+                        </div>
+                        <input type="range" min="-10" max="10" step="0.1" value="0" class="slider" id="z-slider" oninput="updateSigmoidSimulator()">
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label"><span>Công thức hiển thị</span></div>
+                        <div class="math-result" id="sigmoid-formula-display">
+                            sigmoid(0.0) = 0.50
+                        </div>
+                    </div>
+                </div>
+
+                <div class="visual-panel">
+                    <svg class="sigmoid-graph" viewBox="0 0 200 100">
+                        <line x1="0" y1="50" x2="200" y2="50" stroke="rgba(255,255,255,0.15)" stroke-dasharray="3,3" />
+                        <line x1="100" y1="0" x2="100" y2="100" stroke="rgba(255,255,255,0.15)" stroke-dasharray="3,3" />
+                        <!-- Y-axis values labels -->
+                        <text x="105" y="15" fill="rgba(255,255,255,0.3)" font-size="8">1.0</text>
+                        <text x="105" y="88" fill="rgba(255,255,255,0.3)" font-size="8">0.0</text>
+                        <text x="105" y="55" fill="rgba(255,255,255,0.3)" font-size="8">0.5</text>
+                        
+                        <!-- The Sigmoid Curve path -->
+                        <path class="graph-line" id="sigmoid-curve-path" d="" />
+                        
+                        <!-- Interactive Dot -->
+                        <circle class="graph-dot" id="sigmoid-dot" cx="100" cy="50" r="5" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Loss Playground -->
+            <h3 style="margin-top: 3rem;">📉 Mô Phỏng Cơ Chế Phạt của Log Loss (BCE)</h3>
+            <p>Chọn Nhãn Thực Tế $y$ (0 hoặc 1) và di chuyển thanh trượt dự đoán $\hat{y}$ (từ $0$ tới $1$) để quan sát mức độ mất mát.</p>
+
+            <div class="playground-grid">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <div class="control-label"><span>Nhãn thực tế của dữ liệu $y$ (True class)</span></div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn-toggle active" id="btn-y-0" onclick="setTrueClass(0)">Lớp 0 (Nhãn sai)</button>
+                            <button class="btn-toggle" id="btn-y-1" onclick="setTrueClass(1)">Lớp 1 (Nhãn đúng)</button>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Xác suất dự đoán $\hat{y}$ (Prediction probability)</span>
+                            <span id="y-pred-display" style="font-family: monospace; color: var(--accent-pink); font-weight: bold;">0.50</span>
+                        </div>
+                        <input type="range" min="0.01" max="0.99" step="0.01" value="0.5" class="slider" id="y-pred-slider" oninput="updateLossSimulator()">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>Trị số Mất Mát (Loss Value)</span></div>
+                        <div class="math-result" id="loss-formula-display" style="color: var(--accent-pink); border-color: rgba(236, 72, 153, 0.15);">
+                            Loss = -ln(0.50) = 0.693
+                        </div>
+                    </div>
+                </div>
+
+                <div class="visual-panel">
+                    <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                        <span id="loss-gauge-label" style="font-weight: 700; font-size: 1.25rem; margin-bottom: 0.5rem;">Độ mất mát: Vừa phải</span>
+                        <div class="loss-container">
+                            <div class="loss-bar-outer">
+                                <div class="loss-bar-inner" id="loss-visual-bar"></div>
+                            </div>
+                        </div>
+                        <p style="margin-top: 1rem; text-align: center; font-size: 0.9rem;" id="loss-explanation">
+                            Mô hình dự đoán 50-50, mức độ chịu phạt trung bình.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LẬP TRÌNH CARD -->
+        <section id="lap-trinh" class="card">
+            <h2><i class="fa-solid fa-code" style="color: var(--success-color);"></i> 4. Lập trình Hướng Đối Tượng Scratch</h2>
+            <p>Sau khi đã nắm vững lý thuyết, hãy viết một class <code>LogisticRegressionScratch</code> hoàn chỉnh dưới dạng hướng đối tượng trong Python.</p>
+
+            <div class="code-header">
+                <div class="code-title">
+                    <span></span><span></span><span></span>
+                    &nbsp;logistic_regression.py
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Python 3</span>
+            </div>
+            <pre><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+
+<span class="keyword">class</span> <span class="func">LogisticRegressionScratch</span>:
+    <span class="keyword">def</span> <span class="func">__init__</span>(self, lr=<span class="number">0.01</span>, epochs=<span class="number">1000</span>):
+        self.lr = lr
+        self.epochs = epochs
+        self.weights = <span class="keyword">None</span>
+        self.bias = <span class="keyword">None</span>
+        self.loss_history = []
+        
+    <span class="keyword">def</span> <span class="func">fit</span>(self, X, y):
+        m, n = X.shape
+        self.weights = np.zeros(n)
+        self.bias = <span class="number">0.0</span>
+        
+        <span class="keyword">for</span> epoch <span class="keyword">in</span> range(self.epochs):
+            <span class="comment"># 1. Tính toán đầu ra & đưa qua Sigmoid</span>
+            z = np.dot(X, self.weights) + self.bias
+            y_pred = <span class="number">1</span> / (<span class="number">1</span> + np.exp(-z))
+            
+            <span class="comment"># 2. Tính đạo hàm Gradient</span>
+            dw = (<span class="number">1</span>/m) * np.dot(X.T, (y_pred - y))
+            db = (<span class="number">1</span>/m) * np.sum(y_pred - y)
+            
+            <span class="comment"># 3. Cập nhật trọng số</span>
+            self.weights -= self.lr * dw
+            self.bias -= self.lr * db
+            
+    <span class="keyword">def</span> <span class="func">predict_proba</span>(self, X):
+        z = np.dot(X, self.weights) + self.bias
+        <span class="keyword">return</span> <span class="number">1</span> / (<span class="number">1</span> + np.exp(-z))
+        
+    <span class="keyword">def</span> <span class="func">predict</span>(self, X, threshold=<span class="number">0.5</span>):
+        proba = self.predict_proba(X)
+        <span class="keyword">return</span> (proba >= threshold).astype(<span class="keyword">int</span>)</code></pre>
+
+            <a href="Logistic_Regression_Scratch.ipynb" class="btn-primary">
+                <i class="fa-solid fa-laptop-code"></i> Mở File Bài Tập Jupyter Notebook
+            </a>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <p>Được thiết kế chuyên biệt dành cho Khang | Microsoft AI For Beginners</p>
+            <p style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.5;">&copy; 2026 AI Study Companion. Let's study smart!</p>
+        </footer>
+    </main>
+
+    <script>
+        // Tab switching logic
+        function switchTab(dayId) {
+            // Remove active classes
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // Add active class to selected button and tab content
+            event.currentTarget.classList.add('active');
+            document.getElementById(dayId).classList.add('active');
+        }
+
+        // Interactive Checklist Local Storage
+        function initChecklist() {
+            const items = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'];
+            items.forEach(id => {
+                const isCompleted = localStorage.getItem(id) === 'true';
+                const el = document.getElementById(id);
+                if (el && isCompleted) {
+                    el.closest('.check-item').classList.add('completed');
+                }
+            });
+        }
+
+        function toggleCheck(element, id) {
+            element.classList.toggle('completed');
+            const hasCompleted = element.classList.contains('completed');
+            localStorage.setItem(id, hasCompleted);
+        }
+
+        // --- Sigmoid Graph & Simulator ---
+        function drawSigmoidCurve() {
+            const path = document.getElementById('sigmoid-curve-path');
+            let dString = "";
+            
+            for (let xPixel = 0; xPixel <= 200; xPixel++) {
+                // Map pixel x [0, 200] to z values [-7, 7]
+                const zVal = -7 + (xPixel / 200) * 14;
+                const sigVal = 1 / (1 + Math.exp(-zVal));
+                
+                // Map sigVal [0, 1] to pixel y [100, 0] (y is inverted in SVG)
+                const yPixel = 100 - (sigVal * 100);
+                
+                if (xPixel === 0) {
+                    dString += `M ${xPixel} ${yPixel}`;
+                } else {
+                    dString += ` L ${xPixel} ${yPixel}`;
+                }
+            }
+            path.setAttribute('d', dString);
+        }
+
+        function updateSigmoidSimulator() {
+            const zSlider = document.getElementById('z-slider');
+            const zVal = parseFloat(zSlider.value);
+            
+            // Update Text Displays
+            document.getElementById('z-val-display').innerText = zVal.toFixed(2);
+            
+            const proba = 1 / (1 + Math.exp(-zVal));
+            
+            document.getElementById('sigmoid-formula-display').innerText = 
+                `sigmoid(${zVal.toFixed(1)}) = ${proba.toFixed(4)}`;
+            
+            // Update interactive dot in the SVG
+            // Map z to pixel X
+            const xPixel = ((zVal + 7) / 14) * 200;
+            // Map proba to pixel Y
+            const yPixel = 100 - (proba * 100);
+            
+            const dot = document.getElementById('sigmoid-dot');
+            dot.setAttribute('cx', xPixel);
+            dot.setAttribute('cy', yPixel);
+        }
+
+        // --- Log Loss Simulator ---
+        let currentTrueClass = 0;
+
+        function setTrueClass(val) {
+            currentTrueClass = val;
+            document.getElementById('btn-y-0').classList.remove('active');
+            document.getElementById('btn-y-1').classList.remove('active');
+            
+            if (val === 0) {
+                document.getElementById('btn-y-0').classList.add('active');
+            } else {
+                document.getElementById('btn-y-1').classList.add('active');
+            }
+            
+            updateLossSimulator();
+        }
+
+        function updateLossSimulator() {
+            const slider = document.getElementById('y-pred-slider');
+            const pred = parseFloat(slider.value);
+            
+            document.getElementById('y-pred-display').innerText = pred.toFixed(2);
+            
+            let loss = 0;
+            let formula = "";
+            let exp = "";
+            let color = "var(--success-color)";
+            let widthPercent = 0;
+            let label = "";
+
+            if (currentTrueClass === 1) {
+                loss = -Math.log(pred);
+                formula = `Loss = -ln(${pred.toFixed(2)}) = ${loss.toFixed(3)}`;
+                
+                // Mức độ phạt và nhãn
+                if (pred > 0.8) {
+                    label = "Độ mất mát: Rất Nhỏ 🎉";
+                    color = "var(--success-color)";
+                    widthPercent = 10;
+                    exp = "Tuyệt vời! Mô hình dự đoán cực kỳ chính xác gần như trùng khớp với thực tế.";
+                } else if (pred >= 0.5) {
+                    label = "Độ mất mát: Nhẹ Nhàng ⚠️";
+                    color = "var(--warning-color)";
+                    widthPercent = 35;
+                    exp = "Khá tốt. Dự đoán đúng xu hướng nhưng cần cải thiện thêm để tự tin hơn.";
+                } else if (pred >= 0.2) {
+                    label = "Độ mất mát: Lớn 🚨";
+                    color = "var(--danger-color)";
+                    widthPercent = 70;
+                    exp = "Rất tệ! Mô hình đang dự đoán ngược lại nhãn thực tế, hình phạt đang tăng nhanh.";
+                } else {
+                    label = "Độ mất mát: Vô Cùng Nặng 💣";
+                    color = "var(--danger-color)";
+                    widthPercent = 100;
+                    exp = "Thảm họa! Thực tế nhãn là 1 nhưng mô hình lại cực kỳ tự tin nhãn là 0. Bạn bị phạt cực nặng!";
+                }
+            } else {
+                loss = -Math.log(1 - pred);
+                formula = `Loss = -ln(1 - ${pred.toFixed(2)}) = ${loss.toFixed(3)}`;
+                
+                if (pred < 0.2) {
+                    label = "Độ mất mát: Rất Nhỏ 🎉";
+                    color = "var(--success-color)";
+                    widthPercent = 10;
+                    exp = "Tuyệt vời! Mô hình dự đoán cực kỳ chính xác gần nhãn 0.";
+                } else if (pred <= 0.5) {
+                    label = "Độ mất mát: Nhẹ Nhàng ⚠️";
+                    color = "var(--warning-color)";
+                    widthPercent = 35;
+                    exp = "Khá tốt. Dự đoán đúng hướng nhưng tính tự tin chưa cao.";
+                } else if (pred <= 0.8) {
+                    label = "Độ mất mát: Lớn 🚨";
+                    color = "var(--danger-color)";
+                    widthPercent = 70;
+                    exp = "Khá tệ! Thực tế nhãn 0 nhưng dự đoán lại nghiêng hẳn về nhãn 1.";
+                } else {
+                    label = "Độ mất mát: Vô Cùng Nặng 💣";
+                    color = "var(--danger-color)";
+                    widthPercent = 100;
+                    exp = "Thảm họa! Thực tế nhãn là 0 nhưng mô hình cực kỳ tự tin dự đoán nhãn 1. Phạt kịch trần!";
+                }
+            }
+
+            // Update displays
+            document.getElementById('loss-formula-display').innerText = formula;
+            document.getElementById('loss-gauge-label').innerText = label;
+            document.getElementById('loss-explanation').innerText = exp;
+            
+            const bar = document.getElementById('loss-visual-bar');
+            bar.style.width = widthPercent + "%";
+            bar.style.backgroundColor = color;
+        }
+        // Toggle Mobile Sidebar Drawer
+        function toggleSidebar() {
+            const sidebar = document.querySelector('aside');
+            const overlay = document.getElementById('sidebar-overlay');
+            const menuIcon = document.getElementById('menu-icon');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            
+            if (sidebar.classList.contains('open')) {
+                menuIcon.className = "fa-solid fa-xmark";
+            } else {
+                menuIcon.className = "fa-solid fa-bars";
+            }
+        }
+
+        // Close sidebar drawer when a navigation link is clicked
+        document.querySelectorAll('.nav-item a').forEach(link => {
+            link.addEventListener('click', () => {
+                const sidebar = document.querySelector('aside');
+                if (sidebar.classList.contains('open')) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Initialize things when page loads
+        window.addEventListener('load', () => {
+            initChecklist();
+            drawSigmoidCurve();
+            updateSigmoidSimulator();
+            updateLossSimulator();
+        });
+    </script>
+</body>
+</html>

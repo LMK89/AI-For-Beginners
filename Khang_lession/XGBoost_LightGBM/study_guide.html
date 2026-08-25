@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinh Phục XGBoost & LightGBM - Lộ Trình Tương Tác</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- MathJax for rendering LaTeX equations -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #040806;
+            --sidebar-bg: rgba(10, 18, 14, 0.75);
+            --card-bg: rgba(16, 28, 22, 0.6);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-gradient: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%);
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --glow-color: rgba(16, 185, 129, 0.35);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(4, 8, 6, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.6);
+        }
+
+        /* Sidebar Styling */
+        aside {
+            width: 300px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--card-border);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo-icon {
+            background: var(--primary-gradient);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.85rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .nav-item a:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
+            padding-left: 1.25rem;
+        }
+
+        .nav-item.active a {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--text-main);
+            font-weight: 600;
+            box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.1);
+        }
+
+        /* Main Workspace */
+        main {
+            margin-left: 300px;
+            padding: 3rem 4rem;
+            width: calc(100% - 300px);
+            max-width: 1200px;
+        }
+
+        header {
+            margin-bottom: 3.5rem;
+            position: relative;
+        }
+
+        .badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.4rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #ffffff, #a7f3d0, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .lead-text {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            line-height: 1.6;
+            max-width: 800px;
+        }
+
+        /* Glassmorphism Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2.25rem;
+            margin-bottom: 2.5rem;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(16, 185, 129, 0.25);
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.05);
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #ffffff;
+        }
+
+        h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 1.75rem 0 1rem 0;
+            color: #a7f3d0;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 1.25rem;
+        }
+
+        /* Math & Highlights */
+        .math-box {
+            background: rgba(6, 12, 9, 0.5);
+            border-left: 4px solid var(--accent-emerald);
+            padding: 1.25rem 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .info-tip {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px dashed rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .info-tip i {
+            color: var(--accent-emerald);
+            font-size: 1.2rem;
+            margin-top: 0.15rem;
+        }
+
+        .info-tip p {
+            margin-bottom: 0;
+            font-size: 0.95rem;
+            color: #d1d5db;
+        }
+
+        /* Interactive Checklist */
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 1.5rem;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .check-item:hover {
+            background: rgba(16, 185, 129, 0.04);
+            border-color: rgba(16, 185, 129, 0.15);
+            transform: translateX(3px);
+        }
+
+        .check-checkbox {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .check-item.completed .check-checkbox {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+
+        .check-checkbox i {
+            color: white;
+            font-size: 0.75rem;
+            display: none;
+        }
+
+        .check-item.completed .check-checkbox i {
+            display: block;
+        }
+
+        .check-content {
+            flex-grow: 1;
+        }
+
+        .check-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 0.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .check-item.completed .check-title {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .check-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.75rem;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: var(--primary-gradient);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        /* Playgrounds styling */
+        .playground-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .playground-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-panel {
+            background: rgba(6, 12, 9, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .visual-panel {
+            background: rgba(6, 12, 9, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 280px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #a7f3d0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-emerald);
+            transition: transform 0.1s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .math-result {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            color: #34d399;
+            border: 1px solid rgba(52, 211, 153, 0.1);
+            text-align: center;
+        }
+
+        /* SVG and Dynamic graph styling */
+        .boosting-graph {
+            width: 100%;
+            height: 220px;
+        }
+
+        .graph-line-train {
+            fill: none;
+            stroke: #10b981;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+        }
+
+        .graph-line-val {
+            fill: none;
+            stroke: #ef4444;
+            stroke-width: 2.5;
+            stroke-dasharray: 4,4;
+            stroke-linecap: round;
+        }
+
+        /* Code block */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0b1410;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px 12px 0 0;
+            border: 1px solid var(--card-border);
+            border-bottom: none;
+        }
+
+        .code-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #d1d5db;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-title span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f87171;
+            display: inline-block;
+        }
+        .code-title span:nth-child(2) { background: #fbbf24; }
+        .code-title span:nth-child(3) { background: #34d399; }
+
+        pre {
+            background: #030604;
+            border: 1px solid var(--card-border);
+            border-radius: 0 0 12px 12px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        .keyword { color: #f472b6; }
+        .func { color: #34d399; }
+        .comment { color: #6b7280; font-style: italic; }
+        .string { color: #38bdf8; }
+        .number { color: #fbbf24; }
+
+        /* Mobile structure drawer */
+        .mobile-header {
+            display: none;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(4, 8, 6, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 99;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            transition: all 0.25s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.45);
+        }
+
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive adaptations (iPhone 11 support out-of-the-box!) */
+        @media (max-width: 968px) {
+            body {
+                flex-direction: column;
+            }
+
+            .mobile-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.85rem 1.25rem;
+                background: var(--sidebar-bg);
+                backdrop-filter: blur(20px);
+                border-bottom: 1px solid var(--card-border);
+                position: sticky;
+                top: 0;
+                z-index: 101;
+                width: 100%;
+            }
+
+            .menu-toggle-btn {
+                background: none;
+                border: none;
+                color: var(--text-main);
+                font-size: 1.5rem;
+                cursor: pointer;
+                padding: 0.25rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            aside {
+                left: -300px;
+                width: 280px;
+                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 102;
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+                border-right: 1px solid rgba(255, 255, 255, 0.05);
+                padding-top: 1.5rem;
+            }
+
+            aside.open {
+                left: 0;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 1.5rem 1rem;
+                width: 100%;
+            }
+
+            header {
+                margin-bottom: 2rem;
+            }
+
+            h1 {
+                font-size: 2.1rem;
+                line-height: 1.2;
+            }
+
+            .lead-text {
+                font-size: 1rem;
+            }
+
+            .card {
+                padding: 1.25rem;
+                border-radius: 16px;
+                margin-bottom: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.45rem;
+            }
+
+            h3 {
+                font-size: 1.2rem;
+                margin: 1.25rem 0 0.75rem 0;
+            }
+
+            .math-box {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+
+            .playground-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+
+            .control-panel, .visual-panel {
+                padding: 1.1rem;
+                border-radius: 12px;
+            }
+
+            pre {
+                padding: 1rem;
+            }
+
+            code {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="logo-area" style="margin-bottom: 0;">
+            <div class="logo-icon" style="width: 32px; height: 32px; border-radius: 8px; font-size: 1rem; box-shadow: none;"><i class="fa-solid fa-tree"></i></div>
+            <div class="logo-text" style="font-size: 1.1rem;">KHANG LESSON</div>
+        </div>
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars" id="menu-icon"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside>
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-tree"></i></div>
+            <div class="logo-text">KHANG LESSON</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active"><a href="#lo-trinh"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình Học</a></li>
+            <li class="nav-item"><a href="#thuyet-1"><i class="fa-solid fa-code-fork"></i> 1. Cây Quyết Định</a></li>
+            <li class="nav-item"><a href="#thuyet-2"><i class="fa-solid fa-layer-group"></i> 2. Gradient Boosting</a></li>
+            <li class="nav-item"><a href="#thuyet-3"><i class="fa-solid fa-bolt"></i> 3. XGBoost vs LightGBM</a></li>
+            <li class="nav-item"><a href="#playground"><i class="fa-solid fa-sliders"></i> 4. Trực Quan Tham Số</a></li>
+            <li class="nav-item"><a href="#code-mau"><i class="fa-solid fa-code"></i> 5. Code Huấn Luyện</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+        <header>
+            <div class="badge"><i class="fa-solid fa-ranking-star"></i> Vua dữ liệu bảng (Tabular Data King)</div>
+            <h1>Chinh Phục XGBoost & LightGBM</h1>
+            <p class="lead-text">Chào Khang! Hai thuật toán Boosting này chính là đỉnh cao phân tích dữ liệu bảng trong thực tế. Trang tương tác này sẽ trang bị cho bạn trực giác toán học và kỹ thuật điều phối siêu tham số đỉnh cao.</p>
+        </header>
+
+        <!-- LỘ TRÌNH TIẾN ĐỘ -->
+        <section id="lo-trinh" class="card">
+            <h2><i class="fa-solid fa-calendar-check" style="color: var(--accent-emerald);"></i> Kế Hoạch 5 Ngày & Tiến Độ Học</h2>
+            <p>Đánh dấu vào những mục tiêu bạn đã đạt được để ghi nhớ lộ trình học tập của mình (được lưu tự động trên iPhone/Mac):</p>
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('day1-3')">🗓️ Ngày 1 - 3: Bản chất thuật toán</button>
+                <button class="tab-btn" onclick="switchTab('day4-5')">🗓️ Ngày 4 - 5: Tuning & Thực hành</button>
+            </div>
+
+            <!-- Day 1-3 Checklist -->
+            <div id="day1-3" class="tab-content active">
+                <div class="checklist">
+                    <div class="check-item" onclick="toggleCheck(this, 'xgb_c1')">
+                        <div class="check-checkbox" id="xgb_c1"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Hiểu cơ chế Decision Tree, Gini & Entropy</div>
+                            <div class="check-desc">Biết cách máy tính chọn điểm cắt dữ liệu dựa trên độ thuần khiết của nút lá. Thử công cụ tính Gini ở mục 1!</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'xgb_c2')">
+                        <div class="check-checkbox" id="xgb_c2"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Bagging vs Boosting (Ensemble Learning)</div>
+                            <div class="check-desc">Phân biệt được cơ chế song song (Random Forest - Bagging) và cơ chế sửa sai tuần tự (Gradient Boosting).</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'xgb_c3')">
+                        <div class="check-checkbox" id="xgb_c3"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Bí mật tối ưu hóa của XGBoost</div>
+                            <div class="check-desc">Hiểu tại sao XGBoost lại nhanh và mạnh: Tối ưu hóa xấp xỉ Taylor bậc hai và tích hợp Regularization chống overfitting trực tiếp.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'xgb_c4')">
+                        <div class="check-checkbox" id="xgb_c4"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Leaf-wise vs Level-wise của LightGBM</div>
+                            <div class="check-desc">Hiểu sự khác biệt về cách mọc cây và các kỹ thuật siêu tốc độ của LightGBM như GOSS và EFB.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Day 4-5 Checklist -->
+            <div id="day4-5" class="tab-content">
+                <div class="checklist">
+                    <div class="check-item" onclick="toggleCheck(this, 'xgb_c5')">
+                        <div class="check-checkbox" id="xgb_c5"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Tinh thông Siêu Tham Số (Hyperparameters)</div>
+                            <div class="check-desc">Biết cách kết hợp learning_rate, max_depth, subsample để chế ngự hiện tượng Overfitting. Hãy kéo thử bộ mô phỏng ở mục 4!</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'xgb_c6')">
+                        <div class="check-checkbox" id="xgb_c6"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Mở Notebook bài tập & Setup Thư viện</div>
+                            <div class="check-desc">Cài đặt <code>pip install xgboost lightgbm</code> và mở file bài tập thực hành trên máy.</div>
+                        </div>
+                    </div>
+                    <div class="check-item" onclick="toggleCheck(this, 'xgb_c7')">
+                        <div class="check-checkbox" id="xgb_c7"><i class="fa-solid fa-check"></i></div>
+                        <div class="check-content">
+                            <div class="check-title">Trích xuất Feature Importance & Giải thích mô hình</div>
+                            <div class="check-desc">Vẽ biểu đồ mức độ quan trọng đặc trưng để biết biến số nào chi phối lớn nhất kết quả phân loại kinh doanh.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 1. CÂY QUYẾT ĐỊNH -->
+        <section id="thuyet-1" class="card">
+            <h2><i class="fa-solid fa-code-fork" style="color: var(--accent-emerald);"></i> 1. Gốc Rễ: Cây Quyết Định & Độ Đo Gini</h2>
+            <p>Để tìm ra cách chia nhánh tốt nhất cho dữ liệu, thuật toán tính toán độ hỗn loạn tại nút. Độ đo kinh điển nhất là <strong>Gini Impurity (Độ không thuần khiết Gini)</strong>:</p>
+            
+            <div class="math-box">
+                $$Gini = 1 - \sum_{i=1}^{c} p_i^2$$
+            </div>
+            <p>Trong đó $p_i$ là tỷ lệ của lớp $i$ tại nút đó. Nút hoàn toàn thuần khiết (chỉ chứa 1 lớp dữ liệu duy nhất) sẽ có $Gini = 0$.</p>
+
+            <!-- Gini Calculator Playground -->
+            <h3 style="margin-top: 2rem;"><i class="fa-solid fa-calculator"></i> Máy Tính Gini & Entropy Tự Động</h3>
+            <p>Thay đổi số lượng mẫu nhãn 0 (Âm tính) và nhãn 1 (Dương tính) để xem độ tinh khiết của lá cây thay đổi ra sao.</p>
+            
+            <div class="playground-grid">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Số mẫu Lớp 0 ($y=0$)</span>
+                            <span id="label0-display" style="font-weight: bold; color: var(--accent-cyan);">10</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="10" class="slider" id="label0-slider" oninput="calculateGiniEntropy()">
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Số mẫu Lớp 1 ($y=1$)</span>
+                            <span id="label1-display" style="font-weight: bold; color: var(--accent-emerald);">10</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="10" class="slider" id="label1-slider" oninput="calculateGiniEntropy()">
+                    </div>
+                </div>
+
+                <div class="visual-panel">
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 0.85rem;">
+                        <div class="math-result" id="gini-result" style="color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.2);">
+                            Gini Impurity = 0.500
+                        </div>
+                        <div class="math-result" id="entropy-result" style="color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.2);">
+                            Entropy = 1.000
+                        </div>
+                        <p style="text-align: center; font-size: 0.9rem; margin-top: 0.5rem;" id="impurity-explanation">
+                            Dữ liệu hỗn loạn tối đa (tỷ lệ 50/50).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. GRADIENT BOOSTING -->
+        <section id="thuyet-2" class="card">
+            <h2><i class="fa-solid fa-layer-group" style="color: var(--accent-cyan);"></i> 2. Nghệ Thuật Cộng Dồn: Gradient Boosting</h2>
+            <p>Thay vì xây dựng một cây quyết định siêu sâu để ghi nhớ dữ liệu (gây Overfitting), **Gradient Boosting** tạo ra một chuỗi các cây quyết định nông tuần tự.</p>
+            <p>Mỗi cây quyết định mới $T_m(x)$ được huấn luyện để **dự đoán phần lỗi dư (residual error)** của toàn bộ các cây trước đó cộng lại:</p>
+            <div class="math-box">
+                $$y_{dự\_đoán}^{(m)} = y_{dự\_đoán}^{(m-1)} + \eta \cdot T_m(x)$$
+            </div>
+            <p>Trong đó $\eta$ chính là **Learning Rate** (Tốc độ học). Việc hạn chế sức mạnh của mỗi cây bằng $\eta$ nhỏ giúp toàn bộ hệ thống cây tiến dần đến chân lý một cách cực kỳ vững chắc và bền bỉ.</p>
+        </section>
+
+        <!-- 3. XGBOOST VS LIGHTGBM -->
+        <section id="thuyet-3" class="card">
+            <h2><i class="fa-solid fa-bolt" style="color: var(--accent-blue);"></i> 3. Cuộc Đối Đầu: XGBoost vs LightGBM</h2>
+            <p>Cả hai thuật toán đều phát triển từ hệ tư tưởng Gradient Boosting nhưng đi theo hai lối kiến trúc tối ưu hóa khác nhau:</p>
+            
+            <div class="playground-grid" style="grid-template-columns: 1fr 1fr; margin-top: 1.5rem;">
+                <div class="control-panel" style="border-left: 4px solid var(--accent-blue);">
+                    <h3 style="margin-top:0;"><i class="fa-solid fa-ranking-star" style="color: var(--accent-blue);"></i> XGBoost (Extreme)</h3>
+                    <p style="font-size:0.95rem; line-height:1.6;">🌲 <strong>Level-wise Growth:</strong> Phát triển cây theo hàng ngang đều đặn. Giúp cấu trúc cây đối xứng, ổn định và tránh lỗi cục bộ.</p>
+                    <p style="font-size:0.95rem; line-height:1.6;">📐 <strong>Tối ưu hóa toán:</strong> Khai triển chuỗi Taylor đạo hàm bậc 2 của hàm mất mát giúp tối ưu hóa siêu chuẩn xác.</p>
+                    <p style="font-size:0.95rem; line-height:1.6;">🛡️ <strong>Chống Overfit:</strong> Tích hợp sẵn cơ chế kiểm soát số lượng nút lá ngay trong hàm Loss gốc.</p>
+                </div>
+                
+                <div class="control-panel" style="border-left: 4px solid var(--accent-emerald);">
+                    <h3 style="margin-top:0;"><i class="fa-solid fa-gauge-high" style="color: var(--accent-emerald);"></i> LightGBM (Lightweight)</h3>
+                    <p style="font-size:0.95rem; line-height:1.6;">🌿 <strong>Leaf-wise Growth:</strong> Phát triển cây theo chiều dọc sâu. Tập trung xẻ đôi nút có lỗi lớn nhất. Nhanh hơn, chính xác hơn nhưng rất dễ overfit.</p>
+                    <p style="font-size:0.95rem; line-height:1.6;">⚡ <strong>Siêu tốc độ GOSS:</strong> Bỏ bớt các điểm dữ liệu đã học tốt, chỉ tập trung huấn luyện trên các dòng dữ liệu có lỗi lớn.</p>
+                    <p style="font-size:0.95rem; line-height:1.6;">📦 <strong>Nén dữ liệu EFB:</strong> Gộp các đặc trưng thưa thớt thành một biến gộp duy nhất giúp tiết kiệm RAM.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. TRỰC QUAN THAM SỐ PLAYGROUND -->
+        <section id="playground" class="card">
+            <h2><i class="fa-solid fa-sliders" style="color: var(--accent-emerald);"></i> 4. Bộ Mô Phỏng Tinh Chỉnh Tham Số (Overfitting Simulator)</h2>
+            <p>Trải nghiệm trực quan đỉnh cao! Thay đổi các siêu tham số dưới đây để xem sự biến chuyển của đường cong sai số trên tập Huấn luyện (<strong>Train Loss - màu xanh</strong>) và tập Kiểm thử (<strong>Validation Loss - màu đỏ</strong>).</p>
+
+            <div class="playground-grid">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Chiều Sâu Tối Đa Cây (`max_depth`)</span>
+                            <span id="depth-display" style="font-weight: bold; color: var(--accent-cyan);">6</span>
+                        </div>
+                        <input type="range" min="2" max="15" value="6" class="slider" id="depth-slider" oninput="simulateTraining()">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Tốc Độ Học (`learning_rate` / `eta`)</span>
+                            <span id="lr-display" style="font-weight: bold; color: var(--accent-cyan);">0.10</span>
+                        </div>
+                        <input type="range" min="0.01" max="1.0" step="0.01" value="0.1" class="slider" id="lr-slider" oninput="simulateTraining()">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Số Lượng Cây Lặp (`n_estimators`)</span>
+                            <span id="estimators-display" style="font-weight: bold; color: var(--accent-cyan);">150</span>
+                        </div>
+                        <input type="range" min="20" max="400" step="10" value="150" class="slider" id="estimators-slider" oninput="simulateTraining()">
+                    </div>
+                </div>
+
+                <div class="visual-panel">
+                    <div style="position: absolute; top: 10px; right: 15px; font-size: 0.8rem; display: flex; gap: 0.75rem;">
+                        <span style="color: #10b981;"><i class="fa-solid fa-minus"></i> Train Loss</span>
+                        <span style="color: #ef4444;"><i class="fa-solid fa-minus-dashed"></i> Val Loss</span>
+                    </div>
+                    <svg class="boosting-graph" id="loss-svg" viewBox="0 0 200 100">
+                        <!-- Grid Lines -->
+                        <line x1="0" y1="20" x2="200" y2="20" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" />
+                        <line x1="0" y1="50" x2="200" y2="50" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" />
+                        <line x1="0" y1="80" x2="200" y2="80" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" />
+                        
+                        <!-- Graph Paths -->
+                        <path class="graph-line-train" id="train-path" d="" />
+                        <path class="graph-line-val" id="val-path" d="" />
+                    </svg>
+                    <p style="text-align: center; font-size: 0.95rem; font-weight: 600; margin-top: 1rem; color: #ffffff;" id="sim-status">
+                        Trạng thái mô hình: Tối Ưu (Optimal)
+                    </p>
+                    <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; max-width: 90%;" id="sim-desc">
+                        Hai đường giảm song song đồng đều, mô hình tổng quát tốt dữ liệu mới.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. CODE MẪU HUẤN LUYỆN -->
+        <section id="code-mau" class="card">
+            <h2><i class="fa-solid fa-code" style="color: var(--accent-cyan);"></i> 5. Code Huấn Luyện Thực Tế Bằng Python</h2>
+            <p>Dưới đây là khung code chuẩn mực nhất để huấn luyện XGBoost và LightGBM kết hợp với việc xử lý dữ liệu và trích xuất độ quan trọng của đặc trưng.</p>
+
+            <div class="code-header">
+                <div class="code-title">
+                    <span></span><span></span><span></span>
+                    &nbsp;train_boosting.py
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Python 3</span>
+            </div>
+            <pre><code><span class="keyword">import</span> xgboost <span class="keyword">as</span> xgb
+<span class="keyword">import</span> lightgbm <span class="keyword">as</span> lgb
+<span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> train_test_split
+<span class="keyword">from</span> sklearn.metrics <span class="keyword">import</span> classification_report
+
+<span class="comment"># 1. Khởi tạo mô hình XGBoost với các siêu tham số chống Overfitting</span>
+xgb_model = xgb.XGBClassifier(
+    n_estimators=<span class="number">150</span>,
+    learning_rate=<span class="number">0.05</span>,
+    max_depth=<span class="number">5</span>,
+    subsample=<span class="number">0.8</span>,
+    colsample_bytree=<span class="number">0.8</span>,
+    random_state=<span class="number">42</span>
+)
+
+<span class="comment"># 2. Huấn luyện mô hình</span>
+xgb_model.fit(X_train, y_train)
+
+<span class="comment"># 3. Đánh giá chất lượng phân loại nhãn</span>
+y_pred = xgb_model.predict(X_test)
+print(classification_report(y_test, y_pred))
+
+<span class="comment"># 4. Trích xuất độ quan trọng đặc trưng (Feature Importance)</span>
+feature_importance = xgb_model.feature_importances_
+<span class="comment"># Vẽ độ quan trọng của các đặc trưng lên đồ thị để giải thích kinh doanh...</span></code></pre>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <p>Được thiết kế chuyên biệt dành cho Khang | Microsoft AI For Beginners</p>
+            <p style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.5;">&copy; 2026 AI Study Companion. Keep learning, keep boosting!</p>
+        </footer>
+    </main>
+
+    <script>
+        // Tab Switcher
+        function switchTab(dayId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(dayId).classList.add('active');
+        }
+
+        // Toggle mobile drawer
+        function toggleSidebar() {
+            const sidebar = document.querySelector('aside');
+            const overlay = document.getElementById('sidebar-overlay');
+            const menuIcon = document.getElementById('menu-icon');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            
+            if (sidebar.classList.contains('open')) {
+                menuIcon.className = "fa-solid fa-xmark";
+            } else {
+                menuIcon.className = "fa-solid fa-bars";
+            }
+        }
+
+        // Auto close on mobile click
+        document.querySelectorAll('.nav-item a').forEach(link => {
+            link.addEventListener('click', () => {
+                const sidebar = document.querySelector('aside');
+                if (sidebar.classList.contains('open')) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Checklist states saving
+        function initChecklist() {
+            const items = ['xgb_c1', 'xgb_c2', 'xgb_c3', 'xgb_c4', 'xgb_c5', 'xgb_c6', 'xgb_c7'];
+            items.forEach(id => {
+                const isCompleted = localStorage.getItem(id) === 'true';
+                const el = document.getElementById(id);
+                if (el && isCompleted) {
+                    el.closest('.check-item').classList.add('completed');
+                }
+            });
+        }
+
+        function toggleCheck(element, id) {
+            element.classList.toggle('completed');
+            const hasCompleted = element.classList.contains('completed');
+            localStorage.setItem(id, hasCompleted);
+        }
+
+        // --- Gini Impurity & Entropy calculations ---
+        function calculateGiniEntropy() {
+            const s0 = parseFloat(document.getElementById('label0-slider').value);
+            const s1 = parseFloat(document.getElementById('label1-slider').value);
+            
+            document.getElementById('label0-display').innerText = s0;
+            document.getElementById('label1-display').innerText = s1;
+            
+            const total = s0 + s1;
+            let gini = 0;
+            let entropy = 0;
+            let explanation = "";
+
+            if (total === 0) {
+                gini = 0;
+                entropy = 0;
+                explanation = "Nút trống không có mẫu dữ liệu nào.";
+            } else {
+                const p0 = s0 / total;
+                const p1 = s1 / total;
+                
+                gini = 1 - (p0 * p0 + p1 * p1);
+                
+                if (p0 === 0 || p1 === 0) {
+                    entropy = 0;
+                } else {
+                    entropy = -(p0 * Math.log2(p0) + p1 * Math.log2(p1));
+                }
+
+                // Wording explanations
+                if (gini === 0) {
+                    explanation = "Nút thuần khiết hoàn hảo! Chỉ có duy nhất 1 lớp dữ liệu (Gini = 0).";
+                } else if (gini >= 0.45) {
+                    explanation = "Nút cực kỳ hỗn loạn (tỷ lệ gần như tương đồng 50/50).";
+                } else if (gini <= 0.2) {
+                    explanation = "Nút có độ tinh khiết cao. Lớp dữ liệu áp đảo rõ rệt.";
+                } else {
+                    explanation = "Nút có độ hỗn loạn trung bình.";
+                }
+            }
+
+            document.getElementById('gini-result').innerText = `Gini Impurity = ${gini.toFixed(3)}`;
+            document.getElementById('entropy-result').innerText = `Entropy = ${entropy.toFixed(3)}`;
+            document.getElementById('impurity-explanation').innerText = explanation;
+        }
+
+        // --- Boosting Training Curves Simulator (Overfitting) ---
+        function simulateTraining() {
+            const depth = parseInt(document.getElementById('depth-slider').value);
+            const lr = parseFloat(document.getElementById('lr-slider').value);
+            const est = parseInt(document.getElementById('estimators-slider').value);
+
+            document.getElementById('depth-display').innerText = depth;
+            document.getElementById('lr-display').innerText = lr.toFixed(2);
+            document.getElementById('estimators-display').innerText = est;
+
+            const trainPoints = [];
+            const valPoints = [];
+            
+            // X-axis maps estimators [0, 200 pixels]
+            // Y-axis maps loss [0, 100] -> mapping loss from 0.0 to 1.0 (where Y=100 is loss=1.0, Y=0 is loss=0.0)
+            
+            for (let i = 0; i <= 200; i++) {
+                const xVal = (i / 200) * est;
+                
+                // Mathematical formulation of Overfitting vs Underfitting based on depth and lr
+                // Train loss equation: starts at 0.9, decays exponentially
+                const trainDecayRate = 0.01 * lr * Math.pow(depth, 1.3);
+                const trainLossVal = 0.9 * Math.exp(-trainDecayRate * xVal);
+                
+                // Val loss equation: decays, then might rise up again (overfitting) if depth is high or lr is too aggressive
+                const baseValDecay = 0.008 * lr * Math.pow(depth, 0.85);
+                let valLossVal = 0.9 * Math.exp(-baseValDecay * xVal);
+                
+                // Overfitting threshold logic
+                // If depth > 7 and lr > 0.3, massive overfitting after some trees
+                const overfitStart = 400 / (depth * lr);
+                if (xVal > overfitStart) {
+                    const overfitFactor = 0.0005 * (depth - 5) * lr * (xVal - overfitStart);
+                    valLossVal += overfitFactor;
+                }
+                
+                // Make sure values stay between 0.02 and 0.95
+                const trainLossClamped = Math.max(0.02, Math.min(0.95, trainLossVal));
+                const valLossClamped = Math.max(0.02, Math.min(0.95, valLossVal));
+                
+                // SVG coordinates (Invert Y since 0 is top, 100 is bottom)
+                const trainY = 100 - (trainLossClamped * 100);
+                const valY = 100 - (valLossClamped * 100);
+                
+                trainPoints.push(`${i},${trainY}`);
+                valPoints.push(`${i},${valY}`);
+            }
+
+            document.getElementById('train-path').setAttribute('d', `M ${trainPoints.join(' L ')}`);
+            document.getElementById('val-path').setAttribute('d', `M ${valPoints.join(' L ')}`);
+
+            // Update simulator analysis texts
+            const simStatus = document.getElementById('sim-status');
+            const simDesc = document.getElementById('sim-desc');
+
+            if (depth > 8 && lr > 0.4 && est > 120) {
+                simStatus.innerText = "Trạng thái: QUÁ KHỚP (Overfitting) 🚨";
+                simStatus.style.color = "var(--danger-color)";
+                simDesc.innerText = "Cây quá sâu và học quá gấp. Sai số tập Train giảm về 0 nhưng sai số tập Val bắt đầu tăng mạnh ngược trở lại!";
+            } else if (depth < 4 && lr < 0.03 && est < 100) {
+                simStatus.innerText = "Trạng thái: CHƯA KHỚP (Underfitting) ⚠️";
+                simStatus.style.color = "var(--warning-color)";
+                simDesc.innerText = "Cây quá nông, tốc độ học quá chậm và ít cây lặp. Cả hai sai số đều đang ở mức rất cao, mô hình chưa học hết dữ liệu.";
+            } else {
+                simStatus.innerText = "Trạng thái: TỐI ƯU (Optimal) 🎉";
+                simStatus.style.color = "var(--success-color)";
+                simDesc.innerText = "Các tham số bổ trợ tốt cho nhau. Sai số hai tập cùng giảm đều và hội tụ sát nhau, khả năng tổng quát hóa dữ liệu mới cực tốt.";
+            }
+        }
+
+        window.addEventListener('load', () => {
+            initChecklist();
+            calculateGiniEntropy();
+            simulateTraining();
+        });
+    </script>
+</body>
+</html>

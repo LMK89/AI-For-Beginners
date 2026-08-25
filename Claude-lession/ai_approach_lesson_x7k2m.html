@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hai Cách Tiếp Cận AI: Top-Down vs. Bottom-Up [x7k2m]</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-light: #f9fafb;
+            --bg-card: #ffffff;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        [data-theme="dark"] {
+            --bg-light: #111827;
+            --bg-card: #1f2937;
+            --text-dark: #f9fafb;
+            --text-light: #d1d5db;
+            --border: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        header p {
+            font-size: 1.1em;
+            color: var(--text-light);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-light);
+            transform: scale(1.05);
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary);
+            animation: slideUp 0.5s ease 0.1s both;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+            animation: slideUp 0.5s ease 0.2s both;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+            animation: slideUp 0.5s ease both;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .card.topdown .card-title { color: #3b82f6; }
+        .card.bottomup .card-title { color: #8b5cf6; }
+
+        .card-content {
+            font-size: 0.95em;
+            line-height: 1.8;
+        }
+
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .pros {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .cons {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .diagram {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        .code-block {
+            background: var(--bg-card);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            animation: slideUp 0.5s ease both;
+        }
+
+        .code-block code {
+            display: block;
+            color: var(--text-dark);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+            animation: slideUp 0.5s ease both;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: var(--bg-light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .badge.good {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .badge.bad {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .use-case {
+            background: var(--bg-card);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            animation: slideUp 0.5s ease both;
+        }
+
+        .use-case-title {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .quiz-section {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 30px 0;
+            animation: slideUp 0.5s ease 0.3s both;
+        }
+
+        .quiz-title {
+            font-size: 1.4em;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .quiz-question {
+            margin-bottom: 20px;
+        }
+
+        .quiz-options {
+            display: grid;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .option:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .option input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            background: var(--primary-light);
+            transform: scale(1.05);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .feedback.incorrect {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .highlight {
+            background: rgba(79, 70, 229, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+            color: var(--text-light);
+            animation: fadeInDown 0.6s ease 0.5s both;
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Đêm</button>
+
+    <div class="container">
+        <header>
+            <h1>🤖 Hai Cách Tiếp Cận AI</h1>
+            <p><strong>Top-Down vs. Bottom-Up Approaches</strong></p>
+            <p style="margin-top: 10px; font-size: 0.9em; color: var(--text-light);">
+                Hiểu hai phương pháp khác nhau để xây dựng hệ thống AI thông minh
+            </p>
+        </header>
+
+        <!-- INTRODUCTION SECTION -->
+        <div class="section">
+            <h2 class="section-title">📖 Giới Thiệu</h2>
+            <div class="card">
+                <p>
+                    Để tạo ra một hệ thống AI thông minh, chúng ta cần trả lời câu hỏi:
+                    <span class="highlight">Làm thế nào để máy tính suy luận và học tập như con người?</span>
+                </p>
+                <p style="margin-top: 15px;">
+                    Có hai cách tiếp cận chính:
+                </p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Top-Down:</strong> Trích xuất kiến thức từ chuyên gia → Lập trình luật suy luận</li>
+                    <li><strong>Bottom-Up:</strong> Mô phỏng não bộ → Huấn luyện mạng nơ-ron từ dữ liệu</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- COMPARISON GRID -->
+        <div class="section">
+            <h2 class="section-title">⚖️ So Sánh Hai Phương Pháp</h2>
+
+            <div class="comparison-grid">
+                <!-- TOP-DOWN CARD -->
+                <div class="card topdown">
+                    <div class="icon">🏗️</div>
+                    <div class="card-title">Top-Down: Suy Luận Tượng Trưng</div>
+                    <div class="card-content">
+                        <p><strong>Ý tưởng:</strong></p>
+                        <p>Trích xuất <span class="highlight">kiến thức từ chuyên gia</span> → Biểu diễn bằng các quy tắc → Máy tính suy luận dựa trên quy tắc</p>
+
+                        <p style="margin-top: 15px;"><strong>Ví dụ:</strong></p>
+                        <p>
+                            Chẩn đoán bệnh:<br>
+                            Nếu (sốt = cao) VÀ (ho = có) VÀ (mệt = có) THÌ viêm phổi
+                        </p>
+
+                        <div class="pros-cons">
+                            <div>
+                                <div class="pros">✅ Ưu điểm</div>
+                                <ul style="margin-top: 5px; margin-left: 15px; font-size: 0.9em;">
+                                    <li>Dễ giải thích</li>
+                                    <li>Xử lý nhanh</li>
+                                    <li>Cần ít dữ liệu</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <div class="cons">❌ Nhược điểm</div>
+                                <ul style="margin-top: 5px; margin-left: 15px; font-size: 0.9em;">
+                                    <li>Khó trích xuất kiến thức</li>
+                                    <li>Quy tắc không linh hoạt</li>
+                                    <li>Mở rộng khó khăn</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTTOM-UP CARD -->
+                <div class="card bottomup">
+                    <div class="icon">🧠</div>
+                    <div class="card-title">Bottom-Up: Mạng Nơ-Ron</div>
+                    <div class="card-content">
+                        <p><strong>Ý tưởng:</strong></p>
+                        <p>Mô phỏng <span class="highlight">cấu trúc não bộ</span> → Tạo mạng nơ-ron → Huấn luyện từ dữ liệu</p>
+
+                        <p style="margin-top: 15px;"><strong>Ví dụ:</strong></p>
+                        <p>
+                            Nhận dạng ảnh chó:<br>
+                            Mạng học từ hàng nghìn ảnh → Tự phát hiện đặc trưng → Nhận dạng chó
+                        </p>
+
+                        <div class="pros-cons">
+                            <div>
+                                <div class="pros">✅ Ưu điểm</div>
+                                <ul style="margin-top: 5px; margin-left: 15px; font-size: 0.9em;">
+                                    <li>Linh hoạt cao</li>
+                                    <li>Tự học tính năng</li>
+                                    <li>Mở rộng tốt</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <div class="cons">❌ Nhược điểm</div>
+                                <ul style="margin-top: 5px; margin-left: 15px; font-size: 0.9em;">
+                                    <li>Cần nhiều dữ liệu</li>
+                                    <li>Huấn luyện chậm</li>
+                                    <li>Khó giải thích</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DIAGRAM SECTION -->
+        <div class="section">
+            <h2 class="section-title">📊 Biểu Đồ Quy Trình</h2>
+
+            <h3 style="margin: 30px 0 15px 0; color: var(--primary);">Top-Down: Kiến Thức → Máy Tính</h3>
+            <div class="diagram">
+┌─────────────┐      ┌──────────────┐      ┌─────────────┐
+│  Chuyên gia │      │ Trích xuất   │      │  Lập trình  │
+│ (Bác sĩ)    │  →   │  kiến thức   │  →   │  quy tắc    │
+└─────────────┘      └──────────────┘      └─────────────┘
+                                                    ↓
+                                          ┌─────────────────┐
+                                          │  Máy tính suy   │
+                                          │  luận kết quả   │
+                                          └─────────────────┘
+            </div>
+
+            <h3 style="margin: 30px 0 15px 0; color: var(--primary);">Bottom-Up: Dữ Liệu → Mạng Nơ-Ron</h3>
+            <div class="diagram">
+┌──────────────┐    ┌─────────────┐    ┌──────────────┐
+│ Dữ liệu      │    │ Tạo mạng    │    │  Huấn luyện  │
+│ huấn luyện   │ → │  nơ-ron     │ → │  từ dữ liệu  │
+└──────────────┘    └─────────────┘    └──────────────┘
+                                              ↓
+                                      ┌───────────────────┐
+                                      │  Mạng tự học      │
+                                      │  nhận dạng mẫu    │
+                                      └───────────────────┘
+            </div>
+        </div>
+
+        <!-- DETAILED COMPARISON TABLE -->
+        <div class="section">
+            <h2 class="section-title">📋 Bảng So Sánh Chi Tiết</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Tiêu Chí</th>
+                            <th style="width: 40%;">Top-Down</th>
+                            <th style="width: 40%;">Bottom-Up</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Điểm xuất phát</strong></td>
+                            <td>Kiến thức của chuyên gia</td>
+                            <td>Dữ liệu thực tế (training data)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cách làm việc</strong></td>
+                            <td>Áp dụng quy tắc lôgic</td>
+                            <td>Nhận dạng mẫu & quy tắc (weights)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lượng dữ liệu cần</strong></td>
+                            <td>❌ Ít (không cần dữ liệu)</td>
+                            <td>✅ Nhiều (hàng triệu dữ liệu)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tốc độ xử lý</strong></td>
+                            <td>✅ Nhanh (rule-based)</td>
+                            <td>⚠️ Chậm (tính toán phức tạp)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Độ chính xác</strong></td>
+                            <td>⚠️ Phụ thuộc quy tắc</td>
+                            <td>✅ Cao (học từ nhiều mẫu)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dễ giải thích</strong></td>
+                            <td>✅ Rất dễ (thấy quy tắc)</td>
+                            <td>❌ Khó (black box)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thích ứng với thay đổi</strong></td>
+                            <td>❌ Cần sửa quy tắc</td>
+                            <td>✅ Tự thích ứng</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CODE EXAMPLES -->
+        <div class="section">
+            <h2 class="section-title">💻 Ví Dụ Code</h2>
+
+            <h3 style="margin: 20px 0 15px 0; color: var(--primary);">1️⃣ Top-Down: Chẩn đoán bệnh với quy tắc</h3>
+            <div class="code-block">
+<code>
+def chuan_doan_benh(sot, ho, met):
+    # Quy tắc được lập trình cứng
+    if sot > 38 and ho and met:
+        return "Viêm phổi"
+    elif sot > 37 and ho:
+        return "Cảm lạnh"
+    elif met and not sot:
+        return "Mệt mỏi bình thường"
+    else:
+        return "Khỏe mạnh"
+
+# Sử dụng
+result = chuan_doan_benh(sot=39, ho=True, met=True)
+print(result)  # Output: "Viêm phổi"
+</code>
+            </div>
+            <div class="badge good">✅ Ưu điểm: Rõ ràng, nhanh, dễ hiểu</div>
+            <div class="badge bad">❌ Nhược điểm: Quy tắc cứng nhắc, không linh hoạt với trường hợp mới</div>
+
+            <h3 style="margin: 30px 0 15px 0; color: var(--primary);">2️⃣ Bottom-Up: Nhận dạng chó với mạng nơ-ron</h3>
+            <div class="code-block">
+<code>
+import tensorflow as tf
+
+# 1. Tạo mạng nơ-ron
+model = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, (3,3), activation='relu',
+                           input_shape=(224,224,3)),
+    tf.keras.layers.MaxPooling2D((2,2)),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])
+
+# 2. Huấn luyện từ hàng ngàn ảnh
+model.compile(optimizer='adam', loss='binary_crossentropy')
+model.fit(training_images, labels, epochs=10)
+
+# 3. Nhận dạng chó trong ảnh mới
+prediction = model.predict(new_dog_image)
+print(prediction)  # Output: 0.95 (95% là chó)
+</code>
+            </div>
+            <div class="badge good">✅ Ưu điểm: Linh hoạt, học từ dữ liệu, độ chính xác cao</div>
+            <div class="badge bad">❌ Nhược điểm: Cần nhiều dữ liệu, khó giải thích</div>
+        </div>
+
+        <!-- DATA EXAMPLES -->
+        <div class="section">
+            <h2 class="section-title">📊 Dữ Liệu Tốt vs. Xấu</h2>
+
+            <h3 style="margin: 20px 0 15px 0; color: var(--primary);">Top-Down: Dữ Liệu Input</h3>
+            <div class="use-case">
+                <div class="use-case-title">✅ Dữ Liệu Tốt: Rõ ràng & Có cấu trúc</div>
+                <p><strong>Input:</strong> sốt=39°C, ho=Có, mệt=Có</p>
+                <p><strong>→ Quy tắc khớp:</strong> Viêm phổi</p>
+                <p style="margin-top: 10px; color: var(--text-light);">
+                    Dữ liệu rõ ràng, quy tắc dễ kiểm tra kết quả
+                </p>
+            </div>
+
+            <div class="use-case">
+                <div class="use-case-title">❌ Dữ Liệu Xấu: Mơ hồ & Không đủ thông tin</div>
+                <p><strong>Input:</strong> "Bệnh nhân cảm thấy không khỏe"</p>
+                <p><strong>→ Quy tắc không khớp:</strong> Không chẩn đoán được</p>
+                <p style="margin-top: 10px; color: var(--text-light);">
+                    Thông tin mơ hồ không phù hợp với quy tắc cứng nhắc
+                </p>
+            </div>
+
+            <h3 style="margin: 30px 0 15px 0; color: var(--primary);">Bottom-Up: Dữ Liệu Huấn Luyện</h3>
+            <div class="use-case">
+                <div class="use-case-title">✅ Dữ Liệu Tốt: Đa dạng & Cân bằng</div>
+                <p><strong>Dataset:</strong> 10,000 ảnh chó + 10,000 ảnh mèo</p>
+                <p><strong>Đặc điểm:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                    <li>Đa dạng: nhiều chó/mèo loài khác nhau</li>
+                    <li>Cân bằng: số lượng bằng nhau</li>
+                    <li>Chất lượng cao: ảnh rõ nét, được dán nhãn đúng</li>
+                </ul>
+                <p style="margin-top: 10px; color: var(--text-light);">
+                    Kết quả: Mạng đạt 98% độ chính xác
+                </p>
+            </div>
+
+            <div class="use-case">
+                <div class="use-case-title">❌ Dữ Liệu Xấu: Lệch về số lượng & Chất lượng thấp</div>
+                <p><strong>Dataset:</strong> 100 ảnh chó + 10,000 ảnh mèo</p>
+                <p><strong>Vấn đề:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                    <li>Mất cân bằng: mèo quá nhiều, chó quá ít</li>
+                    <li>Quy trình học bị thiên lệch về mèo</li>
+                    <li>Mạng nhận chó thành mèo</li>
+                </ul>
+                <p style="margin-top: 10px; color: var(--text-light);">
+                    Kết quả: Chỉ 45% độ chính xác khi nhận dạng chó
+                </p>
+            </div>
+        </div>
+
+        <!-- REAL-WORLD USE CASES -->
+        <div class="section">
+            <h2 class="section-title">🌍 Các Use Case Thực Tế</h2>
+
+            <div class="comparison-grid">
+                <div class="card">
+                    <div class="icon">🏥</div>
+                    <div class="card-title">Top-Down: Hệ Thống Chuyên Gia</div>
+                    <p><strong>Ứng dụng:</strong> Chẩn đoán bệnh, kiểm tra tín dụng, hệ thống luật lệ</p>
+                    <p style="margin-top: 10px;"><strong>Tại sao dùng Top-Down?</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 8px;">
+                        <li>Cần tính minh bạch & giải thích</li>
+                        <li>Có quy tắc pháp luật cô định</li>
+                        <li>Ít dữ liệu để huấn luyện</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="icon">📸</div>
+                    <div class="card-title">Bottom-Up: Deep Learning</div>
+                    <p><strong>Ứng dụng:</strong> Nhận dạng khuôn mặt, dịch máy, chatbot AI</p>
+                    <p style="margin-top: 10px;"><strong>Tại sao dùng Bottom-Up?</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 8px;">
+                        <li>Dữ liệu phong phú (internet, social)</li>
+                        <li>Không thể viết quy tắc cứng nhắc</li>
+                        <li>Cần độ chính xác cao</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- INTERACTIVE QUIZ -->
+        <div class="quiz-section">
+            <h2 class="quiz-title">🎯 Kiểm Tra Kiến Thức</h2>
+
+            <div class="quiz-question">
+                <h3 style="margin-bottom: 15px; color: var(--text-dark);">Câu 1: Phương pháp nào phù hợp để nhận dạng khuôn mặt trong ảnh?</h3>
+                <div class="quiz-options" id="quiz1">
+                    <label class="option">
+                        <input type="radio" name="q1" value="topdown">
+                        <span>A) Top-Down (quy tắc lôgic)</span>
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="q1" value="bottomup">
+                        <span>B) Bottom-Up (mạng nơ-ron)</span>
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="q1" value="both">
+                        <span>C) Cả hai đều được</span>
+                    </label>
+                </div>
+                <button class="btn" onclick="checkQuiz(1, 'bottomup', 'Đúng rồi! Nhận dạng khuôn mặt cần mạng nơ-ron để học từ hàng triệu mẫu.')">Kiểm Tra Câu 1</button>
+                <div class="feedback" id="feedback1"></div>
+            </div>
+
+            <div class="quiz-question">
+                <h3 style="margin-bottom: 15px; color: var(--text-dark);">Câu 2: Top-Down cần gì để hoạt động?</h3>
+                <div class="quiz-options" id="quiz2">
+                    <label class="option">
+                        <input type="radio" name="q2" value="data">
+                        <span>A) Hàng triệu dữ liệu huấn luyện</span>
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="q2" value="rules">
+                        <span>B) Kiến thức & quy tắc từ chuyên gia</span>
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="q2" value="gpu">
+                        <span>C) GPU mạnh để tính toán</span>
+                    </label>
+                </div>
+                <button class="btn" onclick="checkQuiz(2, 'rules', 'Chính xác! Top-Down dùng kiến thức được lập trình cứng từ chuyên gia.')">Kiểm Tra Câu 2</button>
+                <div class="feedback" id="feedback2"></div>
+            </div>
+
+            <div class="quiz-question">
+                <h3 style="margin-bottom: 15px; color: var(--text-dark);">Câu 3: Nhược điểm chính của Bottom-Up là gì?</h3>
+                <div class="quiz-options" id="quiz3">
+                    <label class="option">
+                        <input type="radio" name="q3" value="slow">
+                        <span>A) Sử lý chậm</span>
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="q3" value="data">
+                        <span>B) Cần rất nhiều dữ liệu</span>
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="q3" value="explain">
+                        <span>C) Khó giải thích quyết định (black box)</span>
+                    </label>
+                </div>
+                <button class="btn" onclick="checkQuiz(3, 'data', 'Đúng! Bottom-Up cần hàng triệu mẫu dữ liệu để huấn luyện hiệu quả.')">Kiểm Tra Câu 3</button>
+                <div class="feedback" id="feedback3"></div>
+            </div>
+
+            <div class="quiz-question">
+                <h3 style="margin-bottom: 15px; color: var(--text-dark);">Câu 4: Để chẩn đoán bệnh với luật pháp, nên dùng phương pháp nào?</h3>
+                <div class="quiz-options" id="quiz4">
+                    <label class="option">
+                        <input type="radio" name="q4" value="topdown">
+                        <span>A) Top-Down (vì cần minh bạch)</span>
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="q4" value="bottomup">
+                        <span>B) Bottom-Up (vì độ chính xác cao)</span>
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="q4" value="hybrid">
+                        <span>C) Kết hợp cả hai</span>
+                    </label>
+                </div>
+                <button class="btn" onclick="checkQuiz(4, 'topdown', 'Chính xác! Chẩn đoán y khoa cần minh bạch và có thể giải thích, nên Top-Down phù hợp hơn.')">Kiểm Tra Câu 4</button>
+                <div class="feedback" id="feedback4"></div>
+            </div>
+        </div>
+
+        <!-- KEY TAKEAWAYS -->
+        <div class="section">
+            <h2 class="section-title">💡 Điểm Chính Cần Nhớ</h2>
+            <div class="card">
+                <ul style="margin-left: 20px; font-size: 1.05em;">
+                    <li style="margin-bottom: 12px;">
+                        <strong>Top-Down:</strong> Quy tắc → Máy tính. Nhanh, dễ giải thích, nhưng quy tắc cứng nhắc.
+                    </li>
+                    <li style="margin-bottom: 12px;">
+                        <strong>Bottom-Up:</strong> Dữ liệu → Mạng nơ-ron. Linh hoạt, độ chính xác cao, nhưng cần nhiều dữ liệu.
+                    </li>
+                    <li style="margin-bottom: 12px;">
+                        <strong>Chọn phương pháp:</strong> Tùy vào bài toán - cần minh bạch? Dùng Top-Down. Cần độ chính xác? Dùng Bottom-Up.
+                    </li>
+                    <li style="margin-bottom: 12px;">
+                        <strong>Xu hướng hiện tại:</strong> Hybrid (kết hợp cả hai) để tận dụng ưu điểm của mỗi phương pháp.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- EXERCISE -->
+        <div class="section">
+            <h2 class="section-title">✏️ Bài Tập Thực Hành</h2>
+            <div class="card">
+                <p style="margin-bottom: 20px;">
+                    <strong>Bài tập:</strong> Cho 3 tình huống sau, hãy quyết định nên dùng Top-Down hay Bottom-Up? Giải thích lý do.
+                </p>
+
+                <div style="background: var(--bg-light); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p><strong>1) Hệ thống lọc email spam</strong></p>
+                    <p style="color: var(--text-light); margin-top: 8px;">
+                        Bạn có 50 triệu email được dán nhãn (spam/không spam), và cần độ chính xác cao.
+                    </p>
+                    <p style="margin-top: 10px;">
+                        <span class="highlight">Trả lời:</span> ___________________________________
+                    </p>
+                </div>
+
+                <div style="background: var(--bg-light); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p><strong>2) Hệ thống kiểm tra tuổi người trong chứng minh thư (ID photo)</strong></p>
+                    <p style="color: var(--text-light); margin-top: 8px;">
+                        Cần phải tuân thủ pháp luật, cần giải thích rõ tại sao từ chối.
+                    </p>
+                    <p style="margin-top: 10px;">
+                        <span class="highlight">Trả lời:</span> ___________________________________
+                    </p>
+                </div>
+
+                <div style="background: var(--bg-light); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p><strong>3) Hệ thống dịch tự động (Google Translate)</strong></p>
+                    <p style="color: var(--text-light); margin-top: 8px;">
+                        Cần xử lý hàng tỷ cặp từ trong 100+ ngôn ngữ, quy tắc ngữ pháp quá phức tạp.
+                    </p>
+                    <p style="margin-top: 10px;">
+                        <span class="highlight">Trả lời:</span> ___________________________________
+                    </p>
+                </div>
+
+                <p style="margin-top: 20px; padding: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 4px solid var(--success);">
+                    <strong>💡 Gợi ý:</strong> Hãy tự trả lời trước, sau đó tham khảo:
+                    1) Bottom-Up (dữ liệu phong phú, cần độ chính xác),
+                    2) Top-Down (cần minh bạch & giải thích),
+                    3) Bottom-Up (quá phức tạp để viết quy tắc)
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            <p>📚 Bài học này từ AI-For-Beginners | Code: x7k2m</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                Bạn đã hiểu rõ sự khác biệt giữa hai cách tiếp cận AI. Hãy tiếp tục học về Neural Networks & Deep Learning! 🚀
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const btn = document.querySelector('.theme-toggle');
+
+            if (html.getAttribute('data-theme') === 'light') {
+                html.setAttribute('data-theme', 'dark');
+                btn.textContent = '☀️ Sáng';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                html.setAttribute('data-theme', 'light');
+                btn.textContent = '🌙 Đêm';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        if (savedTheme === 'dark') {
+            document.querySelector('.theme-toggle').textContent = '☀️ Sáng';
+        }
+
+        function checkQuiz(questionNum, correctAnswer, message) {
+            const selectedOption = document.querySelector(`input[name="q${questionNum}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback${questionNum}`);
+
+            if (!selectedOption) {
+                feedbackDiv.textContent = '⚠️ Vui lòng chọn một đáp án!';
+                feedbackDiv.classList.add('show', 'incorrect');
+                return;
+            }
+
+            feedbackDiv.classList.remove('incorrect', 'correct');
+            void feedbackDiv.offsetWidth; // Trigger reflow for animation
+
+            if (selectedOption.value === correctAnswer) {
+                feedbackDiv.textContent = message;
+                feedbackDiv.classList.add('show', 'correct');
+            } else {
+                feedbackDiv.textContent = '❌ Sai rồi! Hãy xem lại các định nghĩa ở trên.';
+                feedbackDiv.classList.add('show', 'incorrect');
+            }
+        }
+
+        // Animate cards on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'slideUp 0.5s ease forwards';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.card, .diagram, .code-block').forEach(el => {
+            el.style.opacity = '0';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
