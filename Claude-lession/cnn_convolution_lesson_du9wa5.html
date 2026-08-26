@@ -1,0 +1,855 @@
+<title>Mạng Nơ-ron Tích Chập</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #eef1ef;
+    --surface: #ffffff;
+    --surface-alt: #e2e7e3;
+    --text: #14181a;
+    --text-muted: #4b5a57;
+    --border: #c7d0cb;
+    --accent: #178f86;
+    --accent-2: #d98c2b;
+    --good: #2f8f5c;
+    --warn: #b8842a;
+    --bad: #c04a3c;
+    --good-bg: #e3f3ea;
+    --warn-bg: #f7ecd9;
+    --bad-bg: #f6e3e0;
+    --shadow: 0 1px 2px rgba(20, 24, 26, 0.06), 0 8px 24px rgba(20, 24, 26, 0.06);
+    --radius: 10px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1613;
+      --surface: #172420;
+      --surface-alt: #1c2a25;
+      --text: #e7f0ec;
+      --text-muted: #9db3ac;
+      --border: #2c433c;
+      --accent: #3ecdc0;
+      --accent-2: #f0b45c;
+      --good: #57c98a;
+      --warn: #e0b756;
+      --bad: #e2695c;
+      --good-bg: #17342a;
+      --warn-bg: #33291a;
+      --bad-bg: #341f1c;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0f1613;
+    --surface: #172420;
+    --surface-alt: #1c2a25;
+    --text: #e7f0ec;
+    --text-muted: #9db3ac;
+    --border: #2c433c;
+    --accent: #3ecdc0;
+    --accent-2: #f0b45c;
+    --good: #57c98a;
+    --warn: #e0b756;
+    --bad: #e2695c;
+    --good-bg: #17342a;
+    --warn-bg: #33291a;
+    --bad-bg: #341f1c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 6rem;
+  }
+
+  h1, h2, h3 {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  code, .mono, .kbd, .cell, .grid-cell, table { font-variant-numeric: tabular-nums; }
+
+  /* ---------- Header ---------- */
+  .hero {
+    padding: 2.4rem 0 1.6rem;
+    border-bottom: 1px dashed var(--border);
+    opacity: 0;
+    animation: fadeInDown 0.7s ease forwards;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulseDot 1.6s ease-in-out infinite;
+  }
+  h1.title {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    margin: 0.8rem 0 0.4rem;
+    font-weight: 600;
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  /* ---------- Sections ---------- */
+  section { margin-top: 3rem; }
+  .section-head { margin-bottom: 1.1rem; }
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent-2);
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+  }
+  h2.section-title {
+    font-size: 1.4rem;
+    margin: 0.2rem 0 0.3rem;
+  }
+  .section-desc { color: var(--text-muted); margin: 0; max-width: 68ch; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.3rem 1.4rem;
+    opacity: 0;
+    transform: translateY(16px);
+    animation: slideUp 0.55s ease forwards;
+  }
+
+  .stagger > * { animation-delay: calc(var(--i, 0) * 0.09s); }
+
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  /* ---------- Tables ---------- */
+  .table-scroll { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; background: var(--surface); }
+  th, td { padding: 0.65rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); background: var(--surface-alt); }
+  tr:last-child td { border-bottom: none; }
+
+  .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+  .badge.good { color: var(--good); background: var(--good-bg); }
+  .badge.warn { color: var(--warn); background: var(--warn-bg); }
+  .badge.bad { color: var(--bad); background: var(--bad-bg); }
+
+  /* ---------- ASCII / code blocks ---------- */
+  pre.ascii {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.86rem;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    line-height: 1.55;
+    margin: 0.9rem 0;
+  }
+  pre.code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.84rem;
+    background: #10221e;
+    color: #d6ede6;
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    margin: 0.9rem 0;
+  }
+  /* ---------- Pipeline flow diagram ---------- */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0;
+    margin: 1.4rem 0;
+  }
+  .flow-node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.8rem 1rem;
+    min-width: 120px;
+    text-align: center;
+    font-size: 0.86rem;
+  }
+  .flow-node b { display: block; font-family: 'IBM Plex Mono', monospace; color: var(--accent); font-size: 0.95rem; }
+  .flow-arrow {
+    display: flex; align-items: center; justify-content: center;
+    width: 42px; color: var(--accent-2); font-size: 1.3rem;
+    animation: arrowPulse 1.4s ease-in-out infinite;
+  }
+
+  /* ---------- Demo ---------- */
+  .demo-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+  }
+  @media (min-width: 640px) {
+    .demo-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .matrix {
+    display: grid;
+    gap: 4px;
+    justify-content: start;
+  }
+  .grid-cell {
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    transition: background 0.25s ease, transform 0.25s ease, color 0.25s ease;
+  }
+  .grid-cell.scan {
+    background: var(--accent-2);
+    color: #1a1204;
+    transform: scale(1.06);
+    box-shadow: 0 0 0 2px var(--accent-2);
+  }
+  .grid-cell.out {
+    background: var(--surface-alt);
+    color: var(--text-muted);
+  }
+  .grid-cell.filled {
+    background: var(--accent);
+    color: #04211e;
+    animation: pop 0.4s ease;
+  }
+  .out-matrix .grid-cell { width: 46px; height: 46px; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.9rem 0; }
+  .btn {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.86rem;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-alt);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.active { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+  .btn.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+  .btn.primary:hover { filter: brightness(1.08); color: var(--surface); }
+  .btn:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .result-panel {
+    margin-top: 0.9rem;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+  }
+  .result-panel.show {
+    animation: slideDown 0.5s ease forwards;
+  }
+
+  .kernel-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+
+  /* ---------- Quiz ---------- */
+  .quiz-q { margin-bottom: 1.6rem; }
+  .quiz-q p.q-text { font-weight: 600; margin: 0 0 0.6rem; }
+  .quiz-opt {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    background: var(--surface);
+    transition: border-color 0.2s ease, background 0.2s ease;
+    font-size: 0.92rem;
+  }
+  .quiz-opt:hover { border-color: var(--accent); }
+  .quiz-opt input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .quiz-opt.correct { border-color: var(--good); background: var(--good-bg); }
+  .quiz-opt.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .explain {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    padding-left: 0.2rem;
+    display: none;
+  }
+  .explain.show { display: block; animation: slideDown 0.4s ease forwards; }
+  .quiz-score {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.05rem;
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius);
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+
+  details.exercise summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent);
+    list-style: none;
+  }
+  details.exercise summary::-webkit-details-marker { display: none; }
+  details.exercise summary::before { content: '▸ '; }
+  details.exercise[open] summary::before { content: '▾ '; }
+  details.exercise .answer { margin-top: 0.8rem; animation: slideDown 0.4s ease; }
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.4rem;
+    border-top: 1px dashed var(--border);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--accent); }
+
+  /* ---------- Animations ---------- */
+  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideDown { from { opacity: 0; max-height: 0; transform: translateY(-6px); } to { opacity: 1; max-height: 600px; transform: translateY(0); } }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  @keyframes arrowPulse { 0%, 100% { transform: translateX(0); opacity: 0.7; } 50% { transform: translateX(4px); opacity: 1; } }
+  @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow"><span class="dot"></span>Bài học ngẫu nhiên · Computer Vision · Lesson 07</span>
+    <h1 class="title">Mạng Nơ-ron Tích Chập (CNN)</h1>
+    <p class="subtitle">Làm sao máy tính "nhìn" ra con mèo dù nó đứng ở góc nào trong ảnh? Bí mật nằm ở một cửa sổ nhỏ trượt qua từng vùng pixel — gọi là <b>convolutional filter</b>.</p>
+  </header>
+
+  <section id="problem">
+    <div class="section-head">
+      <div class="section-num">01 · Vấn đề</div>
+      <h2 class="section-title">Vì sao Perceptron thường không đủ dùng cho ảnh thật?</h2>
+      <p class="section-desc">Với MNIST, số luôn nằm giữa ảnh nên một perceptron nối đầy đủ (fully-connected) học được. Nhưng ảnh thật thì con mèo có thể ở góc trái, góc phải, to, nhỏ — vị trí pixel thay đổi liên tục.</p>
+    </div>
+    <pre class="ascii">Ảnh 1: mèo ở giữa        Ảnh 2: mèo ở góc trái
+┌─────────────┐          ┌─────────────┐
+│      🐱     │          │ 🐱          │
+│             │          │             │
+└─────────────┘          └─────────────┘
+Perceptron học "pixel (12,12) sáng = mèo" → KHÔNG tổng quát hoá được vị trí khác.
+CNN học "một cụm cạnh + râu + tai xuất hiện Ở ĐÂU ĐÓ" → tổng quát hoá tốt hơn nhiều.</pre>
+  </section>
+
+  <section id="states">
+    <div class="section-head">
+      <div class="section-num">02 · 4 trạng thái xử lý</div>
+      <h2 class="section-title">Một lớp CNN đi qua 4 bước biến đổi</h2>
+      <p class="section-desc">Convolution → ReLU → Pooling → xếp chồng nhiều lớp (kiến trúc kim tự tháp). Mỗi bước có input/output riêng, đóng vai trò khác nhau.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Trạng thái</th><th>Input</th><th>Xử lý</th><th>Output</th><th>Đánh giá</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Convolution</b><br><span class="mono" style="color:var(--text-muted)">trích đặc trưng</span></td>
+            <td>Ảnh 2D (hoặc feature map trước đó)</td>
+            <td>Trượt kernel 3×3 / 5×5, tính tích chập (dot product)</td>
+            <td>Feature map — bản đồ "nơi nào có cạnh/pattern"</td>
+            <td><span class="badge good">✅ Cốt lõi CNN</span></td>
+          </tr>
+          <tr>
+            <td><b>ReLU</b><br><span class="mono" style="color:var(--text-muted)">kích hoạt phi tuyến</span></td>
+            <td>Feature map (có số âm)</td>
+            <td>max(0, x) — cắt bỏ giá trị âm</td>
+            <td>Feature map chỉ còn giá trị ≥ 0</td>
+            <td><span class="badge good">✅ Rẻ, nhanh</span></td>
+          </tr>
+          <tr>
+            <td><b>Pooling</b><br><span class="mono" style="color:var(--text-muted)">giảm chiều</span></td>
+            <td>Feature map lớn</td>
+            <td>Lấy max (hoặc average) mỗi vùng 2×2</td>
+            <td>Feature map nhỏ hơn, giữ thông tin quan trọng</td>
+            <td><span class="badge warn">⚠️ Mất chi tiết nhỏ</span></td>
+          </tr>
+          <tr>
+            <td><b>Xếp chồng lớp</b><br><span class="mono" style="color:var(--text-muted)">pyramid</span></td>
+            <td>Feature map của lớp trước</td>
+            <td>Lặp lại Conv→ReLU→Pool, tăng số filter, giảm kích thước không gian</td>
+            <td>Đặc trưng cấp cao (mắt, tai, khuôn mặt...)</td>
+            <td><span class="badge good">✅ VGG-16 đạt 92.7% ImageNet</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flow">
+      <div class="flow-node"><b>Input</b>32×32×3</div>
+      <div class="flow-arrow">➜</div>
+      <div class="flow-node"><b>Conv+ReLU</b>8 filters</div>
+      <div class="flow-arrow">➜</div>
+      <div class="flow-node"><b>Pool</b>÷2</div>
+      <div class="flow-arrow">➜</div>
+      <div class="flow-node"><b>Conv+ReLU</b>16 filters</div>
+      <div class="flow-arrow">➜</div>
+      <div class="flow-node"><b>Pool</b>÷2</div>
+      <div class="flow-arrow">➜</div>
+      <div class="flow-node"><b>Flatten+Dense</b>classify</div>
+    </div>
+    <pre class="ascii">KIẾN TRÚC KIM TỰ THÁP (pyramid)
+kích thước ảnh:   32×32 ──▶ 16×16 ──▶  8×8  ──▶  4×4
+số filter:          8    ──▶   16   ──▶  32   ──▶  64
+                 (ít filter, ảnh to)      (nhiều filter, ảnh nhỏ, đặc trưng "cao cấp")</pre>
+
+    <pre class="code">import torch.nn as nn
+
+layer1 = nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1)
+relu   = nn.ReLU()
+pool   = nn.MaxPool2d(2)
+# x -> layer1 -> relu -> pool -> (lặp lại với out_channels=16, 32, ...)</pre>
+  </section>
+
+  <section id="trace">
+    <div class="section-head">
+      <div class="section-num">03 · State Trace</div>
+      <h2 class="section-title">Convolution diễn ra từng bước như thế nào?</h2>
+      <p class="section-desc">Kernel 3×3 trượt qua ảnh 5×5, mỗi vị trí tính tổng có trọng số (dot product) với vùng pixel bên dưới nó.</p>
+    </div>
+    <pre class="ascii">Input 5×5:                    Kernel dò cạnh dọc (3×3):
+┌───┬───┬───┬───┬───┐          ┌────┬───┬───┐
+│ 0 │ 0 │ 5 │ 5 │ 5 │          │ -1 │ 0 │ 1 │
+├───┼───┼───┼───┼───┤          ├────┼───┼───┤
+│ 0 │ 0 │ 5 │ 5 │ 5 │          │ -1 │ 0 │ 1 │
+├───┼───┼───┼───┼───┤          ├────┼───┼───┤
+│ 0 │ 0 │ 5 │ 5 │ 5 │          │ -1 │ 0 │ 1 │
+├───┼───┼───┼───┼───┤          └────┴───┴───┘
+│ 0 │ 0 │ 5 │ 5 │ 5 │
+├───┼───┼───┼───┼───┤
+│ 0 │ 0 │ 5 │ 5 │ 5 │
+└───┴───┴───┴───┴───┘
+
+Bước i=0,j=0 → cửa sổ [0..2,0..2] = cột toàn 0/5 lệch nhẹ → tổng = 0   ✗ (chưa chạm cạnh)
+Bước i=0,j=1 → cửa sổ [0..2,1..3] = ▶ trùng đúng biên 0→5           → tổng = 15  ✓ CẠNH DỌC!
+Bước i=0,j=2 → cửa sổ [0..2,2..4] = toàn 5, không lệch              → tổng = 0   ✗
+...con trỏ tiếp tục trượt xuống hàng dưới, lặp lại quy luật trên.</pre>
+  </section>
+
+  <section id="demo">
+    <div class="section-head">
+      <div class="section-num">04 · Demo tương tác</div>
+      <h2 class="section-title">Tự tay chạy convolution</h2>
+      <p class="section-desc">Chọn một filter, bấm <b>Chạy quét</b> để xem cửa sổ 3×3 trượt qua ảnh 6×6 và tạo ra feature map bên phải.</p>
+    </div>
+    <div class="card">
+      <div class="controls" id="filterButtons"></div>
+      <div class="demo-grid">
+        <div>
+          <div class="kernel-label">INPUT — ảnh 6×6 (giá trị pixel)</div>
+          <div class="matrix" id="inputGrid" style="grid-template-columns: repeat(6, 42px);"></div>
+        </div>
+        <div>
+          <div class="kernel-label">OUTPUT — feature map 4×4</div>
+          <div class="matrix out-matrix" id="outputGrid" style="grid-template-columns: repeat(4, 46px);"></div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn primary" id="runBtn">▶ Chạy quét</button>
+        <button class="btn" id="resetBtn">↺ Reset</button>
+      </div>
+      <div class="result-panel" id="demoResult">
+        <p style="margin:0.6rem 0 0; font-size:0.9rem; color:var(--text-muted);" id="demoNote"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="filters">
+    <div class="section-head">
+      <div class="section-num">05 · So sánh các loại filter</div>
+      <h2 class="section-title">Mỗi kernel "nhìn" ra một pattern khác nhau</h2>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Filter</th><th>Kernel</th><th>Phát hiện</th><th>Use case</th><th>Đánh giá</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Vertical edge</td>
+            <td class="mono">[-1 0 1]<br>[-1 0 1]<br>[-1 0 1]</td>
+            <td>Cạnh dọc (biên trái/phải vật thể)</td>
+            <td>Nhận diện chữ số, khung cửa, cột</td>
+            <td><span class="badge good">✅ Rõ nét khi ảnh sắc</span></td>
+          </tr>
+          <tr>
+            <td>Horizontal edge</td>
+            <td class="mono">[-1 -1 -1]<br>[ 0  0  0]<br>[ 1  1  1]</td>
+            <td>Cạnh ngang (đường chân trời, mí mắt)</td>
+            <td>Phát hiện khuôn mặt, văn bản</td>
+            <td><span class="badge good">✅ Rõ nét khi ảnh sắc</span></td>
+          </tr>
+          <tr>
+            <td>Blur (box)</td>
+            <td class="mono">[1 1 1]<br>[1 1 1]<br>[1 1 1] ÷9</td>
+            <td>Làm mượt nhiễu, giảm chi tiết</td>
+            <td>Tiền xử lý ảnh nhiễu trước khi phát hiện cạnh</td>
+            <td><span class="badge warn">⚠️ Mất chi tiết nhỏ</span></td>
+          </tr>
+          <tr>
+            <td>Sharpen</td>
+            <td class="mono">[ 0 -1  0]<br>[-1  5 -1]<br>[ 0 -1  0]</td>
+            <td>Tăng tương phản cạnh</td>
+            <td>Làm nổi chi tiết trước khi phân loại</td>
+            <td><span class="badge warn">⚠️ Khuếch đại cả nhiễu</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <pre class="code">import numpy as np
+from scipy.signal import convolve2d
+
+vertical_edge = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
+feature_map = convolve2d(image, vertical_edge, mode='valid')</pre>
+  </section>
+
+  <section id="data">
+    <div class="section-head">
+      <div class="section-num">06 · Dữ liệu tốt vs dữ liệu xấu</div>
+      <h2 class="section-title">CNN chỉ giỏi khi dữ liệu ảnh "sạch"</h2>
+      <p class="section-desc">Filter chỉ học được pattern thật nếu pixel phản ánh đúng thực tế. Nhiễu, sai nhãn, mất cân bằng lớp đều phá hỏng việc học.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Loại dữ liệu</th><th>Ví dụ</th><th>Ảnh hưởng tới CNN</th><th>Đánh giá</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ảnh rõ nét, đúng nhãn, đa dạng góc/ánh sáng</td>
+            <td>10,000 ảnh mèo/chó, chụp nhiều tư thế, ánh sáng khác nhau, nhãn được người kiểm tra</td>
+            <td>Filter học được pattern tổng quát → tổng quát hoá tốt trên ảnh mới</td>
+            <td><span class="badge good">✅ Tốt</span></td>
+          </tr>
+          <tr>
+            <td>Ảnh phân giải thấp, ít mẫu/lớp, chưa augment</td>
+            <td>Chỉ 50 ảnh cho lớp "xe cứu thương" trong khi lớp khác có 5,000 ảnh</td>
+            <td>Model học lệch, overfitting vào lớp nhiều dữ liệu, bỏ sót lớp hiếm</td>
+            <td><span class="badge warn">⚠️ Trung bình — cần augmentation / cân bằng lớp</span></td>
+          </tr>
+          <tr>
+            <td>Ảnh gắn sai nhãn, bị watermark/logo che chủ thể</td>
+            <td>Ảnh mèo bị gán nhãn "chó", hoặc ảnh sản phẩm bị logo che 40% khung hình</td>
+            <td>Filter học nhầm pattern (học watermark thay vì vật thể) → dự đoán sai nghiêm trọng</td>
+            <td><span class="badge bad">❌ Xấu — phải làm sạch trước khi train</span></td>
+          </tr>
+          <tr>
+            <td>Kích thước/tỉ lệ ảnh không đồng nhất, không chuẩn hoá</td>
+            <td>Ảnh 100×100 trộn lẫn ảnh 4000×3000 chưa resize/normalize pixel về [0,1]</td>
+            <td>Batch không đồng nhất, gradient bất ổn, train chậm hội tụ hoặc lỗi shape</td>
+            <td><span class="badge bad">❌ Xấu — bắt buộc resize + normalize</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="usecases">
+    <div class="section-head">
+      <div class="section-num">07 · Use case thực tế</div>
+      <h2 class="section-title">CNN đang chạy ở đâu quanh bạn?</h2>
+    </div>
+    <div class="grid-cards stagger">
+      <div class="card" style="--i:0"><b>🚗 Nhận diện biển số xe</b><p style="margin:0.4rem 0 0;color:var(--text-muted);font-size:0.9rem;">Camera bãi giữ xe tự động đọc biển số qua các lớp conv phát hiện ký tự.</p></div>
+      <div class="card" style="--i:1"><b>🩺 Chẩn đoán ảnh y tế</b><p style="margin:0.4rem 0 0;color:var(--text-muted);font-size:0.9rem;">Phát hiện khối u trên ảnh X-quang/MRI bằng cách học pattern bất thường trong mô.</p></div>
+      <div class="card" style="--i:2"><b>♻️ Phân loại rác thải</b><p style="margin:0.4rem 0 0;color:var(--text-muted);font-size:0.9rem;">Camera trên băng chuyền phân loại nhựa/giấy/kim loại theo hình dạng & kết cấu.</p></div>
+      <div class="card" style="--i:3"><b>🏭 Kiểm tra lỗi sản phẩm</b><p style="margin:0.4rem 0 0;color:var(--text-muted);font-size:0.9rem;">Dây chuyền sản xuất dùng CNN phát hiện vết nứt/trầy xước cực nhỏ mà mắt người dễ bỏ sót.</p></div>
+    </div>
+  </section>
+
+  <section id="exercise">
+    <div class="section-head">
+      <div class="section-num">08 · Bài tập nhỏ</div>
+      <h2 class="section-title">Tự tay tính convolution</h2>
+      <p class="section-desc">Cho ảnh 4×4 và kernel dò cạnh ngang bên dưới, hãy tự tính giá trị góc trên-trái của feature map 2×2 (trước khi bấm xem đáp án).</p>
+    </div>
+    <div class="card">
+      <pre class="ascii">Ảnh 4×4:            Kernel (horizontal edge):
+0 0 0 0              -1 -1 -1
+0 0 0 0               0  0  0
+9 9 9 9               1  1  1
+9 9 9 9
+
+→ Tính giá trị output[0][0] bằng cách nhân từng phần tử cửa sổ [0..2,0..2] với kernel rồi cộng lại.</pre>
+      <details class="exercise">
+        <summary>Xem đáp án</summary>
+        <div class="answer">
+          <p style="margin:0;">Cửa sổ = hàng 0,1,2 cột 0,1,2 = [[0,0,0],[0,0,0],[9,9,9]]<br>
+          Tích: (0×-1+0×-1+0×-1) + (0×0+0×0+0×0) + (9×1+9×1+9×1) = 0 + 0 + 27 = <b>27</b><br>
+          → Giá trị lớn nghĩa là cửa sổ này đang nằm ngay trên một cạnh ngang mạnh (0 chuyển sang 9).</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="section-head">
+      <div class="section-num">09 · Tự kiểm tra</div>
+      <h2 class="section-title">Quiz nhanh 4 câu</h2>
+    </div>
+    <div class="card" id="quizCard">
+      <div class="quiz-q" data-correct="b">
+        <p class="q-text">1. Vì sao CNN dùng convolution thay vì fully-connected cho ảnh?</p>
+        <label class="quiz-opt"><input type="radio" name="q1" value="a">Vì convolution chạy trên GPU nhanh hơn</label>
+        <label class="quiz-opt"><input type="radio" name="q1" value="b">Vì convolution tìm pattern bất kể vị trí, giảm số tham số</label>
+        <label class="quiz-opt"><input type="radio" name="q1" value="c">Vì convolution không cần dữ liệu training</label>
+        <p class="explain">Đúng: filter dùng chung trọng số quét khắp ảnh → phát hiện pattern dù nó ở đâu, và số tham số ít hơn nhiều so với việc nối đầy đủ mọi pixel.</p>
+      </div>
+      <div class="quiz-q" data-correct="c">
+        <p class="q-text">2. Pooling (max pooling) dùng để làm gì?</p>
+        <label class="quiz-opt"><input type="radio" name="q2" value="a">Tăng độ phân giải ảnh</label>
+        <label class="quiz-opt"><input type="radio" name="q2" value="b">Học trọng số filter tự động</label>
+        <label class="quiz-opt"><input type="radio" name="q2" value="c">Giảm kích thước feature map, giữ thông tin nổi bật</label>
+        <p class="explain">Đúng: pooling nén vùng 2×2 (hoặc lớn hơn) thành 1 giá trị, giúp giảm tính toán và tăng tính bất biến với dịch chuyển nhỏ.</p>
+      </div>
+      <div class="quiz-q" data-correct="a">
+        <p class="q-text">3. Trong kiến trúc kim tự tháp, khi đi sâu vào các lớp sau, điều gì thường xảy ra?</p>
+        <label class="quiz-opt"><input type="radio" name="q3" value="a">Kích thước không gian giảm, số lượng filter tăng</label>
+        <label class="quiz-opt"><input type="radio" name="q3" value="b">Kích thước không gian tăng, số lượng filter giảm</label>
+        <label class="quiz-opt"><input type="radio" name="q3" value="c">Cả kích thước và số filter đều giữ nguyên</label>
+        <p class="explain">Đúng: giống VGG-16 — ảnh nhỏ dần (32→16→8...) nhưng số filter tăng dần (8→16→32...) để bắt đặc trưng phức tạp hơn.</p>
+      </div>
+      <div class="quiz-q" data-correct="b">
+        <p class="q-text">4. Dữ liệu ảnh nào KHÔNG nên đưa thẳng vào huấn luyện CNN?</p>
+        <label class="quiz-opt"><input type="radio" name="q4" value="a">Ảnh đã resize đồng nhất, pixel chuẩn hoá [0,1]</label>
+        <label class="quiz-opt"><input type="radio" name="q4" value="b">Ảnh bị gắn sai nhãn hoặc watermark che chủ thể</label>
+        <label class="quiz-opt"><input type="radio" name="q4" value="c">Ảnh chụp cùng vật thể từ nhiều góc khác nhau</label>
+        <p class="explain">Đúng: nhãn sai hoặc watermark che khuất khiến CNN học nhầm pattern, dẫn tới dự đoán sai một cách hệ thống.</p>
+      </div>
+      <div class="controls">
+        <button class="btn primary" id="checkQuiz">Kiểm tra đáp án</button>
+      </div>
+      <div class="result-panel" id="quizResultPanel">
+        <div class="quiz-score" id="quizScore"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="notes">
+    <div class="section-head">
+      <div class="section-num">10 · Ghi chú bản chất</div>
+      <h2 class="section-title">Độ phức tạp & giới hạn</h2>
+    </div>
+    <div class="card">
+      <ul style="margin:0; padding-left:1.2rem; color:var(--text-muted);">
+        <li>Chi phí 1 lớp conv ≈ <span class="mono">O(k² · W · H · C_in · C_out)</span> với k là kích thước kernel — đây là lý do pooling và giảm dần kích thước ảnh giúp mạng sâu vẫn khả thi.</li>
+        <li>CNN không "hiểu" ảnh như con người — nó học pattern thống kê từ dữ liệu training, nên dữ liệu lệch/bẩn sẽ tạo ra thiên kiến (bias) khó phát hiện.</li>
+        <li>Bất biến vị trí chỉ tương đối: xoay ảnh 90°, lật ngược hay phóng to quá mức vẫn có thể đánh lừa filter nếu training set không đủ đa dạng.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    Bài giảng dựa trên <span class="mono">lessons/4-ComputerVision/07-ConvNets</span> trong AI-For-Beginners. Ghi chú tự động — chọn ngẫu nhiên trong kho bài học.
+  </footer>
+</div>
+
+<script>
+(function () {
+  // ---------- Convolution demo ----------
+  var INPUT = [
+    [0,0,0,5,5,5],
+    [0,0,0,5,5,5],
+    [0,0,0,5,5,5],
+    [0,0,0,5,5,5],
+    [0,0,0,5,5,5],
+    [0,0,0,5,5,5]
+  ];
+
+  var FILTERS = {
+    vertical: { label: 'Vertical edge', kernel: [[-1,0,1],[-1,0,1],[-1,0,1]] },
+    horizontal: { label: 'Horizontal edge', kernel: [[-1,-1,-1],[0,0,0],[1,1,1]] },
+    blur: { label: 'Blur', kernel: [[1/9,1/9,1/9],[1/9,1/9,1/9],[1/9,1/9,1/9]] },
+    sharpen: { label: 'Sharpen', kernel: [[0,-1,0],[-1,5,-1],[0,-1,0]] }
+  };
+
+  var currentFilter = 'vertical';
+  var inputGridEl = document.getElementById('inputGrid');
+  var outputGridEl = document.getElementById('outputGrid');
+  var filterButtonsEl = document.getElementById('filterButtons');
+  var demoResultEl = document.getElementById('demoResult');
+  var demoNoteEl = document.getElementById('demoNote');
+  var running = false;
+
+  function buildFilterButtons() {
+    Object.keys(FILTERS).forEach(function (key) {
+      var b = document.createElement('button');
+      b.className = 'btn' + (key === currentFilter ? ' active' : '');
+      b.textContent = FILTERS[key].label;
+      b.dataset.key = key;
+      b.addEventListener('click', function () {
+        if (running) return;
+        currentFilter = key;
+        Array.prototype.forEach.call(filterButtonsEl.children, function (c) {
+          c.classList.toggle('active', c.dataset.key === key);
+        });
+        renderInput();
+        renderOutput(true);
+      });
+      filterButtonsEl.appendChild(b);
+    });
+  }
+
+  function renderInput() {
+    inputGridEl.innerHTML = '';
+    for (var r = 0; r < 6; r++) {
+      for (var c = 0; c < 6; c++) {
+        var cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.textContent = INPUT[r][c];
+        cell.id = 'in-' + r + '-' + c;
+        inputGridEl.appendChild(cell);
+      }
+    }
+  }
+
+  function renderOutput(empty) {
+    outputGridEl.innerHTML = '';
+    for (var r = 0; r < 4; r++) {
+      for (var c = 0; c < 4; c++) {
+        var cell = document.createElement('div');
+        cell.className = 'grid-cell out';
+        cell.textContent = empty ? '·' : '·';
+        cell.id = 'out-' + r + '-' + c;
+        outputGridEl.appendChild(cell);
+      }
+    }
+  }
+
+  function clearScan() {
+    for (var r = 0; r < 6; r++) {
+      for (var c = 0; c < 6; c++) {
+        var el = document.getElementById('in-' + r + '-' + c);
+        if (el) el.classList.remove('scan');
+      }
+    }
+  }
+
+  function convAt(r, c, kernel) {
+    var sum = 0;
+    for (var dr = 0; dr < 3; dr++) {
+      for (var dc = 0; dc < 3; dc++) {
+        sum += INPUT[r + dr][c + dc] * kernel[dr][dc];
+      }
+    }
+    return Math.round(sum * 100) / 100;
+  }
+
+  function sleep(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+
+  async function runScan() {
+    if (running) return;
+    running = true;
+    document.getElementById('runBtn').disabled = true;
+    renderOutput(true);
+    var kernel = FILTERS[currentFilter].kernel;
+    for (var r = 0; r < 4; r++) {
+      for (var c = 0; c < 4; c++) {
+        clearScan();
+        for (var dr = 0; dr < 3; dr++) {
+          for (var dc = 0; dc < 3; dc++) {
+            var el = document.getElementById('in-' + (r + dr) + '-' + (c + dc));
+            if (el) el.classList.add('scan');
+          }
+        }
+        await sleep(130);
+        var value = convAt(r, c, kernel);
+        var outEl = document.getElementById('out-' + r + '-' + c);
+        outEl.textContent = value;
+        outEl.classList.remove('out');
+        outEl.classList.add('filled');
+      }
+    }
+    clearScan();
+    running = false;
+    document.getElementById('runBtn').disabled = false;
+    demoNoteEl.textContent = 'Filter "' + FILTERS[currentFilter].label + '" xong: các ô sáng nhất trong feature map chính là nơi kernel "nhìn thấy" pattern nó tìm kiếm — ở đây là đường biên dọc giữa vùng 0 và vùng 5.';
+    demoResultEl.classList.add('show');
+  }
+
+  document.getElementById('runBtn').addEventListener('click', runScan);
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    if (running) return;
+    renderOutput(true);
+    clearScan();
+    demoResultEl.classList.remove('show');
+  });
+
+  buildFilterButtons();
+  renderInput();
+  renderOutput(true);
+
+  // ---------- Quiz ----------
+  var checkBtn = document.getElementById('checkQuiz');
+  checkBtn.addEventListener('click', function () {
+    var questions = document.querySelectorAll('.quiz-q');
+    var score = 0;
+    questions.forEach(function (q, idx) {
+      var name = 'q' + (idx + 1);
+      var correct = q.dataset.correct;
+      var selected = q.querySelector('input[name="' + name + '"]:checked');
+      var opts = q.querySelectorAll('.quiz-opt');
+      opts.forEach(function (opt) {
+        opt.classList.remove('correct', 'wrong');
+        var input = opt.querySelector('input');
+        if (input.value === correct) opt.classList.add('correct');
+        else if (selected && input.value === selected.value) opt.classList.add('wrong');
+      });
+      var explain = q.querySelector('.explain');
+      explain.classList.add('show');
+      if (selected && selected.value === correct) score++;
+    });
+    var scoreEl = document.getElementById('quizScore');
+    scoreEl.textContent = 'Kết quả: ' + score + ' / ' + questions.length + ' câu đúng.' +
+      (score === questions.length ? ' 🎉 Xuất sắc!' : score >= questions.length / 2 ? ' Khá tốt, xem lại phần giải thích nhé.' : ' Đọc lại phần 2 và 6 rồi thử lại!');
+    document.getElementById('quizResultPanel').classList.add('show');
+  });
+})();
+</script>
