@@ -1,0 +1,642 @@
+<title>Autoencoder Lab</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #f6f2e9;
+    --surface: #ffffff;
+    --surface-alt: #ede6d6;
+    --ink: #241b12;
+    --ink-muted: #6b5c48;
+    --border: #ddd0b6;
+    --accent: #0e7f6f;
+    --accent-soft: #d9ede9;
+    --amber: #b8742a;
+    --amber-soft: #f4e5cf;
+    --good: #2f7a52;
+    --good-bg: #e2efe3;
+    --warn: #a9752b;
+    --warn-bg: #f6ecd7;
+    --bad: #a83f30;
+    --bad-bg: #f5e2dd;
+    --scope-bg: #0b1712;
+    --scope-grid: #1c2f27;
+    --scope-fg: #59e6c2;
+    --shadow: 0 1px 2px rgba(36,27,18,0.06), 0 10px 28px rgba(36,27,18,0.08);
+    --radius: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17130d;
+      --surface: #221c14;
+      --surface-alt: #2a2318;
+      --ink: #f1e9d8;
+      --ink-muted: #b6a689;
+      --border: #493c28;
+      --accent: #4fd3b8;
+      --accent-soft: #1c332c;
+      --amber: #e3a85c;
+      --amber-soft: #3a2c17;
+      --good: #6bcb8f;
+      --good-bg: #1b3324;
+      --warn: #e0b756;
+      --warn-bg: #362a15;
+      --bad: #e2836f;
+      --bad-bg: #3a2119;
+      --scope-bg: #060c09;
+      --scope-grid: #16261f;
+      --scope-fg: #6bf2cf;
+      --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 32px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17130d;
+    --surface: #221c14;
+    --surface-alt: #2a2318;
+    --ink: #f1e9d8;
+    --ink-muted: #b6a689;
+    --border: #493c28;
+    --accent: #4fd3b8;
+    --accent-soft: #1c332c;
+    --amber: #e3a85c;
+    --amber-soft: #3a2c17;
+    --good: #6bcb8f;
+    --good-bg: #1b3324;
+    --warn: #e0b756;
+    --warn-bg: #362a15;
+    --bad: #e2836f;
+    --bad-bg: #3a2119;
+    --scope-bg: #060c09;
+    --scope-grid: #16261f;
+    --scope-fg: #6bf2cf;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 32px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 2.4rem 1.25rem 6rem; }
+
+  h1, h2, h3 { font-family: 'Source Serif 4', Georgia, serif; text-wrap: balance; letter-spacing: -0.01em; margin: 0; }
+  .mono, code, .kbd, .cell, table { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  a { color: var(--accent); }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 1rem 0 2rem; border-bottom: 1px dashed var(--border); opacity: 0; animation: fadeInDown 0.7s ease forwards; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 0.55rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--border); padding: 0.3rem 0.7rem; border-radius: 999px; }
+  .hero h1 { font-size: clamp(1.7rem, 4.4vw, 2.5rem); margin: 0.9rem 0 0.7rem; font-weight: 700; }
+  .hero p { color: var(--ink-muted); font-size: 1.04rem; max-width: 62ch; margin: 0; }
+
+  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(14,127,111,0.35); } 50% { box-shadow: 0 0 0 10px rgba(14,127,111,0); } }
+  @keyframes shake { 10%,90%{transform:translateX(-1px)} 20%,80%{transform:translateX(2px)} 30%,50%,70%{transform:translateX(-4px)} 40%,60%{transform:translateX(4px)} }
+  .reveal { opacity: 0; animation: slideUp 0.6s ease forwards; }
+  .r1{animation-delay:.05s}.r2{animation-delay:.14s}.r3{animation-delay:.23s}.r4{animation-delay:.32s}.r5{animation-delay:.41s}
+
+  section { margin-top: 3rem; }
+  .section-head { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.9rem; }
+  .section-num { font-family: 'IBM Plex Mono', monospace; color: var(--accent); font-size: 0.85rem; }
+  section h2 { font-size: 1.5rem; }
+  .lede { color: var(--ink-muted); margin: 0.5rem 0 1.2rem; max-width: 66ch; }
+
+  /* ---------- Flow diagram ---------- */
+  .flow { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: center; padding: 1.6rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .flow-node { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; padding: 0.8rem 1rem; border-radius: 10px; min-width: 92px; text-align: center; }
+  .flow-node .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); }
+  .flow-node .val { font-weight: 600; font-size: 0.92rem; }
+  .flow-node.io { background: var(--surface-alt); border: 1px dashed var(--border); }
+  .flow-node.enc { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
+  .flow-node.z { background: var(--ink); color: var(--bg); animation: pulse 2.2s ease-in-out infinite; }
+  .flow-node.dec { background: var(--amber-soft); border: 1px solid var(--amber); }
+  .flow-arrow { font-size: 1.3rem; color: var(--ink-muted); }
+  .flow-loss { flex-basis: 100%; text-align: center; margin-top: 0.6rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--ink-muted); }
+
+  /* ---------- Variant cards ---------- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem 1.3rem; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 0.55rem; }
+  .card h3 { font-size: 1.05rem; }
+  .card .tag { align-self: flex-start; font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.05em; padding: 0.2rem 0.55rem; border-radius: 999px; text-transform: uppercase; }
+  .tag.good { background: var(--good-bg); color: var(--good); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  .card dl { margin: 0; font-size: 0.9rem; display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.6rem; }
+  .card dt { color: var(--ink-muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; text-transform: uppercase; align-self: baseline; padding-top: 0.1rem; }
+  .card dd { margin: 0; }
+  .card pre { margin: 0.3rem 0 0; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.7rem; font-size: 0.76rem; overflow-x: auto; }
+
+  /* ---------- Table ---------- */
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 0.86rem; }
+  th, td { text-align: left; padding: 0.7rem 0.85rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); background: var(--surface-alt); }
+  tr:last-child td { border-bottom: none; }
+  .verdict { display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600; }
+
+  /* ---------- Scope / demo ---------- */
+  .scope { background: var(--scope-bg); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow); color: #cfe9de; }
+  .scope-controls { display: flex; flex-wrap: wrap; gap: 1.1rem; align-items: center; margin-bottom: 1.2rem; font-size: 0.86rem; }
+  .scope-controls label { display: flex; align-items: center; gap: 0.5rem; }
+  .scope input[type="range"] { accent-color: var(--scope-fg); width: 150px; }
+  .scope button { font-family: 'IBM Plex Mono', monospace; background: var(--scope-fg); color: #04120c; border: none; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.8rem; letter-spacing: 0.03em; transition: transform 0.15s ease, filter 0.15s ease; }
+  .scope button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .scope button:active { transform: translateY(0); }
+  .scope-checkbox { accent-color: var(--scope-fg); }
+  .scope-grids { display: flex; gap: 1.6rem; flex-wrap: wrap; justify-content: center; }
+  .grid-block { text-align: center; }
+  .grid-block .cap { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: #86a99c; margin-bottom: 0.5rem; }
+  .pixel-grid { display: grid; gap: 1px; background: var(--scope-grid); padding: 3px; border-radius: 6px; }
+  .pixel { width: 11px; height: 11px; background: #0e1c17; transition: background 0.25s ease; }
+  .pixel.on { background: var(--scope-fg); }
+  .scope-readout { margin-top: 1.2rem; text-align: center; }
+  .err-bar-track { width: 100%; max-width: 360px; height: 8px; border-radius: 99px; background: #16281f; margin: 0.5rem auto; overflow: hidden; }
+  .err-bar-fill { height: 100%; width: 0%; background: var(--scope-fg); transition: width 0.6s ease, background 0.6s ease; }
+  .scope-note { font-size: 0.86rem; color: #a9c9bc; max-width: 54ch; margin: 0.6rem auto 0; opacity: 0; animation: slideDown 0.4s ease forwards; }
+
+  /* ---------- Data quality ---------- */
+  .dq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+  .dq-card { border-radius: var(--radius); padding: 1.1rem 1.2rem; border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .dq-card.good { background: var(--good-bg); }
+  .dq-card.warn { background: var(--warn-bg); }
+  .dq-card.bad { background: var(--bad-bg); }
+  .dq-card .head { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .dq-card p { margin: 0.3rem 0; font-size: 0.9rem; }
+  .dq-card .example { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; background: rgba(255,255,255,0.35); border-radius: 6px; padding: 0.5rem 0.6rem; margin-top: 0.5rem; }
+  :root:not([data-theme="light"]) .dq-card .example { background: rgba(0,0,0,0.2); }
+  :root[data-theme="dark"] .dq-card .example { background: rgba(0,0,0,0.2); }
+
+  /* ---------- Exercise ---------- */
+  .exercise { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--amber); border-radius: var(--radius); padding: 1.2rem 1.4rem; box-shadow: var(--shadow); }
+  .exercise ol { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+  .exercise li { margin-bottom: 0.4rem; }
+  .selfcheck { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border); font-size: 0.9rem; color: var(--ink-muted); }
+
+  /* ---------- Quiz tabs ---------- */
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
+  .tab-btn { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; background: var(--surface-alt); border: 1px solid var(--border); color: var(--ink-muted); padding: 0.5rem 0.9rem; border-radius: 999px; cursor: pointer; transition: all 0.2s ease; }
+  .tab-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: slideUp 0.4s ease; }
+
+  .q-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.3rem; margin-bottom: 0.9rem; box-shadow: var(--shadow); }
+  .q-block p.q { font-weight: 600; margin: 0 0 0.7rem; }
+  .opt-list { display: flex; flex-direction: column; gap: 0.45rem; }
+  .opt { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.15s ease; background: var(--surface); }
+  .opt:hover { border-color: var(--accent); }
+  .opt.correct { background: var(--good-bg); border-color: var(--good); color: var(--good); font-weight: 600; }
+  .opt.wrong { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); animation: shake 0.4s ease; }
+  .opt.disabled { pointer-events: none; }
+  .feedback { margin-top: 0.6rem; font-size: 0.85rem; color: var(--ink-muted); opacity: 0; }
+  .feedback.show { opacity: 1; animation: slideDown 0.3s ease; }
+
+  .blank-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; font-size: 0.92rem; }
+  .blank-input { font-family: 'IBM Plex Mono', monospace; border: none; border-bottom: 2px solid var(--accent); background: transparent; color: var(--ink); padding: 0.15rem 0.3rem; width: 150px; font-size: 0.88rem; }
+  .blank-input:focus { outline: none; border-color: var(--amber); }
+  .blank-input.correct { border-color: var(--good); color: var(--good); font-weight: 600; }
+  .blank-input.wrong { border-color: var(--bad); color: var(--bad); }
+  .check-btn { margin-top: 0.6rem; font-family: 'IBM Plex Mono', monospace; background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.1rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.82rem; transition: transform 0.15s ease, filter 0.15s ease; }
+  .check-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+  .match-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1.4rem; }
+  @media (max-width: 560px) { .match-wrap { grid-template-columns: 1fr; } }
+  .match-chip { padding: 0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.86rem; background: var(--surface); transition: all 0.15s ease; }
+  .match-chip.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .match-chip.matched { background: var(--good-bg); border-color: var(--good); color: var(--good); pointer-events: none; font-weight: 600; }
+  .match-chip.shake-wrong { animation: shake 0.4s ease; border-color: var(--bad); }
+
+  .score-pill { display: inline-flex; align-items: center; gap: 0.4rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 999px; padding: 0.35rem 0.8rem; margin-bottom: 1rem; }
+
+  footer { margin-top: 4rem; padding-top: 1.4rem; border-top: 1px dashed var(--border); color: var(--ink-muted); font-size: 0.82rem; text-align: center; }
+</style>
+
+<div class="wrap">
+
+  <div class="hero">
+    <span class="eyebrow">Phòng thí nghiệm · Thị giác máy tính · Bài 09</span>
+    <h1>Autoencoder: Khi Máy Tự Nén Rồi Tự Vẽ Lại</h1>
+    <p>Không cần ai gắn nhãn, không cần ai chấm đúng-sai. Mạng nơ-ron tự tìm cách nén một bức ảnh xuống còn vài con số, rồi tự vẽ lại bức ảnh chỉ từ đúng những con số đó. Đây là bài học về <strong>self-supervised learning</strong> — học từ chính dữ liệu, không cần nhãn.</p>
+  </div>
+
+  <section class="reveal r1">
+    <div class="section-head"><span class="section-num">01</span><h2>Autoencoder là gì?</h2></div>
+    <p class="lede">Một autoencoder gồm 2 nửa ghép lưng nhau: <strong>Encoder</strong> nén ảnh đầu vào thành một vector nhỏ gọi là <strong>latent vector</strong> (không gian tiềm ẩn), rồi <strong>Decoder</strong> cố gắng vẽ lại ảnh gốc chỉ từ vector đó. Cả mạng học bằng cách so sánh ảnh vẽ lại với ảnh gốc — càng giống, loss càng thấp.</p>
+    <div class="flow">
+      <div class="flow-node io"><span class="lbl">Input</span><span class="val">🖼️ Ảnh gốc</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node enc"><span class="lbl">Encoder</span><span class="val">Nén ↓</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node z"><span class="lbl">Latent z</span><span class="val">[0.2, -1.4, 0.7…]</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node dec"><span class="lbl">Decoder</span><span class="val">Giải nén ↑</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node io"><span class="lbl">Output</span><span class="val">🖼️ Ảnh tái tạo</span></div>
+      <div class="flow-loss">loss = so_sánh( Output , Target ) — Target đổi tùy loại autoencoder, xem mục 02</div>
+    </div>
+  </section>
+
+  <section class="reveal r2">
+    <div class="section-head"><span class="section-num">02</span><h2>4 biến thể — cùng kiến trúc, khác mục tiêu</h2></div>
+    <p class="lede">Cùng một sơ đồ Encoder → Latent → Decoder, nhưng đổi <em>thứ đưa vào</em> và <em>thứ so sánh ở đầu ra</em> thì mục đích sử dụng thay đổi hoàn toàn.</p>
+    <div class="cards">
+      <div class="card">
+        <span class="tag good">✅ Nén &amp; trực quan hóa</span>
+        <h3>1. Autoencoder cơ bản</h3>
+        <dl>
+          <dt>Input</dt><dd>Ảnh gốc</dd>
+          <dt>So với</dt><dd>Chính ảnh gốc đó</dd>
+          <dt>Output</dt><dd>Ảnh gần giống gốc, hơi mờ nhẹ</dd>
+        </dl>
+        <pre>z = encoder(x)
+x_hat = decoder(z)
+loss = MSE(x_hat, x)</pre>
+      </div>
+      <div class="card">
+        <span class="tag good">✅ Khử nhiễu</span>
+        <h3>2. Denoising Autoencoder</h3>
+        <dl>
+          <dt>Input</dt><dd>Ảnh gốc + nhiễu ngẫu nhiên</dd>
+          <dt>So với</dt><dd>Ảnh gốc SẠCH (không nhiễu)</dd>
+          <dt>Output</dt><dd>Ảnh đã khử nhiễu</dd>
+        </dl>
+        <pre>x_noisy = x + noise
+z = encoder(x_noisy)
+x_hat = decoder(z)
+loss = MSE(x_hat, x)   # so với bản sạch</pre>
+      </div>
+      <div class="card">
+        <span class="tag warn">⚠️ Cần đúng miền dữ liệu</span>
+        <h3>3. Super-Resolution Autoencoder</h3>
+        <dl>
+          <dt>Input</dt><dd>Ảnh độ phân giải thấp</dd>
+          <dt>So với</dt><dd>Ảnh độ phân giải cao</dd>
+          <dt>Output</dt><dd>Ảnh nét hơn — nhưng chi tiết là "bịa" từ những gì đã học</dd>
+        </dl>
+        <pre>x_low = downsample(x)
+z = encoder(x_low)
+x_hat = decoder(z)
+loss = MSE(x_hat, x_high)</pre>
+      </div>
+      <div class="card">
+        <span class="tag good">✅ Sinh dữ liệu mới</span>
+        <h3>4. Variational Autoencoder (VAE)</h3>
+        <dl>
+          <dt>Input</dt><dd>Ảnh gốc</dd>
+          <dt>So với</dt><dd>Ảnh gốc, cộng ràng buộc phân phối</dd>
+          <dt>Output</dt><dd>Ảnh tái tạo + có thể sinh ảnh mới từ z ngẫu nhiên</dd>
+        </dl>
+        <pre>mean, log_sigma = encoder(x)
+z = sample(mean, exp(log_sigma))
+x_hat = decoder(z)
+loss = MSE(x_hat, x) + KL(mean, log_sigma)</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal r3">
+    <div class="section-head"><span class="section-num">03</span><h2>Bảng so sánh nhanh</h2></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Trạng thái</th><th>Input</th><th>Xử lý</th><th>Output</th><th>Đánh giá</th></tr></thead>
+        <tbody>
+          <tr><td>Cơ bản</td><td>Ảnh gốc</td><td>Nén → giải nén, so với chính nó</td><td>Bản sao hơi mờ</td><td><span class="verdict" style="color:var(--good)">✅ Tốt để giảm chiều</span></td></tr>
+          <tr><td>Denoising</td><td>Ảnh + nhiễu</td><td>Nén ảnh nhiễu → giải nén, so với bản sạch</td><td>Ảnh sạch</td><td><span class="verdict" style="color:var(--good)">✅ Tốt để khử nhiễu</span></td></tr>
+          <tr><td>Super-Resolution</td><td>Ảnh phân giải thấp</td><td>Nén → giải nén, so với bản phân giải cao</td><td>Ảnh nét hơn</td><td><span class="verdict" style="color:var(--warn)">⚠️ Chỉ tốt cùng miền dữ liệu</span></td></tr>
+          <tr><td>VAE</td><td>Ảnh gốc</td><td>Nén thành phân phối, lấy mẫu, giải nén</td><td>Ảnh tái tạo + ảnh mới</td><td><span class="verdict" style="color:var(--good)">✅ Tốt nhất để sinh dữ liệu</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="reveal r4">
+    <div class="section-head"><span class="section-num">04</span><h2>Xưởng khử nhiễu — tự tay chạy thử</h2></div>
+    <p class="lede">Lưới điểm bên dưới là một hình trái tim — coi như "ảnh" mà autoencoder đã học rất kỹ trong lúc huấn luyện. Kéo thanh trượt để rắc nhiễu lên nó, bấm <strong>Chạy Autoencoder</strong> để xem mạng "vẽ lại" như thế nào. Rồi thử tick vào ô <strong>dữ liệu lạ</strong> để xem chuyện gì xảy ra khi đưa vào thứ nó chưa từng học.</p>
+    <div class="scope">
+      <div class="scope-controls">
+        <label>Mức nhiễu <span id="noiseVal" class="mono">30%</span><input id="noiseSlider" type="range" min="0" max="100" value="30"></label>
+        <label><input id="domainMismatch" class="scope-checkbox" type="checkbox"> Dữ liệu lạ (ngoài miền huấn luyện)</label>
+        <button id="runBtn">▶ Chạy Autoencoder</button>
+      </div>
+      <div class="scope-grids">
+        <div class="grid-block"><div class="cap">Đầu vào</div><div id="gridInput" class="pixel-grid"></div></div>
+        <div class="grid-block"><div class="cap">Autoencoder tái tạo</div><div id="gridOutput" class="pixel-grid"></div></div>
+      </div>
+      <div class="scope-readout">
+        <div class="mono" style="font-size:0.8rem;color:#86a99c;">Sai số tái tạo</div>
+        <div class="err-bar-track"><div id="errBar" class="err-bar-fill"></div></div>
+        <div id="errPct" class="mono" style="font-size:0.9rem;">—</div>
+        <p id="scopeNote" class="scope-note"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal r5">
+    <div class="section-head"><span class="section-num">05</span><h2>Data tốt vs data xấu</h2></div>
+    <p class="lede">Autoencoder có một tính chất quan trọng: <strong>data-specific</strong> — nó chỉ tái tạo tốt loại dữ liệu giống với lúc huấn luyện. Đây là 3 mức chất lượng dữ liệu thường gặp.</p>
+    <div class="dq-grid">
+      <div class="dq-card good">
+        <div class="head" style="color:var(--good)">✅ Tốt</div>
+        <p>Ảnh cùng loại, cùng kích thước, đã canh giữa và chuẩn hóa độ sáng. Số lượng đủ lớn (hàng chục nghìn ảnh trở lên).</p>
+        <div class="example">Ví dụ: MNIST — 60.000 ảnh chữ số viết tay, 28×28px, thang xám, đã canh giữa.</div>
+      </div>
+      <div class="dq-card warn">
+        <div class="head" style="color:var(--warn)">⚠️ Trung bình</div>
+        <p>Cùng chủ đề nhưng góc chụp, ánh sáng, kích thước quá đa dạng, chưa được chuẩn hóa. Mạng vẫn học được nhưng cần sâu hơn, lâu hơn.</p>
+        <div class="example">Ví dụ: ảnh sản phẩm chụp từ nhiều góc, không crop, độ sáng không đồng đều.</div>
+      </div>
+      <div class="dq-card bad">
+        <div class="head" style="color:var(--bad)">❌ Xấu</div>
+        <p>Trộn nhiều loại ảnh không liên quan, hoặc test bằng dữ liệu hoàn toàn khác miền train. Autoencoder sẽ "hallucinate" — vẽ ra chi tiết không có thật.</p>
+        <div class="example">Ví dụ: train trên ảnh hoa, đưa ảnh khuôn mặt người vào → ra hình mờ vô nghĩa, không phải khuôn mặt.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="section-head"><span class="section-num">06</span><h2>Bài tập nhỏ</h2></div>
+    <div class="exercise">
+      <p>Mở notebook <code>AutoencodersTF.ipynb</code> hoặc <code>AutoEncodersPyTorch.ipynb</code> trong thư mục <code>lessons/4-ComputerVision/09-Autoencoders/</code> của repo, rồi làm theo các bước:</p>
+      <ol>
+        <li>Huấn luyện một autoencoder cơ bản trên tập MNIST với latent size = 32. Ghi lại loss sau 10 epoch.</li>
+        <li>Biến nó thành denoising autoencoder: thêm nhiễu Gaussian vào ảnh input, nhưng vẫn so sánh output với ảnh sạch gốc. So sánh chất lượng ảnh tái tạo trước/sau.</li>
+        <li>Giảm latent size xuống còn 2, vẽ scatter plot các điểm latent theo nhãn chữ số (0-9). Quan sát xem các chữ số có tách thành từng cụm riêng không.</li>
+      </ol>
+      <div class="selfcheck">
+        <strong>Tự kiểm tra:</strong> Nếu latent size = 2 mà các cụm chữ số chồng lấn lung tung, đó là dấu hiệu mạng chưa nén đủ tốt — thử tăng số epoch hoặc thêm lớp ẩn trước khi kết luận kiến trúc sai.
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="section-head"><span class="section-num">07</span><h2>Khởi động nhanh — kiểm tra hiểu bài</h2></div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="mcq">Trắc nghiệm</button>
+      <button class="tab-btn" data-tab="blank">Điền khuyết</button>
+      <button class="tab-btn" data-tab="match">Đối chiếu</button>
+    </div>
+
+    <div id="panel-mcq" class="tab-panel active"></div>
+    <div id="panel-blank" class="tab-panel"></div>
+    <div id="panel-match" class="tab-panel">
+      <div class="score-pill">🎯 Ghép đúng: <span id="matchScore">0</span>/4</div>
+      <div class="match-wrap" id="matchTerms"></div>
+      <div class="match-wrap" id="matchDefs" style="margin-top:0.6rem"></div>
+    </div>
+  </section>
+
+  <footer>Autoencoder Lab · Dựa trên nội dung <code>lessons/4-ComputerVision/09-Autoencoders</code> — Microsoft AI For Beginners</footer>
+</div>
+
+<script>
+(function(){
+  // ---------- Tabs ----------
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabBtns.forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---------- MCQ ----------
+  var MCQ = [
+    { q: '1. Autoencoder học từ loại dữ liệu nào?', opts: ['Dữ liệu có nhãn thủ công', 'Dữ liệu không nhãn (self-supervised)', 'Chỉ dữ liệu dạng bảng số', 'Chỉ văn bản'], correct: 1, explain: 'Đúng vậy — input và target đều lấy từ chính ảnh, không cần ai gắn nhãn.' },
+    { q: '2. Phần nào chịu trách nhiệm nén ảnh đầu vào thành vector nhỏ?', opts: ['Decoder', 'Loss function', 'Encoder', 'Latent space'], correct: 2, explain: 'Encoder nén ảnh thành latent vector; decoder mới là phần giải nén.' },
+    { q: '3. Denoising autoencoder được huấn luyện thế nào?', opts: ['Input = output = ảnh gốc', 'Input = ảnh nhiễu, so sánh output với ảnh sạch', 'Input = nhãn phân loại', 'Không cần huấn luyện, chạy trực tiếp'], correct: 1, explain: 'Đưa ảnh nhiễu vào, nhưng loss so với bản sạch để ép mạng học cách loại bỏ nhiễu.' },
+    { q: '4. VAE khác autoencoder truyền thống ở điểm nào?', opts: ['VAE chỉ dùng cho văn bản', 'VAE học một phân phối thống kê thay vì một vector cố định', 'VAE không có decoder', 'VAE không cần huấn luyện'], correct: 1, explain: 'Encoder của VAE dự đoán mean và log_sigma, rồi lấy mẫu ngẫu nhiên — nhờ vậy có thể sinh ảnh mới.' },
+    { q: '5. Vì sao autoencoder được gọi là "data-specific"?', opts: ['Vì chỉ chạy được trên GPU', 'Vì nó chỉ tái tạo tốt loại dữ liệu giống lúc huấn luyện', 'Vì cần nhãn để chạy', 'Vì không dùng được cho ảnh'], correct: 1, explain: 'Đưa vào ảnh khác hẳn miền train (hoa vs. mặt người) sẽ ra kết quả sai lệch, vì mạng chỉ học được đặc trưng của dữ liệu train.' }
+  ];
+  var mcqPanel = document.getElementById('panel-mcq');
+  MCQ.forEach(function(item, qi){
+    var block = document.createElement('div'); block.className = 'q-block';
+    var p = document.createElement('p'); p.className = 'q'; p.textContent = item.q; block.appendChild(p);
+    var list = document.createElement('div'); list.className = 'opt-list';
+    var fb = document.createElement('div'); fb.className = 'feedback';
+    item.opts.forEach(function(optText, oi){
+      var opt = document.createElement('div'); opt.className = 'opt'; opt.textContent = optText;
+      opt.addEventListener('click', function(){
+        if (block.dataset.answered) return;
+        block.dataset.answered = '1';
+        list.querySelectorAll('.opt').forEach(function(o, idx){
+          o.classList.add('disabled');
+          if (idx === item.correct) o.classList.add('correct');
+        });
+        if (oi !== item.correct) opt.classList.add('wrong');
+        fb.textContent = (oi === item.correct ? '✅ Chính xác! ' : '❌ Chưa đúng. ') + item.explain;
+        fb.classList.add('show');
+      });
+      list.appendChild(opt);
+    });
+    block.appendChild(list); block.appendChild(fb);
+    mcqPanel.appendChild(block);
+  });
+
+  // ---------- Fill in the blank ----------
+  var blankPanel = document.getElementById('panel-blank');
+  var blankItems = [
+    { text: 'Autoencoder gồm 2 phần chính: {b1} (nén ảnh thành vector nhỏ) và {b2} (tái tạo lại ảnh từ vector đó).', answers: { b1: 'encoder', b2: 'decoder' } },
+    { text: 'Vùng vector nhỏ ở giữa mạng, nơi lưu trữ thông tin đã nén, được gọi là {b1}.', answers: { b1: 'latent space' } },
+    { text: 'Loại autoencoder chuyên dùng để loại bỏ nhiễu khỏi ảnh gọi là {b1} autoencoder.', answers: { b1: 'denoising' } },
+    { text: 'Hàm mất mát của VAE gồm reconstruction loss và {b1} loss.', answers: { b1: 'kl' } }
+  ];
+  blankItems.forEach(function(item){
+    var block = document.createElement('div'); block.className = 'q-block';
+    var row = document.createElement('div'); row.className = 'blank-row';
+    var parts = item.text.split(/(\{b\d\})/g);
+    var inputs = {};
+    parts.forEach(function(part){
+      var m = part.match(/^\{(b\d)\}$/);
+      if (m) {
+        var input = document.createElement('input');
+        input.type = 'text'; input.className = 'blank-input'; input.autocomplete = 'off';
+        input.placeholder = '...';
+        inputs[m[1]] = input;
+        row.appendChild(input);
+      } else if (part) {
+        var span = document.createElement('span'); span.textContent = part;
+        row.appendChild(span);
+      }
+    });
+    block.appendChild(row);
+    var fb = document.createElement('div'); fb.className = 'feedback';
+    var btn = document.createElement('button'); btn.className = 'check-btn'; btn.textContent = 'Kiểm tra';
+    btn.addEventListener('click', function(){
+      var allOk = true;
+      Object.keys(item.answers).forEach(function(key){
+        var val = inputs[key].value.trim().toLowerCase();
+        var expected = item.answers[key];
+        var ok = val === expected || (expected === 'latent space' && (val === 'không gian tiềm ẩn' || val.indexOf('latent') > -1));
+        inputs[key].classList.remove('correct', 'wrong');
+        inputs[key].classList.add(ok ? 'correct' : 'wrong');
+        if (!ok) allOk = false;
+      });
+      fb.textContent = allOk ? '✅ Chuẩn! Đúng thuật ngữ.' : '❌ Chưa đúng hết, thử lại xem — gợi ý nằm trong mục 01-02 phía trên.';
+      fb.classList.add('show');
+    });
+    block.appendChild(btn); block.appendChild(fb);
+    blankPanel.appendChild(block);
+  });
+
+  // ---------- Matching ----------
+  var PAIRS = [
+    { term: 'Encoder', def: 'Nén ảnh đầu vào thành một vector nhỏ' },
+    { term: 'Decoder', def: 'Tái tạo lại ảnh từ vector đã nén' },
+    { term: 'Latent space', def: 'Vùng không gian nhỏ chứa thông tin đã nén' },
+    { term: 'KL loss', def: 'Ép phân phối latent của VAE gần với phân phối chuẩn' }
+  ];
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+  var termsEl = document.getElementById('matchTerms');
+  var defsEl = document.getElementById('matchDefs');
+  var shuffledDefs = shuffle(PAIRS.slice());
+  var selectedTerm = null, selectedDef = null, matchedCount = 0;
+  var scoreEl = document.getElementById('matchScore');
+
+  PAIRS.forEach(function(pair, idx){
+    var chip = document.createElement('div'); chip.className = 'match-chip'; chip.textContent = pair.term; chip.dataset.term = pair.term;
+    chip.addEventListener('click', function(){
+      if (chip.classList.contains('matched')) return;
+      document.querySelectorAll('#matchTerms .match-chip').forEach(function(c){ c.classList.remove('selected'); });
+      chip.classList.add('selected'); selectedTerm = chip;
+      tryMatch();
+    });
+    termsEl.appendChild(chip);
+  });
+  shuffledDefs.forEach(function(pair){
+    var chip = document.createElement('div'); chip.className = 'match-chip'; chip.textContent = pair.def; chip.dataset.term = pair.term;
+    chip.addEventListener('click', function(){
+      if (chip.classList.contains('matched')) return;
+      document.querySelectorAll('#matchDefs .match-chip').forEach(function(c){ c.classList.remove('selected'); });
+      chip.classList.add('selected'); selectedDef = chip;
+      tryMatch();
+    });
+    defsEl.appendChild(chip);
+  });
+  function tryMatch(){
+    if (!selectedTerm || !selectedDef) return;
+    if (selectedTerm.dataset.term === selectedDef.dataset.term) {
+      selectedTerm.classList.remove('selected'); selectedDef.classList.remove('selected');
+      selectedTerm.classList.add('matched'); selectedDef.classList.add('matched');
+      matchedCount++; scoreEl.textContent = matchedCount;
+    } else {
+      [selectedTerm, selectedDef].forEach(function(c){ c.classList.add('shake-wrong'); setTimeout(function(){ c.classList.remove('shake-wrong','selected'); }, 400); });
+    }
+    selectedTerm = null; selectedDef = null;
+  }
+
+  // ---------- Denoising scope demo ----------
+  var SIZE = 16;
+  function heartAt(gx, gy){
+    var x = (gx/(SIZE-1)) * 2.6 - 1.3;
+    var y = 1.15 - (gy/(SIZE-1)) * 2.5;
+    var v = Math.pow(x*x + y*y - 1, 3) - x*x*Math.pow(y, 3);
+    return v <= 0;
+  }
+  var basePattern = [];
+  for (var gy = 0; gy < SIZE; gy++) for (var gx = 0; gx < SIZE; gx++) basePattern.push(heartAt(gx, gy));
+
+  function buildGrid(container){
+    container.innerHTML = '';
+    container.style.gridTemplateColumns = 'repeat(' + SIZE + ', 11px)';
+    var cells = [];
+    for (var i = 0; i < SIZE*SIZE; i++){
+      var d = document.createElement('div'); d.className = 'pixel'; container.appendChild(d); cells.push(d);
+    }
+    return cells;
+  }
+  var inputCells = buildGrid(document.getElementById('gridInput'));
+  var outputCells = buildGrid(document.getElementById('gridOutput'));
+
+  function setGrid(cells, data){
+    for (var i = 0; i < cells.length; i++) cells[i].classList.toggle('on', !!data[i]);
+  }
+  setGrid(inputCells, basePattern);
+
+  var noiseSlider = document.getElementById('noiseSlider');
+  var noiseVal = document.getElementById('noiseVal');
+  var domainChk = document.getElementById('domainMismatch');
+  var runBtn = document.getElementById('runBtn');
+  var errBar = document.getElementById('errBar');
+  var errPct = document.getElementById('errPct');
+  var scopeNote = document.getElementById('scopeNote');
+
+  noiseSlider.addEventListener('input', function(){ noiseVal.textContent = noiseSlider.value + '%'; });
+
+  function currentInput(){
+    var noise = parseInt(noiseSlider.value, 10) / 100;
+    if (domainChk.checked) {
+      var rnd = [];
+      for (var i = 0; i < SIZE*SIZE; i++) rnd.push(Math.random() < 0.5);
+      return rnd;
+    }
+    return basePattern.map(function(v){ return Math.random() < noise ? !v : v; });
+  }
+
+  runBtn.addEventListener('click', function(){
+    var noise = parseInt(noiseSlider.value, 10) / 100;
+    var input = currentInput();
+    setGrid(inputCells, input);
+
+    var recon;
+    var errRatio;
+    if (domainChk.checked) {
+      var flips = Math.floor(SIZE*SIZE * 0.18);
+      recon = basePattern.slice();
+      var idxs = Array.from({length: SIZE*SIZE}, function(_, i){ return i; }).sort(function(){ return Math.random()-0.5; }).slice(0, flips);
+      idxs.forEach(function(i){ recon[i] = !recon[i]; });
+      var diff = 0;
+      for (var i=0;i<recon.length;i++) if (recon[i] !== input[i]) diff++;
+      errRatio = diff / (SIZE*SIZE);
+    } else {
+      var flips2 = Math.floor(SIZE*SIZE * 0.15 * noise);
+      recon = basePattern.slice();
+      var idxs2 = Array.from({length: SIZE*SIZE}, function(_, i){ return i; }).sort(function(){ return Math.random()-0.5; }).slice(0, flips2);
+      idxs2.forEach(function(i){ recon[i] = !recon[i]; });
+      var diff2 = 0;
+      for (var j=0;j<recon.length;j++) if (recon[j] !== basePattern[j]) diff2++;
+      errRatio = diff2 / (SIZE*SIZE);
+    }
+    setGrid(outputCells, recon);
+
+    var pct = Math.round(errRatio * 100);
+    errBar.style.width = Math.min(100, pct) + '%';
+    errPct.textContent = pct + '% khác biệt so với ' + (domainChk.checked ? 'đầu vào' : 'trái tim gốc');
+    var note;
+    if (domainChk.checked) {
+      errBar.style.background = 'var(--bad,#e2836f)';
+      note = '⚠️ Đầu vào là dữ liệu ngẫu nhiên, ngoài miền huấn luyện. Autoencoder vẫn cố "ép" nó thành hình trái tim đã học — kết quả sai lệch nặng. Đây chính là tính chất data-specific.';
+    } else if (pct < 8) {
+      errBar.style.background = '#59e6c2';
+      note = '✅ Nhiễu thấp — autoencoder khử nhiễu gần như hoàn hảo, tái tạo đúng hình trái tim đã học.';
+    } else if (pct < 25) {
+      errBar.style.background = '#e0b756';
+      note = '⚠️ Nhiễu vừa phải — mạng vẫn nhận ra hình trái tim nhưng vài chi tiết nhỏ bị lệch.';
+    } else {
+      errBar.style.background = '#e2836f';
+      note = '❌ Nhiễu quá cao — ngay cả một autoencoder được huấn luyện tốt cũng bắt đầu tái tạo sai chi tiết.';
+    }
+    scopeNote.textContent = note;
+    scopeNote.classList.remove('show'); void scopeNote.offsetWidth; scopeNote.classList.add('show');
+  });
+})();
+</script>
