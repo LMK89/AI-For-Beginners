@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Thuật Toán Di Truyền</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg: #f2f3ea;
+  --bg-alt: #e7e9dc;
+  --panel: #ffffff;
+  --ink: #16241f;
+  --ink-soft: #445048;
+  --line: rgba(22,36,31,0.14);
+  --accent: #c9791f;       /* fitness / amber energy */
+  --accent-soft: #f3ddb8;
+  --living: #3f8f6d;        /* population / growth green */
+  --living-soft: #d7ecdf;
+  --mutate: #b8483c;        /* mutation / danger brick */
+  --mutate-soft: #f6dbd6;
+  --shadow: 0 10px 30px -14px rgba(22,36,31,0.35);
+  --radius: 14px;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Karla', -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg: #0d1a16;
+    --bg-alt: #122420;
+    --panel: #142a24;
+    --ink: #e9f0ea;
+    --ink-soft: #a9bdb2;
+    --line: rgba(233,240,234,0.14);
+    --accent: #e2a24b;
+    --accent-soft: #3a2c14;
+    --living: #63c397;
+    --living-soft: #16352a;
+    --mutate: #e07566;
+    --mutate-soft: #3a1c17;
+    --shadow: 0 10px 34px -14px rgba(0,0,0,0.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg: #0d1a16;
+  --bg-alt: #122420;
+  --panel: #142a24;
+  --ink: #e9f0ea;
+  --ink-soft: #a9bdb2;
+  --line: rgba(233,240,234,0.14);
+  --accent: #e2a24b;
+  --accent-soft: #3a2c14;
+  --living: #63c397;
+  --living-soft: #16352a;
+  --mutate: #e07566;
+  --mutate-soft: #3a1c17;
+  --shadow: 0 10px 34px -14px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box;}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:920px; margin:0 auto; padding:0 20px 90px;}
+::selection{background:var(--accent-soft); color:var(--ink);}
+
+/* ============ THEME TOGGLE ============ */
+.theme-toggle{
+  position:fixed; top:16px; right:16px; z-index:50;
+  background:var(--panel); border:1px solid var(--line); border-radius:999px;
+  padding:8px 14px; font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);
+  cursor:pointer; box-shadow:var(--shadow);
+}
+
+/* ============ HERO ============ */
+.hero{
+  padding:76px 0 40px;
+  text-align:center;
+  opacity:0;
+  animation:fadeInDown .8s ease-out forwards;
+}
+@keyframes fadeInDown{from{opacity:0; transform:translateY(-22px);} to{opacity:1; transform:translateY(0);}}
+.eyebrow{
+  font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--living); display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:18px;
+}
+.eyebrow .dna{width:120px; height:18px;}
+h1.title{
+  font-family:var(--font-display); font-weight:600; font-size:clamp(2.1rem,6vw,3.4rem);
+  margin:0 0 14px; text-wrap:balance; letter-spacing:-0.01em;
+}
+h1.title em{font-style:italic; color:var(--accent);}
+.subtitle{color:var(--ink-soft); font-size:1.05rem; max-width:540px; margin:0 auto;}
+
+/* strand animation */
+.strand{display:flex; gap:6px;}
+.strand span{
+  width:6px; height:6px; border-radius:50%; background:var(--living);
+  animation:pulse 1.8s ease-in-out infinite;
+}
+.strand span:nth-child(2n){background:var(--accent); animation-delay:.2s;}
+.strand span:nth-child(3n){animation-delay:.4s;}
+@keyframes pulse{0%,100%{opacity:.3; transform:scale(.8);} 50%{opacity:1; transform:scale(1.15);}}
+
+/* ============ SECTION SHELL ============ */
+section{margin-top:64px;}
+.section-head{margin-bottom:22px;}
+.section-num{
+  font-family:var(--font-mono); font-size:12px; color:var(--living); letter-spacing:.08em;
+}
+h2{
+  font-family:var(--font-display); font-weight:600; font-size:1.7rem; margin:.2em 0 .3em; text-wrap:balance;
+}
+h3{font-family:var(--font-display); font-weight:600; font-size:1.15rem; margin:1.2em 0 .5em;}
+p{color:var(--ink-soft); max-width:66ch;}
+.lede{font-size:1.08rem; color:var(--ink);}
+
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:22px 24px; box-shadow:var(--shadow);
+  opacity:0; transform:translateY(18px);
+}
+.card.in-view{animation:slideUp .6s ease-out forwards;}
+@keyframes slideUp{to{opacity:1; transform:translateY(0);}}
+
+/* ============ COMPARISON TABLE ============ */
+.tbl-scroll{overflow-x:auto; border-radius:var(--radius); border:1px solid var(--line);}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:.92rem;}
+thead th{
+  text-align:left; font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-soft); background:var(--bg-alt); padding:12px 14px; border-bottom:1px solid var(--line);
+}
+tbody td{padding:13px 14px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink-soft);}
+tbody tr:last-child td{border-bottom:none;}
+tbody td.state-name{color:var(--ink); font-weight:600;}
+.tag{display:inline-block; padding:3px 9px; border-radius:999px; font-size:.78rem; font-weight:600; white-space:nowrap;}
+.tag.good{background:var(--living-soft); color:var(--living);}
+.tag.mid{background:var(--accent-soft); color:var(--accent);}
+.tag.bad{background:var(--mutate-soft); color:var(--mutate);}
+
+/* ============ CODE ============ */
+pre{
+  background:var(--bg-alt); border:1px solid var(--line); border-radius:10px; padding:16px 18px;
+  overflow-x:auto; font-family:var(--font-mono); font-size:.84rem; line-height:1.55; color:var(--ink);
+}
+code{font-family:var(--font-mono);}
+.card p code, li code{background:var(--bg-alt); padding:1px 6px; border-radius:5px; font-size:.85em;}
+
+/* ============ ASCII / DIAGRAM ============ */
+.diagram{
+  font-family:var(--font-mono); font-size:.82rem; background:var(--bg-alt); border:1px solid var(--line);
+  border-radius:10px; padding:20px; overflow-x:auto; white-space:pre; color:var(--ink-soft);
+}
+.diagram .hl{color:var(--living); font-weight:600;}
+.diagram .hl2{color:var(--accent); font-weight:600;}
+.diagram .hl3{color:var(--mutate); font-weight:600;}
+
+.flow{display:flex; flex-wrap:wrap; gap:0; align-items:stretch; justify-content:center; margin:22px 0;}
+.flow .step{
+  background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+  min-width:130px; text-align:center; font-size:.85rem; box-shadow:var(--shadow);
+}
+.flow .step b{display:block; font-family:var(--font-display); font-size:1rem; margin-bottom:2px;}
+.flow .arrow{
+  display:flex; align-items:center; justify-content:center; width:40px; color:var(--living); font-size:1.3rem;
+  animation:slideArrow 1.6s ease-in-out infinite;
+}
+@keyframes slideArrow{0%,100%{transform:translateX(0);opacity:.5;} 50%{transform:translateX(4px);opacity:1;}}
+.flow .loop{width:100%; text-align:center; margin-top:6px; color:var(--accent); font-family:var(--font-mono); font-size:.78rem;}
+
+/* ============ GOOD/BAD DATA ============ */
+.rating-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:16px;}
+.rating{border-radius:12px; padding:16px 18px; border:1px solid var(--line);}
+.rating.good{background:var(--living-soft); border-color:transparent;}
+.rating.mid{background:var(--accent-soft); border-color:transparent;}
+.rating.bad{background:var(--mutate-soft); border-color:transparent;}
+.rating .mark{font-size:1.1rem; margin-right:6px;}
+.rating h4{margin:6px 0 6px; font-family:var(--font-display); font-size:1rem;}
+.rating p{color:var(--ink); font-size:.88rem; margin:0;}
+.rating .sample{font-family:var(--font-mono); font-size:.8rem; margin-top:8px; opacity:.85; word-break:break-all;}
+
+/* ============ DEMO ============ */
+.demo{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:24px; margin-top:20px;
+}
+.demo-top{display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between; margin-bottom:16px;}
+.demo-target{font-family:var(--font-mono); font-size:1.3rem; letter-spacing:.12em;}
+.demo-target span{color:var(--living);}
+.stat-row{display:flex; gap:22px; flex-wrap:wrap; font-family:var(--font-mono); font-size:.82rem; color:var(--ink-soft);}
+.stat-row b{color:var(--ink); font-size:1rem; display:block; font-family:var(--font-mono);}
+.best-line{
+  font-family:var(--font-mono); font-size:1.6rem; letter-spacing:.14em; text-align:center; padding:18px 0;
+  background:var(--bg-alt); border-radius:10px; margin-bottom:16px;
+}
+.best-line .ok{color:var(--living);}
+.best-line .no{color:var(--ink-soft); opacity:.5;}
+.pop-list{display:grid; gap:6px; font-family:var(--font-mono); font-size:.82rem; margin-bottom:16px;}
+.pop-row{display:flex; align-items:center; gap:10px;}
+.pop-row .bar-track{flex:1; height:8px; background:var(--bg-alt); border-radius:99px; overflow:hidden;}
+.pop-row .bar-fill{height:100%; background:linear-gradient(90deg,var(--living),var(--accent)); transition:width .4s ease;}
+.pop-row .pct{width:44px; text-align:right; color:var(--ink-soft);}
+canvas#chart{width:100%; height:110px; display:block; background:var(--bg-alt); border-radius:10px;}
+.controls{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+button{
+  font-family:var(--font-mono); font-size:.82rem; border:1px solid var(--line); background:var(--panel);
+  color:var(--ink); padding:10px 16px; border-radius:8px; cursor:pointer; transition:transform .15s ease, background .2s ease;
+}
+button:hover{background:var(--bg-alt); transform:translateY(-1px);}
+button:focus-visible, input:focus-visible, .quiz-opt:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+button.primary{background:var(--living); color:#08150f; border-color:transparent; font-weight:600;}
+button.primary:hover{background:var(--living); filter:brightness(1.08);}
+button:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+label.speed{display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:.78rem; color:var(--ink-soft);}
+
+/* ============ EXERCISE (fill-in / compare) ============ */
+.fill-box{
+  font-family:var(--font-mono); background:var(--bg-alt); border:1px dashed var(--line); border-radius:10px;
+  padding:16px; margin:14px 0;
+}
+textarea{
+  width:100%; min-height:70px; font-family:var(--font-mono); font-size:.85rem; background:var(--panel);
+  color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:10px; resize:vertical;
+}
+.reveal{
+  margin-top:12px; max-height:0; overflow:hidden; transition:max-height .5s ease;
+  background:var(--living-soft); border-radius:8px;
+}
+.reveal.open{max-height:400px; animation:slideDown .5s ease;}
+@keyframes slideDown{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
+.reveal-inner{padding:14px 16px; font-size:.88rem;}
+
+/* ============ QUIZ ============ */
+.quiz-card{margin-top:18px;}
+.quiz-q{font-weight:600; margin-bottom:10px; font-family:var(--font-body);}
+.quiz-opt{
+  display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+  margin-bottom:8px; cursor:pointer; transition:background .2s ease, border-color .2s ease; background:var(--bg-alt);
+}
+.quiz-opt:hover{border-color:var(--living);}
+.quiz-opt input{margin-top:3px;}
+.quiz-opt.correct{background:var(--living-soft); border-color:var(--living);}
+.quiz-opt.wrong{background:var(--mutate-soft); border-color:var(--mutate);}
+.feedback{font-size:.85rem; margin-top:6px; font-weight:600; display:none;}
+.feedback.show{display:block; animation:slideDown .4s ease;}
+.feedback.ok{color:var(--living);}
+.feedback.no{color:var(--mutate);}
+.score-pill{
+  display:inline-flex; gap:8px; align-items:center; font-family:var(--font-mono); font-size:.85rem;
+  background:var(--bg-alt); padding:8px 14px; border-radius:999px; margin-top:8px;
+}
+
+footer{
+  margin-top:80px; padding-top:28px; border-top:1px solid var(--line); text-align:center;
+  color:var(--ink-soft); font-size:.85rem;
+}
+footer .brand{font-family:var(--font-display); color:var(--ink);}
+
+@media(max-width:640px){
+  .hero{padding:56px 0 30px;}
+  .flow{flex-direction:column; align-items:center;}
+  .flow .arrow{transform:rotate(90deg);}
+  .demo-top{flex-direction:column; align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" type="button">🌓 Đổi giao diện</button>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">
+      <div class="strand"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      AI For Beginners · 6-Other · Bài 21
+    </div>
+    <h1 class="title">Thuật Toán <em>Di Truyền</em></h1>
+    <p class="subtitle">Genetic Algorithms — dạy máy tính "tiến hóa" lời giải bằng chọn lọc, lai ghép và đột biến, giống hệt cách tự nhiên tạo ra loài thích nghi nhất.</p>
+  </div>
+
+  <!-- KHỞI ĐỘNG NHANH -->
+  <section id="warmup">
+    <div class="section-head">
+      <div class="section-num">00 — Khởi động nhanh</div>
+      <h2>Đoán xem, rồi đối chiếu</h2>
+      <p>Trước khi vào lý thuyết, thử điền khuyết câu sau bằng trực giác của bạn. Không có gì để mất — bấm "So đáp án" để xem bản mẫu ngay.</p>
+    </div>
+    <div class="card">
+      <p class="lede">Trong tự nhiên, cá thể nào <b>thích nghi tốt hơn</b> thì có xu hướng ______, còn thuật toán di truyền copy lại ý tưởng đó bằng cách giữ lại cá thể có ______ cao hơn.</p>
+      <div class="fill-box">
+        <textarea id="fillAnswer" placeholder="Gõ câu trả lời của bạn vào đây..."></textarea>
+      </div>
+      <button id="compareBtn" type="button">So đáp án với bản mẫu</button>
+      <div class="reveal" id="fillReveal">
+        <div class="reveal-inner">
+          <b>Bản mẫu:</b> "...sống sót & sinh sản nhiều hơn (chọn lọc tự nhiên), còn thuật toán di truyền giữ lại cá thể có <b>fitness (độ thích nghi)</b> cao hơn để lai ghép cho thế hệ sau."<br>
+          Nếu ý bạn gần giống vậy — bạn đã nắm được 80% tinh thần của bài học rồi đó!
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ĐỊNH NGHĨA -->
+  <section id="define">
+    <div class="section-head">
+      <div class="section-num">01 — Định nghĩa</div>
+      <h2>GA là gì, nói ngắn gọn?</h2>
+    </div>
+    <div class="card">
+      <p class="lede"><b>Thuật toán Di truyền (Genetic Algorithm – GA)</b> là một kỹ thuật tối ưu hóa lấy cảm hứng từ tiến hóa sinh học: duy trì một <b>quần thể (population)</b> các lời giải ứng viên (gọi là <b>gene/cá thể</b>), rồi qua nhiều <b>thế hệ (generation)</b> lặp đi lặp lại 3 phép biến đổi — <b>Chọn lọc</b>, <b>Lai ghép</b>, <b>Đột biến</b> — để dần dần "tiến hóa" ra lời giải tốt hơn, mà không cần tính đạo hàm hay biết cấu trúc toán học của bài toán.</p>
+      <p>Đề xuất bởi John Holland năm 1975. Không đảm bảo tìm ra lời giải tối ưu tuyệt đối, nhưng cực kỳ hữu dụng khi không gian lời giải quá lớn để duyệt hết (brute-force).</p>
+    </div>
+  </section>
+
+  <!-- 4 TRẠNG THÁI -->
+  <section id="states">
+    <div class="section-head">
+      <div class="section-num">02 — 4 giai đoạn cốt lõi</div>
+      <h2>Một vòng lặp GA có 4 bước</h2>
+      <p>Mỗi thế hệ mới đều đi qua đúng 4 trạng thái này. Bảng dưới so sánh input/xử lý/output của từng bước:</p>
+    </div>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr><th>Giai đoạn</th><th>Input</th><th>Xử lý</th><th>Output</th><th>Đánh giá</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="state-name">① Khởi tạo quần thể</td>
+            <td>Không gian gene hợp lệ Γ</td>
+            <td>Sinh ngẫu nhiên N cá thể</td>
+            <td>Quần thể G ⊂ Γ, N gene</td>
+            <td><span class="tag mid">⚠️ Càng đa dạng càng tốt</span></td>
+          </tr>
+          <tr>
+            <td class="state-name">② Chọn lọc (Selection)</td>
+            <td>Quần thể + điểm fitness</td>
+            <td>Tournament / Roulette wheel</td>
+            <td>Cặp "cha mẹ" tốt</td>
+            <td><span class="tag good">✅ Ưu tiên fitness cao</span></td>
+          </tr>
+          <tr>
+            <td class="state-name">③ Lai ghép (Crossover)</td>
+            <td>2 gene cha mẹ g₁, g₂</td>
+            <td>Cắt & ghép tại điểm ngẫu nhiên</td>
+            <td>Gene con mới</td>
+            <td><span class="tag good">✅ Giữ nếu fit(con) tốt hơn</span></td>
+          </tr>
+          <tr>
+            <td class="state-name">④ Đột biến (Mutation)</td>
+            <td>1 gene bất kỳ</td>
+            <td>Đổi ngẫu nhiên 1 vài "ký tự"</td>
+            <td>Gene lệch nhẹ so với gốc</td>
+            <td><span class="tag mid">⚠️ Tỉ lệ thấp (1-5%)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Sơ đồ vòng lặp đầy đủ</h3>
+    <div class="flow">
+      <div class="step"><b>🧬 Quần thể</b>N cá thể</div>
+      <div class="arrow">→</div>
+      <div class="step"><b>📊 Fitness</b>chấm điểm</div>
+      <div class="arrow">→</div>
+      <div class="step"><b>🎯 Chọn lọc</b>giữ cái tốt</div>
+      <div class="arrow">→</div>
+      <div class="step"><b>🔀 Lai ghép</b>tạo con mới</div>
+      <div class="arrow">→</div>
+      <div class="step"><b>🎲 Đột biến</b>xáo nhẹ</div>
+      <div class="loop">↩ lặp lại cho thế hệ tiếp theo, cho tới khi fitness đủ tốt hoặc hết số vòng lặp cho phép</div>
+    </div>
+
+    <h3>Trực quan hóa: 1 gene tiến hóa qua từng thế hệ (bit string)</h3>
+    <div class="diagram">Mục tiêu:      <span class="hl">1 1 0 1 1 0 1 0</span>  (fitness = số bit khớp / 8)
+
+Thế hệ 0:  0 0 1 1 0 1 1 0   fitness = 3/8   ✗✗<span class="hl">✓</span><span class="hl">✓</span>✗<span class="hl">✓</span>✗✗
+Thế hệ 1:  0 <span class="hl3">1</span> 1 1 0 1 1 0   fitness = 4/8   (đột biến bit #2: 0→1)  ✗<span class="hl">✓</span><span class="hl">✓</span><span class="hl">✓</span>✗<span class="hl">✓</span>✗✗
+Thế hệ 2:  1 1 0 1 <span class="hl2">1</span> <span class="hl2">1</span> 1 0   fitness = 6/8   (lai ghép tại điểm cắt #4) <span class="hl">✓</span><span class="hl">✓</span>✗<span class="hl">✓</span><span class="hl">✓</span><span class="hl">✓</span>✗✗
+Thế hệ 3:  1 1 0 1 1 0 1 0   fitness = 8/8   ✓ HỘI TỤ — dừng vòng lặp!</div>
+  </section>
+
+  <!-- CODE CHO TỪNG BƯỚC -->
+  <section id="code">
+    <div class="section-head">
+      <div class="section-num">03 — Code tối giản cho từng bước</div>
+      <h2>Cài đặt bằng JavaScript (dễ đọc)</h2>
+    </div>
+    <h3>① Khởi tạo & tính fitness</h3>
+    <pre><code>const TARGET = "AI FOR ALL";
+const CHARS  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
+
+function randomGene(len) {
+  return Array.from({length: len},
+    () => CHARS[Math.floor(Math.random() * CHARS.length)]).join("");
+}
+
+function fitness(gene) {           // càng gần 1.0 càng tốt
+  let match = 0;
+  for (let i = 0; i < gene.length; i++)
+    if (gene[i] === TARGET[i]) match++;
+  return match / TARGET.length;
+}</code></pre>
+
+    <h3>② Chọn lọc kiểu Tournament</h3>
+    <pre><code>function selectParent(population) {
+  // Bốc 3 cá thể ngẫu nhiên, giữ lại cá thể fitness cao nhất
+  const pool = Array.from({length: 3},
+    () => population[Math.floor(Math.random() * population.length)]);
+  return pool.sort((a, b) => fitness(b) - fitness(a))[0];
+}</code></pre>
+
+    <h3>③ Lai ghép một điểm cắt</h3>
+    <pre><code>function crossover(g1, g2) {
+  const cut = Math.floor(Math.random() * g1.length);
+  return g1.slice(0, cut) + g2.slice(cut);
+}</code></pre>
+
+    <h3>④ Đột biến</h3>
+    <pre><code>function mutate(gene, rate = 0.02) {
+  return gene.split("").map(
+    ch => Math.random() < rate
+      ? CHARS[Math.floor(Math.random() * CHARS.length)]
+      : ch
+  ).join("");
+}</code></pre>
+  </section>
+
+  <!-- DEMO TƯƠNG TÁC -->
+  <section id="demo">
+    <div class="section-head">
+      <div class="section-num">04 — Thử ngay</div>
+      <h2>Demo trực tiếp: tiến hóa một chuỗi ký tự</h2>
+      <p>Quần thể 80 "cá thể" sẽ tự tiến hóa để khớp với chuỗi mục tiêu bên dưới — không có gì được lập trình sẵn cho đáp án, chỉ có chọn lọc + lai ghép + đột biến.</p>
+    </div>
+    <div class="demo card">
+      <div class="demo-top">
+        <div>
+          <div style="font-family:var(--font-mono); font-size:.75rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.08em;">Mục tiêu</div>
+          <div class="demo-target">"<span id="targetLabel">AI FOR ALL</span>"</div>
+        </div>
+        <div class="stat-row">
+          <div>Thế hệ<b id="genCount">0</b></div>
+          <div>Fitness tốt nhất<b id="bestFit">0%</b></div>
+        </div>
+      </div>
+
+      <div class="best-line" id="bestLine">░░░░░░░░░░</div>
+
+      <canvas id="chart" width="800" height="110"></canvas>
+
+      <h3 style="margin-top:18px;">Top 5 cá thể của thế hệ hiện tại</h3>
+      <div class="pop-list" id="popList"></div>
+
+      <div class="controls">
+        <button class="primary" id="playBtn" type="button">▶ Chạy</button>
+        <button id="stepBtn" type="button">⏭ Từng bước</button>
+        <button id="resetBtn" type="button">↺ Reset</button>
+        <label class="speed">Tốc độ
+          <input type="range" id="speedRange" min="1" max="10" value="6">
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA TỐT / XẤU -->
+  <section id="data-quality">
+    <div class="section-head">
+      <div class="section-num">05 — Chất lượng dữ liệu / mã hóa gene</div>
+      <h2>Gene nào giúp GA chạy tốt, gene nào phá vòng lặp?</h2>
+      <p>Với GA, "dữ liệu" chính là <b>cách bạn mã hóa lời giải thành gene</b> và <b>cách bạn định nghĩa hàm fitness</b>. Chọn sai hai thứ này thì thuật toán dù đúng vẫn không hội tụ.</p>
+    </div>
+    <div class="rating-grid">
+      <div class="rating good">
+        <h4><span class="mark">✅</span>Tốt</h4>
+        <p>Gene chiều dài cố định, khớp đúng cấu trúc bài toán. Fitness trả về số thực có "độ dốc" — càng gần đáp án điểm càng nhích lên dần.</p>
+        <div class="sample">gene = [x1..x8] bit, fit = số bit khớp / 8</div>
+      </div>
+      <div class="rating mid">
+        <h4><span class="mark">⚠️</span>Trung bình</h4>
+        <p>Gene dư thừa (nhiều cách mã hóa cho cùng 1 lời giải) hoặc quần thể khởi tạo quá giống nhau → hội tụ chậm, dễ kẹt local optimum, cần tăng mutation rate.</p>
+        <div class="sample">gene = hoán vị có phần tử lặp không cần thiết</div>
+      </div>
+      <div class="rating bad">
+        <h4><span class="mark">❌</span>Xấu</h4>
+        <p>Gene chiều dài thay đổi khiến crossover tạo ra cá thể <b>không hợp lệ</b>; hoặc fitness chỉ trả 0/1 (đúng tuyệt đối / sai tuyệt đối) khiến GA không có "độ dốc" để leo — chọn lọc trở thành ngẫu nhiên thuần túy.</p>
+        <div class="sample">fit(g) = 1 nếu g == đáp án tuyệt đối, còn lại luôn = 0</div>
+      </div>
+    </div>
+    <p style="margin-top:16px;">📌 Kinh nghiệm thực tế: nếu quần thể hội tụ quá nhanh (mọi cá thể giống hệt nhau ở thế hệ 5) → đó thường là dấu hiệu <b>thiếu đa dạng ban đầu</b> hoặc <b>mutation rate quá thấp</b>, chứ không phải "may mắn tìm ra đáp án sớm".</p>
+  </section>
+
+  <!-- USE CASE -->
+  <section id="usecases">
+    <div class="section-head">
+      <div class="section-num">06 — Ứng dụng thực tế</div>
+      <h2>GA được dùng ở đâu ngoài đời?</h2>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Bài toán</th><th>Gene đại diện cho</th><th>Vì sao GA hợp?</th></tr></thead>
+        <tbody>
+          <tr><td class="state-name">Xếp lịch trực / lịch học</td><td>Thứ tự phân ca cho từng người</td><td>Không gian tổ hợp cực lớn, khó duyệt hết</td></tr>
+          <tr><td class="state-name">Đóng gói / cắt vật liệu tối ưu</td><td>Cách sắp xếp các khối trong không gian</td><td>Nhiều ràng buộc, không có công thức đạo hàm được</td></tr>
+          <tr><td class="state-name">Tìm kiến trúc mạng nơ-ron (NAS)</td><td>Số lớp, số neuron, loại layer</td><td>Không gian rời rạc, đánh giá bằng huấn luyện thử</td></tr>
+          <tr><td class="state-name">AI chơi game (Mario, xe hơi)</td><td>Trọng số mạng điều khiển hành vi</td><td>Không cần biết "đúng - sai" từng bước, chỉ cần điểm số cuối</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- BÀI TẬP NHỎ -->
+  <section id="exercise">
+    <div class="section-head">
+      <div class="section-num">07 — Bài tập nhỏ</div>
+      <h2>Tự tay thiết kế một hàm fitness</h2>
+      <p>Bài toán: bạn cần xếp 4 môn thi vào 4 khung giờ (Toán, Lý, Hóa, Văn) sao cho <b>không có 2 môn "khó" nào liền kề nhau</b> (Toán & Lý là môn khó). Gene = một hoán vị của [Toán, Lý, Hóa, Văn].</p>
+      <div class="fill-box">
+        <p style="margin-top:0;">Viết (bằng lời hoặc pseudo-code) hàm <code>fitness(gene)</code> của bạn:</p>
+        <textarea id="exAnswer" placeholder="Ví dụ: fitness = 1 nếu Toán và Lý không đứng cạnh nhau, ngược lại = 0... hay bạn có cách tính có độ dốc hơn?"></textarea>
+      </div>
+      <button id="exCompareBtn" type="button">Đối chiếu với bản mẫu</button>
+      <div class="reveal" id="exReveal">
+        <div class="reveal-inner">
+          <b>Bản mẫu (một cách làm tốt):</b> đừng chấm 0/1 tuyệt đối — hãy <b>đếm số cặp môn khó liền kề</b>: <code>fitness = 1 / (1 + số_cặp_khó_liền_kề)</code>. Cách này cho "độ dốc": gene có 1 cặp khó liền kề vẫn tốt hơn gene có 3 cặp, giúp GA biết hướng nào để cải thiện — thay vì chỉ biết "đúng hoàn toàn" hay "sai hoàn toàn".
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz">
+    <div class="section-head">
+      <div class="section-num">08 — Tự kiểm tra</div>
+      <h2>Quiz nhanh (4 câu)</h2>
+    </div>
+    <div id="quizContainer"></div>
+    <div class="score-pill">Điểm của bạn: <span id="scoreLabel">0 / 4</span></div>
+  </section>
+
+  <footer>
+    Bài giảng được tạo cho <span class="brand">AI-For-Beginners</span> · dựa trên <code>lessons/6-Other/21-GeneticAlgorithms</code> · giảng bằng tiếng Việt
+  </footer>
+
+</div>
+
+<script>
+/* ---------- theme toggle (manual override, persisted per-viewer) ---------- */
+(function(){
+  const root = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  try{
+    const saved = localStorage.getItem('ga-lesson-theme');
+    if(saved) root.setAttribute('data-theme', saved);
+  }catch(e){}
+  btn.addEventListener('click', function(){
+    const current = root.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : (current === 'light' ? null : (matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark'));
+    if(next) root.setAttribute('data-theme', next); else root.removeAttribute('data-theme');
+    try{ localStorage.setItem('ga-lesson-theme', next || ''); }catch(e){}
+  });
+})();
+
+/* ---------- scroll reveal for cards ---------- */
+(function(){
+  const cards = document.querySelectorAll('.card');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in-view'); io.unobserve(e.target);} });
+  }, {threshold:.15});
+  cards.forEach(c => io.observe(c));
+})();
+
+/* ---------- warm-up fill-in reveal ---------- */
+document.getElementById('compareBtn').addEventListener('click', function(){
+  document.getElementById('fillReveal').classList.toggle('open');
+});
+document.getElementById('exCompareBtn').addEventListener('click', function(){
+  document.getElementById('exReveal').classList.toggle('open');
+});
+
+/* ---------- Genetic Algorithm demo ---------- */
+(function(){
+  const TARGET = "AI FOR ALL";
+  const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
+  const POP_SIZE = 80;
+  const MUTATION_RATE = 0.03;
+
+  let population = [];
+  let generation = 0;
+  let history = [];
+  let running = false;
+  let timer = null;
+
+  function randomGene(len){
+    let s = '';
+    for(let i=0;i<len;i++) s += CHARS[Math.floor(Math.random()*CHARS.length)];
+    return s;
+  }
+  function fitness(gene){
+    let match = 0;
+    for(let i=0;i<gene.length;i++) if(gene[i]===TARGET[i]) match++;
+    return match / TARGET.length;
+  }
+  function tournamentSelect(pop){
+    let best = null, bestFit = -1;
+    for(let i=0;i<3;i++){
+      const cand = pop[Math.floor(Math.random()*pop.length)];
+      const f = fitness(cand);
+      if(f > bestFit){ bestFit = f; best = cand; }
+    }
+    return best;
+  }
+  function crossover(a,b){
+    const cut = 1 + Math.floor(Math.random()*(a.length-1));
+    return a.slice(0,cut) + b.slice(cut);
+  }
+  function mutate(gene){
+    let out = '';
+    for(let i=0;i<gene.length;i++){
+      out += Math.random() < MUTATION_RATE ? CHARS[Math.floor(Math.random()*CHARS.length)] : gene[i];
+    }
+    return out;
+  }
+
+  function initPopulation(){
+    population = Array.from({length:POP_SIZE}, () => randomGene(TARGET.length));
+    generation = 0;
+    history = [];
+  }
+
+  function step(){
+    // sort desc by fitness
+    const ranked = population.map(g => ({g, f: fitness(g)})).sort((a,b)=>b.f-a.f);
+    history.push(ranked[0].f);
+    if(history.length > 60) history.shift();
+
+    if(ranked[0].f >= 1){
+      render(ranked);
+      pause();
+      return true;
+    }
+
+    const next = [];
+    // elitism: keep top 2
+    next.push(ranked[0].g, ranked[1].g);
+    while(next.length < POP_SIZE){
+      const p1 = tournamentSelect(population);
+      const p2 = tournamentSelect(population);
+      next.push(mutate(crossover(p1,p2)));
+    }
+    population = next;
+    generation++;
+    render(ranked);
+    return false;
+  }
+
+  function render(ranked){
+    document.getElementById('genCount').textContent = generation;
+    const bestF = ranked[0].f;
+    document.getElementById('bestFit').textContent = Math.round(bestF*100) + '%';
+
+    const bestGene = ranked[0].g;
+    const bestLine = document.getElementById('bestLine');
+    bestLine.innerHTML = bestGene.split('').map((ch,i) =>
+      `<span class="${ch===TARGET[i] ? 'ok' : 'no'}">${ch===' '?'&nbsp;':ch}</span>`).join('');
+
+    const popList = document.getElementById('popList');
+    popList.innerHTML = ranked.slice(0,5).map(r => {
+      const pct = Math.round(r.f*100);
+      return `<div class="pop-row">
+        <span style="width:150px; overflow:hidden; text-overflow:ellipsis;">"${r.g.replace(/ /g,'␣')}"</span>
+        <span class="bar-track"><span class="bar-fill" style="width:${pct}%"></span></span>
+        <span class="pct">${pct}%</span>
+      </div>`;
+    }).join('');
+
+    drawChart();
+  }
+
+  function drawChart(){
+    const canvas = document.getElementById('chart');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0,0,w,h);
+    const styles = getComputedStyle(document.documentElement);
+    ctx.strokeStyle = styles.getPropertyValue('--line').trim() || '#ccc';
+    ctx.lineWidth = 1;
+    for(let gy=0; gy<=4; gy++){
+      const y = (h/4)*gy;
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    }
+    if(history.length < 2) return;
+    ctx.beginPath();
+    ctx.strokeStyle = styles.getPropertyValue('--living').trim() || '#3f8f6d';
+    ctx.lineWidth = 2.5;
+    history.forEach((f,i) => {
+      const x = (i/(Math.max(history.length-1,1))) * w;
+      const y = h - f*h;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // endpoint dot
+    const lastX = w, lastY = h - history[history.length-1]*h;
+    ctx.beginPath();
+    ctx.fillStyle = styles.getPropertyValue('--accent').trim() || '#c9791f';
+    ctx.arc(lastX-3, lastY, 4, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function loopTick(){
+    const done = step();
+    if(!done && running){
+      const speed = 11 - Number(document.getElementById('speedRange').value);
+      timer = setTimeout(loopTick, speed*60);
+    }
+  }
+  function play(){
+    if(running) return;
+    running = true;
+    document.getElementById('playBtn').textContent = '⏸ Tạm dừng';
+    loopTick();
+  }
+  function pause(){
+    running = false;
+    document.getElementById('playBtn').textContent = '▶ Chạy';
+    clearTimeout(timer);
+  }
+
+  document.getElementById('playBtn').addEventListener('click', () => running ? pause() : play());
+  document.getElementById('stepBtn').addEventListener('click', () => { pause(); step(); });
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    pause(); initPopulation();
+    const ranked = population.map(g => ({g, f: fitness(g)})).sort((a,b)=>b.f-a.f);
+    render(ranked);
+  });
+
+  document.getElementById('targetLabel').textContent = TARGET;
+  initPopulation();
+  const ranked0 = population.map(g => ({g, f: fitness(g)})).sort((a,b)=>b.f-a.f);
+  render(ranked0);
+})();
+
+/* ---------- Quiz ---------- */
+(function(){
+  const QUESTIONS = [
+    {
+      q: "1. Hàm fitness trong GA dùng để làm gì?",
+      options: [
+        "Đánh giá một cá thể/lời giải tốt tới đâu",
+        "Sinh ngẫu nhiên quần thể ban đầu",
+        "Chọn ngôn ngữ lập trình để cài đặt GA"
+      ],
+      correct: 0,
+      explain: "Fitness là 'thước đo' chất lượng lời giải — mọi bước chọn lọc, dừng vòng lặp đều dựa vào con số này."
+    },
+    {
+      q: "2. Quần thể hội tụ về 1 lời giải giống hệt nhau ngay từ thế hệ thứ 5, nhưng chưa phải đáp án tối ưu. Nên tăng tham số nào?",
+      options: [
+        "Kích thước quần thể về 1",
+        "Tỉ lệ đột biến (mutation rate)",
+        "Số điểm cắt khi crossover về 0"
+      ],
+      correct: 1,
+      explain: "Hội tụ sớm = kẹt local optimum vì mất đa dạng gene. Tăng mutation rate giúp 'khuấy' lại quần thể để thoát ra."
+    },
+    {
+      q: "3. Phép toán nào kết hợp 2 gene cha mẹ để tạo cá thể con mới?",
+      options: ["Selection", "Mutation", "Crossover"],
+      correct: 2,
+      explain: "Crossover (lai ghép) cắt & ghép 2 gene cha mẹ — đây là cách GA 'trộn' đặc điểm tốt từ 2 lời giải khác nhau."
+    },
+    {
+      q: "4. Cách mã hóa gene nào dưới đây có khả năng làm GA hoạt động TỆ nhất?",
+      options: [
+        "Bit string độ dài cố định, khớp cấu trúc bài toán",
+        "Chiều dài gene thay đổi tùy ý, crossover có thể tạo ra cá thể không hợp lệ",
+        "Hoán vị của một tập hữu hạn phần tử"
+      ],
+      correct: 1,
+      explain: "Gene không đồng nhất chiều dài khiến crossover dễ sinh lời giải sai cấu trúc — phải luôn đảm bảo phép biến đổi ra gene hợp lệ."
+    }
+  ];
+
+  const container = document.getElementById('quizContainer');
+  let score = 0;
+  let answered = new Array(QUESTIONS.length).fill(false);
+
+  QUESTIONS.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'card quiz-card in-view';
+    let html = `<div class="quiz-q">${item.q}</div>`;
+    item.options.forEach((opt, oi) => {
+      html += `<label class="quiz-opt" data-qi="${qi}" data-oi="${oi}">
+        <input type="radio" name="q${qi}" value="${oi}">
+        <span>${opt}</span>
+      </label>`;
+    });
+    html += `<div class="feedback" id="fb-${qi}"></div>`;
+    card.innerHTML = html;
+    container.appendChild(card);
+  });
+
+  container.addEventListener('change', function(e){
+    if(e.target.type !== 'radio') return;
+    const label = e.target.closest('.quiz-opt');
+    const qi = Number(label.dataset.qi);
+    const oi = Number(label.dataset.oi);
+    if(answered[qi]) return;
+    answered[qi] = true;
+
+    const allOpts = container.querySelectorAll(`.quiz-opt[data-qi="${qi}"]`);
+    allOpts.forEach(o => {
+      o.querySelector('input').disabled = true;
+      if(Number(o.dataset.oi) === QUESTIONS[qi].correct) o.classList.add('correct');
+    });
+    const fb = document.getElementById(`fb-${qi}`);
+    if(oi === QUESTIONS[qi].correct){
+      score++;
+      fb.textContent = '✅ Chính xác! ' + QUESTIONS[qi].explain;
+      fb.classList.add('ok');
+    } else {
+      label.classList.add('wrong');
+      fb.textContent = '❌ Chưa đúng. ' + QUESTIONS[qi].explain;
+      fb.classList.add('no');
+    }
+    fb.classList.add('show');
+    document.getElementById('scoreLabel').textContent = score + ' / ' + QUESTIONS.length;
+  });
+})();
+</script>
+
+</body>
+</html>
