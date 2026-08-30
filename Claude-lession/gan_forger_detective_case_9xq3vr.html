@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Hồ Sơ GAN</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --paper: #e9e0c9;
+  --paper-alt: #ddd1ac;
+  --panel: #f7f2e4;
+  --ink: #2a2018;
+  --ink-soft: #5c5040;
+  --line: rgba(42,32,24,0.22);
+  --forger: #b1501f;
+  --forger-soft: #f0d9c0;
+  --detective: #275b66;
+  --detective-soft: #cfe3e2;
+  --alert: #a02b22;
+  --alert-soft: #f0d3ce;
+  --ok: #3f6e3a;
+  --ok-soft: #d9e6d2;
+  --shadow: 0 10px 26px -14px rgba(42,32,24,.4);
+  --radius: 8px;
+  --font-display: 'Bitter', Georgia, 'Times New Roman', serif;
+  --font-body: 'Be Vietnam Pro', -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper: #1c160f;
+    --paper-alt: #241c12;
+    --panel: #261e14;
+    --ink: #ece3d0;
+    --ink-soft: #b8ab90;
+    --line: rgba(236,227,208,.18);
+    --forger: #e08a4c;
+    --forger-soft: #3a2414;
+    --detective: #6fb4bb;
+    --detective-soft: #16302f;
+    --alert: #e2695c;
+    --alert-soft: #3a1a15;
+    --ok: #7fbf72;
+    --ok-soft: #1c2f18;
+    --shadow: 0 10px 30px -14px rgba(0,0,0,.65);
+  }
+}
+:root[data-theme="dark"]{
+  --paper: #1c160f;
+  --paper-alt: #241c12;
+  --panel: #261e14;
+  --ink: #ece3d0;
+  --ink-soft: #b8ab90;
+  --line: rgba(236,227,208,.18);
+  --forger: #e08a4c;
+  --forger-soft: #3a2414;
+  --detective: #6fb4bb;
+  --detective-soft: #16302f;
+  --alert: #e2695c;
+  --alert-soft: #3a1a15;
+  --ok: #7fbf72;
+  --ok-soft: #1c2f18;
+  --shadow: 0 10px 30px -14px rgba(0,0,0,.65);
+}
+
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); line-height:1.6; font-size:16px;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;}
+[hidden]{display:none!important;}
+h1,h2,h3{font-family:var(--font-display); text-wrap:balance; margin:0 0 .4em;}
+h2{font-size:1.55rem; font-weight:800;}
+h3{font-size:1.15rem; font-weight:700;}
+p{margin:0 0 1em;}
+a{color:var(--detective);}
+code, .mono{font-family:var(--font-mono);}
+::selection{background:var(--forger); color:#fff;}
+
+button:focus-visible, input:focus-visible, .quiz-opt:focus-visible, .blank:focus-visible{
+  outline:2px solid var(--forger); outline-offset:2px;
+}
+
+.wrap{max-width:900px; margin:0 auto; padding:0 20px 80px;}
+.wide{max-width:980px;}
+
+/* ---------- Cover / folder tab ---------- */
+.cover{
+  background:
+    repeating-linear-gradient(135deg, rgba(42,32,24,.035) 0 2px, transparent 2px 14px),
+    var(--paper-alt);
+  border-bottom:3px solid var(--ink);
+  padding:64px 20px 46px;
+  position:relative;
+  opacity:0; transform:translateY(-16px);
+  animation:fadeInDown .7s ease forwards;
+}
+@keyframes fadeInDown{ to{ opacity:1; transform:translateY(0);} }
+.tab{
+  display:inline-block; font-family:var(--font-mono); font-size:.72rem; letter-spacing:.14em;
+  text-transform:uppercase; background:var(--ink); color:var(--paper);
+  padding:4px 12px; border-radius:3px; margin-bottom:18px;
+}
+.cover h1{
+  font-size:clamp(1.9rem, 4.6vw, 2.9rem); max-width:760px; line-height:1.15;
+}
+.cover .sub{color:var(--ink-soft); max-width:640px; font-size:1.02rem;}
+.case-no{
+  font-family:var(--font-mono); font-size:.8rem; color:var(--ink-soft);
+  display:flex; gap:18px; flex-wrap:wrap; margin-top:22px;
+}
+.case-no b{color:var(--ink);}
+
+.theme-toggle{
+  position:fixed; top:14px; right:14px; z-index:40;
+  background:var(--panel); color:var(--ink); border:1.5px solid var(--line);
+  border-radius:999px; padding:8px 14px; font:600 .8rem var(--font-body);
+  cursor:pointer; box-shadow:var(--shadow);
+}
+
+/* ---------- generic section framing ---------- */
+section{padding:46px 0;}
+.folio{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-soft); display:flex; align-items:center; gap:10px; margin-bottom:10px;
+}
+.folio::after{content:""; flex:1; height:1px; background:var(--line);}
+
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:22px 24px; box-shadow:var(--shadow);
+  opacity:0; transform:translateY(18px);
+}
+.card.in-view{ animation:slideUp .55s ease forwards; }
+@keyframes slideUp{ to{opacity:1; transform:translateY(0);} }
+
+/* stamp badges */
+.stamp{
+  display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono);
+  font-weight:700; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase;
+  padding:4px 10px; border-radius:5px; border:2px solid currentColor; transform:rotate(-2deg);
+}
+.stamp.good{ color:var(--ok); background:var(--ok-soft); }
+.stamp.mid{ color:var(--forger); background:var(--forger-soft); }
+.stamp.bad{ color:var(--alert); background:var(--alert-soft); }
+
+/* ---------- warm-up ---------- */
+.warmup-grid{display:grid; gap:14px;}
+.wq{background:var(--panel); border:1px dashed var(--line); border-radius:var(--radius); padding:16px 18px;}
+.wq .q{font-weight:600; margin-bottom:10px;}
+.wq-opts{display:flex; gap:10px; flex-wrap:wrap;}
+.wq-opt{
+  border:1.5px solid var(--line); background:transparent; color:var(--ink);
+  padding:7px 14px; border-radius:999px; cursor:pointer; font:500 .88rem var(--font-body);
+  transition:.2s;
+}
+.wq-opt:hover{border-color:var(--forger);}
+.wq-opt.right{background:var(--ok-soft); border-color:var(--ok); color:var(--ok);}
+.wq-opt.wrong{background:var(--alert-soft); border-color:var(--alert); color:var(--alert);}
+.wq-fb{margin-top:8px; font-size:.85rem; color:var(--ink-soft); min-height:1.2em;}
+
+/* ---------- state cards (4 trạng thái) ---------- */
+.state-grid{display:grid; gap:20px; margin-top:22px;}
+.state-card{position:relative;}
+.state-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;}
+.state-num{
+  font-family:var(--font-mono); font-size:.72rem; color:var(--ink-soft); letter-spacing:.1em;
+}
+.ascii{
+  background:var(--paper-alt); border:1px solid var(--line); border-radius:6px;
+  padding:14px 16px; font-family:var(--font-mono); font-size:.8rem; line-height:1.55;
+  overflow-x:auto; white-space:pre; color:var(--ink);
+}
+.ascii .g{color:var(--forger); font-weight:600;}
+.ascii .d{color:var(--detective); font-weight:600;}
+.ascii .bad{color:var(--alert); font-weight:600;}
+.ascii .ok{color:var(--ok); font-weight:600;}
+pre.code{
+  background:#1d1712; color:#e9dfca; border-radius:6px; padding:14px 16px;
+  font-family:var(--font-mono); font-size:.8rem; overflow-x:auto; line-height:1.55;
+}
+:root[data-theme="dark"] pre.code, @media (prefers-color-scheme:dark){ pre.code{ } }
+pre.code .cm{color:#8a9b7c;}
+pre.code .kw{color:#e08a4c;}
+pre.code .fn{color:#6fb4bb;}
+.iotag{
+  display:inline-block; font-family:var(--font-mono); font-size:.68rem; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--ink-soft); margin-top:14px;
+}
+
+/* ---------- comparison table ---------- */
+.tbl-wrap{overflow-x:auto; border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid var(--line);}
+table{border-collapse:collapse; width:100%; min-width:680px; background:var(--panel);}
+th, td{padding:11px 14px; border-bottom:1px solid var(--line); text-align:left; font-size:.9rem; vertical-align:top;}
+th{background:var(--paper-alt); font-family:var(--font-mono); text-transform:uppercase; font-size:.72rem; letter-spacing:.07em; color:var(--ink-soft);}
+tr:last-child td{border-bottom:none;}
+td.num, th.num{font-variant-numeric:tabular-nums;}
+
+/* ---------- flow diagram ---------- */
+.flow{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;
+  padding:24px 10px; background:var(--paper-alt); border-radius:var(--radius); border:1px solid var(--line);
+}
+.fnode{
+  min-width:108px; text-align:center; padding:14px 12px; border-radius:8px; border:2px solid var(--line);
+  background:var(--panel); font-size:.82rem; font-weight:600; transition:.25s;
+}
+.fnode small{display:block; font-weight:400; color:var(--ink-soft); font-size:.7rem; margin-top:3px; font-family:var(--font-mono);}
+.fnode.g{border-color:var(--forger);}
+.fnode.d{border-color:var(--detective);}
+.fnode.active{transform:scale(1.08); box-shadow:0 0 0 4px var(--forger-soft);}
+.fnode.d.active{box-shadow:0 0 0 4px var(--detective-soft);}
+.farrow{font-size:1.3rem; color:var(--ink-soft); opacity:.5;}
+.farrow.active{color:var(--forger); opacity:1; animation:pulseArrow .5s ease;}
+@keyframes pulseArrow{ 0%{transform:scale(1);} 50%{transform:scale(1.4);} 100%{transform:scale(1);} }
+.flow-controls{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; align-items:center;}
+.flow-status{font-family:var(--font-mono); font-size:.82rem; color:var(--ink-soft); min-height:1.4em;}
+
+/* ---------- buttons ---------- */
+.btn{
+  font:600 .85rem var(--font-body); border-radius:999px; padding:9px 18px; cursor:pointer;
+  border:1.5px solid var(--ink); background:var(--ink); color:var(--paper); transition:.2s;
+}
+.btn:hover{opacity:.85;}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line);}
+.btn.g{background:var(--forger); border-color:var(--forger); color:#fff;}
+.btn.d{background:var(--detective); border-color:var(--detective); color:#fff;}
+
+/* ---------- epoch demo ---------- */
+.demo-panel{display:grid; grid-template-columns:1fr; gap:20px;}
+@media(min-width:720px){ .demo-panel{grid-template-columns:1.1fr 1fr;} }
+.face-box{
+  aspect-ratio:1; border-radius:10px; border:1px solid var(--line); position:relative; overflow:hidden;
+  background:
+    radial-gradient(circle at 45% 38%, #d8b48a 0 22%, transparent 23%),
+    radial-gradient(circle at 62% 38%, #d8b48a 0 22%, transparent 23%),
+    radial-gradient(ellipse at 50% 68%, #a5674a 0 18%, transparent 19%),
+    radial-gradient(circle at 50% 48%, #e8c79a 0 46%, #c99b6c 47% 100%);
+}
+.noise-layer{
+  position:absolute; inset:0;
+  background-image: repeating-conic-gradient(from 0deg, #0000 0deg 2deg, #0006 2deg 4deg);
+  mix-blend-mode:overlay; opacity:1; transition:opacity .3s ease;
+}
+:root[data-theme="dark"] .face-box, @media(prefers-color-scheme:dark){ }
+.face-caption{font-family:var(--font-mono); font-size:.75rem; text-align:center; margin-top:8px; color:var(--ink-soft);}
+.dgz-readout{
+  font-family:var(--font-mono); background:var(--paper-alt); border:1px solid var(--line);
+  border-radius:6px; padding:16px; font-size:.85rem;
+}
+.dgz-readout .big{font-size:1.9rem; font-weight:700; font-family:var(--font-mono);}
+.dgz-bar{height:10px; border-radius:6px; background:var(--line); overflow:hidden; margin:10px 0;}
+.dgz-bar i{display:block; height:100%; background:var(--forger); transition:width .3s ease;}
+.slider-row{display:flex; align-items:center; gap:12px; margin:14px 0;}
+.slider-row input[type=range]{flex:1; accent-color:var(--forger);}
+.mode-toggle{display:flex; gap:8px; margin-bottom:10px;}
+.mode-toggle button.active.g{background:var(--forger); color:#fff;}
+.mode-toggle button.active.d{background:var(--alert); color:#fff;}
+
+/* ---------- batch grid (state trace) ---------- */
+.batch-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:16px 0;}
+@media(min-width:520px){ .batch-grid{grid-template-columns:repeat(8,1fr);} }
+.bcell{
+  aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono); font-weight:700; font-size:.95rem; border:2px solid var(--line);
+}
+.bcell.real{background:var(--detective-soft); border-color:var(--detective); color:var(--detective);}
+.bcell.fake{background:var(--forger-soft); border-color:var(--forger); color:var(--forger);}
+.bcell .mark{font-size:.7rem; display:block; margin-top:2px;}
+.bcell.correct{outline:3px solid var(--ok);}
+.bcell.wrong{outline:3px solid var(--alert);}
+
+/* ---------- use cases ---------- */
+.uc-grid{display:grid; gap:14px; grid-template-columns:1fr;}
+@media(min-width:640px){ .uc-grid{grid-template-columns:1fr 1fr;} }
+.uc-card{border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; background:var(--panel);}
+.uc-card h3{margin-bottom:6px; font-size:1rem;}
+.uc-card .tag{font-family:var(--font-mono); font-size:.68rem; text-transform:uppercase; color:var(--ink-soft);}
+
+/* ---------- exercise ---------- */
+.blank{
+  display:inline-block; min-width:64px; border-bottom:2px dashed var(--forger); color:transparent;
+  text-align:center;
+}
+.reveal-box{
+  max-height:0; overflow:hidden; transition:max-height .4s ease;
+}
+.reveal-box.open{max-height:900px;}
+.reveal-toggle{margin-top:10px;}
+
+/* ---------- self-check ---------- */
+.sc-item{border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); margin-bottom:12px; overflow:hidden;}
+.sc-q{
+  width:100%; text-align:left; padding:14px 18px; background:transparent; border:none; cursor:pointer;
+  font:600 .95rem var(--font-body); color:var(--ink); display:flex; justify-content:space-between; gap:10px;
+}
+.sc-a{padding:0 18px; max-height:0; overflow:hidden; transition:max-height .35s ease; color:var(--ink-soft); font-size:.9rem;}
+.sc-a.open{max-height:300px; padding-bottom:16px;}
+
+/* ---------- quiz ---------- */
+.quiz-card{margin-top:16px;}
+.quiz-q{font-weight:700; margin-bottom:10px;}
+.quiz-opt{
+  display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1.5px solid var(--line);
+  border-radius:7px; margin-bottom:8px; cursor:pointer; transition:.15s; font-size:.92rem;
+}
+.quiz-opt:hover{border-color:var(--forger);}
+.quiz-opt.correct{background:var(--ok-soft); border-color:var(--ok);}
+.quiz-opt.wrong{background:var(--alert-soft); border-color:var(--alert);}
+.quiz-opt input{margin-top:3px;}
+.quiz-score{font-family:var(--font-mono); font-size:.85rem; margin-top:14px; color:var(--ink-soft);}
+
+/* ---------- footer ---------- */
+footer{border-top:3px solid var(--ink); padding:36px 0; background:var(--paper-alt);}
+footer .wrap{font-size:.85rem; color:var(--ink-soft);}
+footer a{color:var(--detective);}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" type="button">🌓 Đổi giao diện</button>
+
+<header class="cover">
+  <div class="wrap">
+    <span class="tab">Hồ sơ mật · AI-For-Beginners · Bài 10-GANs</span>
+    <h1>Cuộc đối đầu giữa thợ giả tranh &amp; thám tử mỹ thuật</h1>
+    <p class="sub">Generative Adversarial Networks (GAN) — hai mạng nơ-ron học bằng cách <b>chơi trò mèo vờn chuột</b>: một bên cố tạo tranh giả y như thật, một bên cố vạch trần hàng giả. Càng đấu, cả hai càng giỏi lên.</p>
+    <div class="case-no">
+      <span>Hồ sơ số: <b>GAN-1997</b></span>
+      <span>Đối tượng: <b>Generator (G)</b> vs <b>Discriminator (D)</b></span>
+      <span>Mức độ: <b>Trung cấp</b></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ WARM UP ============ -->
+  <section id="warmup">
+    <div class="folio">Khởi động — trước khi mở hồ sơ</div>
+    <h2>Đoán thử xem, đúng không?</h2>
+    <p>Bấm vào phương án bạn nghĩ là đúng. Đừng lo sai — đây là lúc để <i>đoán bằng trực giác</i>, hồ sơ chi tiết ở bên dưới sẽ giải thích rõ.</p>
+    <div class="warmup-grid" id="warmupGrid"></div>
+  </section>
+
+  <!-- ============ 4 TRẠNG THÁI ============ -->
+  <section id="concept">
+    <div class="folio">Hồ sơ 01 — Bốn trạng thái của một vòng huấn luyện</div>
+    <h2>GAN hoạt động qua 4 "cảnh" lặp đi lặp lại</h2>
+    <p>Mỗi vòng lặp (mini-batch) trong huấn luyện GAN đi qua 4 trạng thái sau. Cứ lặp lại hàng chục nghìn lần, thợ giả và thám tử cùng tiến bộ.</p>
+
+    <div class="state-grid" id="stateGrid"></div>
+  </section>
+
+  <!-- ============ BẢNG SO SÁNH ============ -->
+  <section id="comparison">
+    <div class="folio">Hồ sơ 02 — Đối chiếu 4 trạng thái</div>
+    <h2>Bảng so sánh nhanh</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Trạng thái</th><th>Input</th><th>Xử lý</th><th>Output</th><th>Đánh giá</th>
+        </tr></thead>
+        <tbody id="cmpBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ FLOW DIAGRAM ============ -->
+  <section id="flow">
+    <div class="folio">Hồ sơ 03 — Sơ đồ luồng dữ liệu</div>
+    <h2>Bấm "Chạy 1 vòng" để xem dữ liệu chảy qua hệ thống</h2>
+    <div class="flow" id="flowDiagram"></div>
+    <div class="flow-controls">
+      <button class="btn g" id="playFlow">▶ Chạy 1 vòng</button>
+      <button class="btn ghost" id="resetFlow">↺ Đặt lại</button>
+    </div>
+    <div class="flow-status" id="flowStatus">Sẵn sàng. z (vector nhiễu ngẫu nhiên) đang chờ ở đầu vào…</div>
+  </section>
+
+  <!-- ============ EPOCH DEMO ============ -->
+  <section id="trace">
+    <div class="folio">Hồ sơ 04 — Nhật ký hiện trường theo thời gian</div>
+    <h2>Demo: chất lượng ảnh giả thay đổi qua các epoch</h2>
+    <p>Kéo thanh trượt để "tua" quá trình huấn luyện. Thử bật/tắt kịch bản <b>"Thám tử quá mạnh"</b> để thấy vì sao mất cân bằng giữa G và D lại phá hỏng cả hệ thống.</p>
+
+    <div class="mode-toggle">
+      <button class="btn ghost active g" data-mode="balanced" id="modeBalanced">✅ Huấn luyện cân bằng</button>
+      <button class="btn ghost" data-mode="strongD" id="modeStrongD">❌ Discriminator quá mạnh</button>
+    </div>
+
+    <div class="demo-panel">
+      <div>
+        <div class="face-box" id="faceBox"><div class="noise-layer" id="noiseLayer"></div></div>
+        <div class="face-caption">Ảnh do Generator "vẽ" ra — nhiễu ẩn dần khi model học tốt</div>
+      </div>
+      <div>
+        <div class="slider-row">
+          <span class="mono" style="font-size:.8rem; white-space:nowrap;">Epoch</span>
+          <input type="range" id="epochRange" min="0" max="30" value="0">
+          <span class="mono" id="epochVal" style="min-width:2.4em;">0</span>
+        </div>
+        <div class="dgz-readout">
+          <div>D(G(z)) — xác suất Discriminator <i>bị lừa</i> tin ảnh giả là thật:</div>
+          <div class="big" id="dgzVal">0.05</div>
+          <div class="dgz-bar"><i id="dgzBar" style="width:5%"></i></div>
+          <div id="dgzNote" style="color:var(--ink-soft); font-size:.82rem;">Mới khởi tạo — G vẽ như trẻ con, D bắt bài dễ dàng.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BATCH TRACE ============ -->
+  <section id="batchtrace">
+    <div class="folio">Hồ sơ 05 — Truy vết một batch huấn luyện Discriminator</div>
+    <h2>Thám tử chấm điểm từng "bức tranh" trong lô hàng</h2>
+    <p>Một batch gồm ảnh thật (nhãn <span class="mono" style="color:var(--detective); font-weight:700;">REAL=1</span>) trộn với ảnh do Generator vẽ (nhãn <span class="mono" style="color:var(--forger); font-weight:700;">FAKE=0</span>). Bấm để xem Discriminator đoán đúng/sai ở từng ô.</p>
+    <div class="batch-grid" id="batchGrid"></div>
+    <button class="btn ghost" id="judgeBatch">🔍 Thám tử chấm điểm</button>
+    <div class="flow-status" id="batchScore"></div>
+  </section>
+
+  <!-- ============ USE CASES ============ -->
+  <section id="usecases">
+    <div class="folio">Hồ sơ 06 — Hiện trường thực tế</div>
+    <h2>GAN được dùng ở đâu ngoài đời?</h2>
+    <div class="uc-grid" id="ucGrid"></div>
+  </section>
+
+  <!-- ============ DATA TỐT / XẤU ============ -->
+  <section id="data">
+    <div class="folio">Hồ sơ 07 — Vật chứng: dữ liệu nào tốt, dữ liệu nào hại</div>
+    <h2>Chọn "nguyên liệu" sai — thợ giả vẽ ra thảm họa</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Mức</th><th>Đặc điểm dữ liệu</th><th>Chuyện gì xảy ra khi huấn luyện</th></tr></thead>
+        <tbody id="dataBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ EXERCISE ============ -->
+  <section id="exercise">
+    <div class="folio">Hồ sơ 08 — Bài tập nhỏ</div>
+    <h2>Điền vào chỗ trống trong vòng lặp huấn luyện</h2>
+    <p>Đây là khung code PyTorch rút gọn cho 1 bước huấn luyện GAN. Hãy đoán 4 chỗ trống <span class="mono">(1)-(4)</span> trước khi bấm "Đối chiếu bản mẫu".</p>
+    <pre class="code" id="exerciseCode"></pre>
+    <button class="btn ghost reveal-toggle" id="exReveal">📋 Đối chiếu với bản mẫu</button>
+    <div class="reveal-box" id="exBox">
+      <div class="card" style="margin-top:12px; box-shadow:none;">
+        <p><b>Bản mẫu đáp án:</b></p>
+        <ol style="padding-left:20px; font-size:.92rem;">
+          <li><span class="mono" style="color:var(--forger); font-weight:700;">G</span> — Generator tạo ảnh giả từ vector nhiễu <span class="mono">z</span>.</li>
+          <li><span class="mono" style="color:var(--detective); font-weight:700;">real_labels</span> (toàn số 1) — vì đây là ảnh thật, D phải học nhận ra.</li>
+          <li><span class="mono" style="color:var(--forger); font-weight:700;">fake_labels</span> (toàn số 0) — D phải học gắn nhãn 0 cho ảnh do G vẽ.</li>
+          <li><span class="mono" style="color:var(--detective); font-weight:700;">real_labels</span> — nghịch lý thú vị: khi huấn luyện G, ta <i>cố tình</i> chấm ảnh giả là "thật" để tính loss, buộc G phải chỉnh sao cho D càng lúc càng tin.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SELF CHECK ============ -->
+  <section id="selfcheck">
+    <div class="folio">Hồ sơ 09 — Tự thẩm vấn</div>
+    <h2>Câu hỏi tự kiểm tra</h2>
+    <div id="scList"></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section id="quiz">
+    <div class="folio">Hồ sơ 10 — Kết luận điều tra</div>
+    <h2>Trắc nghiệm tổng kết (4 câu)</h2>
+    <div id="quizContainer"></div>
+    <div class="quiz-score" id="quizScore"></div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>Nguồn gốc hồ sơ:</b> bài học <span class="mono">lessons/4-ComputerVision/10-GANs</span> trong khoá <a href="https://github.com/microsoft/AI-For-Beginners" target="_blank" rel="noopener">Microsoft AI-For-Beginners</a>. Bài này chỉ diễn giải lại theo phong cách "hồ sơ vụ án" cho dễ nhớ — kiến thức gốc: kiến trúc DCGAN, quy trình huấn luyện 2 giai đoạn, các vấn đề mode collapse / mất cân bằng / progressive growing.</p>
+    <p>⚖️ <b>Lưu ý đạo đức:</b> công nghệ tạo ảnh giả (GAN) là con dao hai lưỡi — dùng để sáng tạo nghệ thuật, tăng cường dữ liệu y tế… nhưng cũng có thể bị lạm dụng làm deepfake. Người học AI có trách nhiệm dùng công cụ này đúng mực.</p>
+  </div>
+</footer>
+
+<script>
+/* ================= DATA ================= */
+const WARMUP = [
+  {q:'Theo bạn, ai "học" trước ai trong một vòng huấn luyện GAN?', opts:['Generator học trước','Discriminator học trước','Cả hai học song song, không ai "trước"'], right:1,
+   fb:'Đúng quy trình chuẩn: mỗi vòng, Discriminator được huấn luyện trước (chấm ảnh thật/giả), sau đó mới đến Generator (dựa vào phản hồi của D vừa cập nhật).'},
+  {q:'Khi huấn luyện Generator, trọng số của Discriminator nên:', opts:['Tiếp tục cập nhật bình thường','Bị đóng băng (không cập nhật)','Bị xoá và khởi tạo lại'], right:1,
+   fb:'Phải đóng băng D khi huấn luyện G — nếu không, ta sẽ tính đạo hàm ngược qua một "giám khảo" đang thay đổi liên tục, làm hỏng tín hiệu học.'},
+  {q:'"Mode collapse" nghĩa là gì?', opts:['Model bị crash, dừng chạy','Generator chỉ tạo ra một (vài) kiểu ảnh lặp lại mãi','Discriminator quên hết kiến thức đã học'], right:1,
+   fb:'Mode collapse: Generator tìm ra "một chiêu ăn gian" đánh lừa được D và cứ lặp lại chiêu đó, thay vì tạo ra sự đa dạng như dữ liệu thật.'}
+];
+
+const STATES = [
+  {
+    tag:'TRẠNG THÁI 0', title:'Khởi tạo — cả hai đều "mù"',
+    badge:'mid', badgeText:'⚠️ Chưa học gì',
+    ascii:
+`z ~ N(0, I)        <span class="g">Generator (G)</span>            <span class="d">Discriminator (D)</span>
+[nhiễu ngẫu nhiên]  trọng số random          trọng số random
+      │                    │                        │
+      └──────────────►     └── vẽ ra noise thuần ────┘`,
+    desc:'G nhận một vector nhiễu ngẫu nhiên <span class="mono">z</span> (vd 100 số thực), D chỉ mới biết phân loại ảnh một cách ngẫu nhiên. Chưa ai giỏi cả — giống thợ giả mới vào nghề vẽ ra vệt màu lem nhem, thám tử cũng chưa có kinh nghiệm.',
+    code:`<span class="cm"># z: vector nhiễu, latent_dim ví dụ = 100</span>
+z = torch.randn(batch_size, latent_dim)
+fake_image = <span class="fn">G</span>(z)   <span class="cm"># ~ toàn nhiễu, chưa giống gì cả</span>`,
+    io:'INPUT: vector z ngẫu nhiên · OUTPUT: ảnh nhiễu vô nghĩa'
+  },
+  {
+    tag:'TRẠNG THÁI 1', title:'Thám tử luyện mắt nhìn',
+    badge:'mid', badgeText:'🔍 Huấn luyện Discriminator',
+    ascii:
+`Batch trộn:  [REAL x1][REAL x1][<span class="g">FAKE(G(z))</span>][REAL x1][<span class="g">FAKE(G(z))</span>]...
+                 │        │         │              │         │
+                 ▼        ▼         ▼              ▼         ▼
+              <span class="d">D dự đoán xác suất "là ảnh thật"</span>
+   loss = BCE(D(real), 1) + BCE(D(fake.detach()), 0)  ──► cập nhật CHỈ D`,
+    desc:'D nhận cả ảnh thật (từ tập dữ liệu, nhãn = 1) lẫn ảnh giả (từ G, nhãn = 0), rồi học phân biệt. G bị "khoá tay" ở bước này (dùng <span class="mono">.detach()</span>) — chỉ D được cập nhật trọng số.',
+    code:`d_loss_real = loss_fn(<span class="fn">D</span>(real_images), real_labels)   <span class="cm"># nhãn = 1</span>
+d_loss_fake = loss_fn(<span class="fn">D</span>(fake_images.detach()), fake_labels) <span class="cm"># nhãn = 0</span>
+d_loss = d_loss_real + d_loss_fake
+d_loss.backward(); d_optimizer.step()`,
+    io:'INPUT: ảnh thật + ảnh giả có nhãn · OUTPUT: D giỏi phân biệt hơn'
+  },
+  {
+    tag:'TRẠNG THÁI 2', title:'Thợ giả học cách qua mặt thám tử',
+    badge:'mid', badgeText:'🎨 Huấn luyện Generator',
+    ascii:
+`z ──► <span class="g">G(z)</span> ──► fake_image ──► <span class="d">D(fake_image)</span> ──► xác suất "thật"?
+                                              │
+                          loss = BCE(D(fake), <b>1</b>)  "ép" G vẽ giống thật hơn
+                                              │
+                        backprop chảy NGƯỢC qua D (đã khoá) vào G
+                                              ▼
+                                  chỉ trọng số của <span class="g">G</span> được cập nhật`,
+    desc:'Lần này D bị đóng băng, G được cập nhật. Ta lấy nhãn = 1 (thật) làm "mục tiêu ao ước" — G muốn D chấm ảnh giả của nó là thật. Gradient chảy xuyên qua D để chỉnh G, nhưng D không học gì thêm ở bước này.',
+    code:`g_loss = loss_fn(<span class="fn">D</span>(fake_images), real_labels) <span class="cm"># mục tiêu: D nói "thật" (1)</span>
+g_loss.backward()   <span class="cm"># gradient chảy qua D (đóng băng) vào G</span>
+g_optimizer.step()  <span class="cm"># chỉ G được cập nhật</span>`,
+    io:'INPUT: fake_image + "ước muốn" nhãn=1 · OUTPUT: G vẽ thuyết phục hơn'
+  },
+  {
+    tag:'TRẠNG THÁI 3', title:'Kết cục: hội tụ đẹp hay đổ vỡ?',
+    badge:'bad', badgeText:'⚖️ Hai kịch bản trái ngược',
+    ascii:
+`<span class="ok">✅ HỘI TỤ TỐT</span>                      <span class="bad">❌ MODE COLLAPSE</span>
+loss G,D dao động quanh 1  mức     loss D → 0 rất nhanh
+D(G(z)) tiến gần 0.5              D(G(z)) mắc kẹt gần 0
+(khó phân biệt thật/giả)          G học ra 1 "chiêu" rồi lặp mãi
+batch ảnh sinh ra ĐA DẠNG          batch ảnh sinh ra GẦN GIỐNG HỆT NHAU`,
+    desc:'Nếu cân bằng tốt, cả G và D cùng tiến bộ, loss dao động (không hội tụ về 0 tuyệt đối — đó là dấu hiệu <i>bình thường</i> của GAN!). Nếu D quá mạnh, G "bó tay", không còn gradient hữu ích để học → mode collapse hoặc sinh ảnh vô nghĩa.',
+    code:`<span class="cm"># Dấu hiệu cần theo dõi mỗi epoch:</span>
+print(d_loss.item(), g_loss.item(), D(fake_images).mean().item())
+<span class="cm"># d_loss ~ 0 kéo dài  => D thắng áp đảo, G ngừng học => cần giảm lr(D)</span>`,
+    io:'INPUT: lịch sử loss qua nhiều epoch · OUTPUT: mô hình dùng được — hoặc phải huấn luyện lại'
+  }
+];
+
+const CMP_ROWS = [
+  ['0 · Khởi tạo','z ~ N(0,1), trọng số random','G và D đều chưa học gì','Ảnh nhiễu vô nghĩa','<span class="stamp mid">⚠️ Bình thường</span>'],
+  ['1 · Train D','Ảnh thật (nhãn 1) + ảnh giả (nhãn 0)','D học phân loại; G bị khoá (.detach())','D phân biệt tốt hơn','<span class="stamp good">✅ Cần thiết</span>'],
+  ['2 · Train G','z mới; D bị đóng băng','G học đánh lừa D; loss dùng nhãn "thật"','Ảnh giả thuyết phục hơn','<span class="stamp good">✅ Cần thiết</span>'],
+  ['3a · Hội tụ tốt','Loss dao động ổn định nhiều epoch','G/D cân bằng lực lượng','Ảnh đa dạng, giống thật','<span class="stamp good">✅ Đạt</span>'],
+  ['3b · Mode collapse','D quá mạnh / dữ liệu quá ít, quá lệch','G tìm 1 "lỗ hổng" của D và khai thác mãi','Vài kiểu ảnh lặp lại, thiếu đa dạng','<span class="stamp bad">❌ Hỏng</span>']
+];
+
+const FLOW_NODES = [
+  {id:'z', cls:'g', title:'z', sub:'nhiễu ngẫu nhiên'},
+  {id:'G', cls:'g', title:'Generator', sub:'vẽ ảnh giả'},
+  {id:'D', cls:'d', title:'Discriminator', sub:'chấm điểm'},
+  {id:'loss', cls:'d', title:'Loss', sub:'sai số'},
+  {id:'back', cls:'g', title:'Backprop', sub:'chỉnh trọng số'}
+];
+
+const USE_CASES = [
+  {tag:'Nghệ thuật & Avatar', title:'Tạo khuôn mặt người không tồn tại', body:'GAN (StyleGAN) sinh ra ảnh chân dung cực thật để làm avatar ẩn danh, nhân vật game, tranh nghệ thuật số.'},
+  {tag:'Y tế', title:'Tăng cường dữ liệu (data augmentation)', body:'Bệnh hiếm có ít ảnh chụp X-quang/MRI → dùng GAN sinh thêm ảnh "giống thật" để huấn luyện model chẩn đoán mạnh hơn.'},
+  {tag:'Thời trang & Thiết kế', title:'Sinh mẫu vải, hoạ tiết, trang phục mới', body:'Nhà thiết kế dùng GAN để brainstorm hàng loạt mẫu hoạ tiết/kiểu dáng làm nguồn cảm hứng.'},
+  {tag:'Phục chế ảnh', title:'Super-resolution — nâng cấp ảnh cũ, mờ', body:'GAN "đoán" chi tiết còn thiếu để biến ảnh độ phân giải thấp thành ảnh sắc nét hơn.'},
+  {tag:'⚠️ Rủi ro đạo đức', title:'Deepfake', body:'Cùng kỹ thuật tạo ảnh giả có thể bị lạm dụng để giả mạo gương mặt người thật trong video — cần quy tắc sử dụng có trách nhiệm.'}
+];
+
+const DATA_ROWS = [
+  ['<span class="stamp good">✅ Tốt</span>','Ảnh cùng kích thước (vd 64×64), pixel chuẩn hoá về [-1,1] khớp hàm <span class="mono">tanh</span> ở output G; tập dữ liệu lớn, đồng nhất chủ đề (toàn mặt người chính diện, ánh sáng đều), nhãn real/fake gán đúng, batch cân bằng 50/50','Loss dao động ổn định, ảnh sinh ra ngày càng đa dạng và giống thật.'],
+  ['<span class="stamp mid">⚠️ Trung bình</span>','Dataset nhỏ (vài trăm ảnh); ảnh có kích thước/tỉ lệ khác nhau phải resize; learning rate của G và D lệch nhẹ','Vẫn train được nhưng dễ overfit, cần augmentation, phải theo dõi sát loss + ảnh mẫu mỗi vài epoch.'],
+  ['<span class="stamp bad">❌ Xấu / gây lỗi</span>','Trộn nhiều chủ đề khác nhau (mèo + xe hơi + người) trong 1 model; batch toàn ảnh gần giống nhau; nhãn real/fake bị đảo ngược do bug; ảnh có watermark; quên chuẩn hoá pixel (0-255 thô) trong khi G dùng tanh (-1,1)','Ảnh ra "cháo" không nhận dạng được, mode collapse ngay từ đầu, loss NaN hoặc không hội tụ, model học in luôn watermark giả lên mọi ảnh.']
+];
+
+const SELF_CHECK = [
+  {q:'Vì sao phải "đóng băng" Discriminator khi huấn luyện Generator?', a:'Nếu D vẫn cập nhật cùng lúc, gradient dùng để chỉnh G sẽ dựa trên một "giám khảo" đang thay đổi liên tục — tín hiệu học trở nên nhiễu loạn, không ổn định. Đóng băng D giúp G có một "thước đo" cố định để cải thiện trong bước đó.'},
+  {q:'Nếu d_loss giảm về gần 0 rất nhanh và giữ nguyên, chuyện gì xảy ra với G? Cách khắc phục?', a:'D đã "thắng áp đảo" — nó phân biệt thật/giả gần như hoàn hảo, khiến gradient truyền về G gần như bằng 0 (G không còn học được gì). Khắc phục: giảm learning rate của D, tăng learning rate của G, hoặc tạm ngừng huấn luyện D vài bước khi loss của nó quá thấp.'},
+  {q:'Làm sao nhận ra mode collapse chỉ bằng cách nhìn một batch ảnh do G sinh ra?', a:'Nếu nhiều ảnh trong cùng 1 batch trông gần như giống hệt nhau (cùng góc mặt, cùng màu nền, cùng bố cục) dù đầu vào z là các vector nhiễu khác nhau — đó chính là dấu hiệu mode collapse: G đã tìm ra "một chiêu" đánh lừa D và không còn động lực khám phá thêm.'}
+];
+
+const QUIZ = [
+  {q:'DCGAN là gì?', opts:['Một loại GAN dùng mạng tích chập (convolutional)','Một thuật toán tối ưu thay thế Adam','Một cách nén ảnh trước khi đưa vào GAN'], right:0},
+  {q:'Trong bước huấn luyện Generator, nhãn "mục tiêu" đưa vào hàm loss là gì?', opts:['0 (fake)','1 (real)','0.5 (không chắc)'], right:1},
+  {q:'"Progressive growing" trong huấn luyện GAN độ phân giải cao nghĩa là gì?', opts:['Tăng dần learning rate theo epoch','Bắt đầu train ở ảnh độ phân giải thấp rồi dần thêm layer để tăng độ phân giải','Tăng dần kích thước batch theo thời gian'], right:1},
+  {q:'Dấu hiệu KHÔNG phải của mode collapse là:', opts:['Ảnh sinh ra thiếu đa dạng, lặp lại','G tìm ra 1 kiểu ảnh đánh lừa được D và bám lấy nó','Loss của cả G và D cùng dao động ổn định quanh 1 mức'], right:2}
+];
+
+/* ================= RENDER: WARMUP ================= */
+const warmupGrid = document.getElementById('warmupGrid');
+WARMUP.forEach((item, qi)=>{
+  const box = document.createElement('div');
+  box.className = 'wq';
+  box.innerHTML = `<div class="q">${qi+1}. ${item.q}</div>
+    <div class="wq-opts">${item.opts.map((o,oi)=>`<button class="wq-opt" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}</div>
+    <div class="wq-fb" id="wqfb-${qi}"></div>`;
+  warmupGrid.appendChild(box);
+});
+warmupGrid.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.wq-opt');
+  if(!btn) return;
+  const qi = +btn.dataset.qi, oi = +btn.dataset.oi;
+  const item = WARMUP[qi];
+  const all = warmupGrid.querySelectorAll(`.wq-opt[data-qi="${qi}"]`);
+  if(all[0].disabled) return;
+  all.forEach(b=>{ b.disabled = true; });
+  btn.classList.add(oi===item.right ? 'right' : 'wrong');
+  if(oi!==item.right) all[item.right].classList.add('right');
+  document.getElementById(`wqfb-${qi}`).textContent = (oi===item.right? '✅ Chính xác! ' : '❌ Chưa đúng. ') + item.fb;
+});
+
+/* ================= RENDER: STATE CARDS ================= */
+const stateGrid = document.getElementById('stateGrid');
+STATES.forEach((s, i)=>{
+  const card = document.createElement('div');
+  card.className = 'card state-card';
+  card.innerHTML = `
+    <div class="state-head">
+      <div>
+        <div class="state-num">${s.tag}</div>
+        <h3>${s.title}</h3>
+      </div>
+      <span class="stamp ${s.badge}">${s.badgeText}</span>
+    </div>
+    <div class="ascii">${s.ascii}</div>
+    <p>${s.desc}</p>
+    <pre class="code">${s.code}</pre>
+    <div class="iotag">${s.io}</div>
+  `;
+  stateGrid.appendChild(card);
+});
+
+/* ================= RENDER: COMPARISON TABLE ================= */
+const cmpBody = document.getElementById('cmpBody');
+CMP_ROWS.forEach(r=>{
+  const tr = document.createElement('tr');
+  tr.innerHTML = r.map(c=>`<td>${c}</td>`).join('');
+  cmpBody.appendChild(tr);
+});
+
+/* ================= RENDER: FLOW DIAGRAM ================= */
+const flowDiagram = document.getElementById('flowDiagram');
+FLOW_NODES.forEach((n,i)=>{
+  if(i>0){
+    const ar = document.createElement('span');
+    ar.className = 'farrow'; ar.id = `arrow-${i}`;
+    ar.textContent = '→';
+    flowDiagram.appendChild(ar);
+  }
+  const node = document.createElement('div');
+  node.className = `fnode ${n.cls}`; node.id = `node-${n.id}`;
+  node.innerHTML = `${n.title}<small>${n.sub}</small>`;
+  flowDiagram.appendChild(node);
+});
+const FLOW_MSGS = [
+  'z (vector nhiễu 100 chiều) được sinh ra ngẫu nhiên…',
+  'Generator biến z thành một ảnh giả…',
+  'Discriminator chấm ảnh này: thật hay giả?',
+  'Tính loss dựa trên câu trả lời của Discriminator…',
+  'Backprop chỉnh trọng số — vòng lặp tiếp theo sẽ khác đi!'
+];
+let flowTimer = null;
+function resetFlow(){
+  clearTimeout(flowTimer);
+  document.querySelectorAll('.fnode').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.farrow').forEach(a=>a.classList.remove('active'));
+  document.getElementById('flowStatus').textContent = 'Sẵn sàng. z (vector nhiễu ngẫu nhiên) đang chờ ở đầu vào…';
+}
+function playFlow(){
+  resetFlow();
+  const ids = FLOW_NODES.map(n=>n.id);
+  let step = 0;
+  function tick(){
+    document.querySelectorAll('.fnode').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('.farrow').forEach(a=>a.classList.remove('active'));
+    document.getElementById(`node-${ids[step]}`).classList.add('active');
+    if(step>0) document.getElementById(`arrow-${step}`).classList.add('active');
+    document.getElementById('flowStatus').textContent = FLOW_MSGS[step];
+    step++;
+    if(step < ids.length){ flowTimer = setTimeout(tick, 950); }
+  }
+  tick();
+}
+document.getElementById('playFlow').addEventListener('click', playFlow);
+document.getElementById('resetFlow').addEventListener('click', resetFlow);
+
+/* ================= RENDER: USE CASES ================= */
+const ucGrid = document.getElementById('ucGrid');
+USE_CASES.forEach(u=>{
+  const c = document.createElement('div');
+  c.className = 'uc-card';
+  c.innerHTML = `<div class="tag">${u.tag}</div><h3>${u.title}</h3><p style="margin:0; font-size:.9rem;">${u.body}</p>`;
+  ucGrid.appendChild(c);
+});
+
+/* ================= RENDER: DATA TABLE ================= */
+const dataBody = document.getElementById('dataBody');
+DATA_ROWS.forEach(r=>{
+  const tr = document.createElement('tr');
+  tr.innerHTML = r.map(c=>`<td>${c}</td>`).join('');
+  dataBody.appendChild(tr);
+});
+
+/* ================= EXERCISE CODE ================= */
+document.getElementById('exerciseCode').innerHTML =
+`<span class="cm"># Vòng lặp huấn luyện GAN (rút gọn)</span>
+for epoch in range(epochs):
+    for real_images in dataloader:
+        z = torch.randn(batch_size, latent_dim)
+        fake_images = <span class="blank">(1)</span>(z)                              <span class="cm"># tạo ảnh giả</span>
+
+        <span class="cm"># --- Huấn luyện Discriminator ---</span>
+        d_loss_real = loss_fn(D(real_images), <span class="blank">(2)</span>)         <span class="cm"># nhãn cho ảnh thật</span>
+        d_loss_fake = loss_fn(D(fake_images.detach()), <span class="blank">(3)</span>) <span class="cm"># nhãn cho ảnh giả</span>
+        d_loss = d_loss_real + d_loss_fake
+        d_loss.backward(); d_optimizer.step()
+
+        <span class="cm"># --- Huấn luyện Generator ---</span>
+        g_loss = loss_fn(D(fake_images), <span class="blank">(4)</span>)              <span class="cm"># G muốn D nghĩ đây là ảnh...?</span>
+        g_loss.backward(); g_optimizer.step()`;
+
+document.getElementById('exReveal').addEventListener('click', ()=>{
+  document.getElementById('exBox').classList.toggle('open');
+});
+
+/* ================= SELF CHECK ================= */
+const scList = document.getElementById('scList');
+SELF_CHECK.forEach((item, i)=>{
+  const box = document.createElement('div');
+  box.className = 'sc-item';
+  box.innerHTML = `<button class="sc-q" data-i="${i}"><span>${i+1}. ${item.q}</span><span>+</span></button>
+    <div class="sc-a" id="sca-${i}"><p>${item.a}</p></div>`;
+  scList.appendChild(box);
+});
+scList.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.sc-q');
+  if(!btn) return;
+  document.getElementById(`sca-${btn.dataset.i}`).classList.toggle('open');
+});
+
+/* ================= QUIZ ================= */
+const quizContainer = document.getElementById('quizContainer');
+let quizAnswered = 0, quizCorrect = 0;
+QUIZ.forEach((item, qi)=>{
+  const card = document.createElement('div');
+  card.className = 'card quiz-card in-view';
+  let html = `<div class="quiz-q">${qi+1}. ${item.q}</div>`;
+  item.opts.forEach((o,oi)=>{
+    html += `<label class="quiz-opt" data-qi="${qi}" data-oi="${oi}">
+      <input type="radio" name="q${qi}" value="${oi}"><span>${o}</span></label>`;
+  });
+  card.innerHTML = html;
+  quizContainer.appendChild(card);
+});
+quizContainer.addEventListener('change', (e)=>{
+  if(e.target.type !== 'radio') return;
+  const label = e.target.closest('.quiz-opt');
+  const qi = +label.dataset.qi, oi = +label.dataset.oi;
+  const item = QUIZ[qi];
+  const allOpts = quizContainer.querySelectorAll(`.quiz-opt[data-qi="${qi}"]`);
+  allOpts.forEach(o=>{ o.querySelector('input').disabled = true; });
+  label.classList.add(oi===item.right ? 'correct' : 'wrong');
+  if(oi!==item.right) allOpts[item.right].classList.add('correct');
+  quizAnswered++;
+  if(oi===item.right) quizCorrect++;
+  if(quizAnswered === QUIZ.length){
+    document.getElementById('quizScore').textContent = `Kết quả: ${quizCorrect}/${QUIZ.length} câu đúng. ` +
+      (quizCorrect===QUIZ.length ? '🏆 Xuất sắc — bạn đủ trình làm thám tử trưởng!' : 'Xem lại Hồ sơ 01-04 ở trên rồi thử lại nhé.');
+  }
+});
+
+/* ================= EPOCH / D(G(z)) DEMO ================= */
+const epochRange = document.getElementById('epochRange');
+const epochVal = document.getElementById('epochVal');
+const dgzVal = document.getElementById('dgzVal');
+const dgzBar = document.getElementById('dgzBar');
+const dgzNote = document.getElementById('dgzNote');
+const noiseLayer = document.getElementById('noiseLayer');
+let demoMode = 'balanced';
+
+function updateDemo(){
+  const e = +epochRange.value;
+  epochVal.textContent = e;
+  let dgz, note;
+  if(demoMode === 'balanced'){
+    // rises toward ~0.5 with light oscillation, representing healthy adversarial equilibrium
+    const t = e/30;
+    dgz = 0.05 + t*0.42 + Math.sin(e*0.9)*0.03*t;
+    dgz = Math.max(0.03, Math.min(0.58, dgz));
+    note = e < 6 ? 'G còn vẽ vụng, D bắt bài dễ dàng.' :
+           e < 18 ? 'Cả hai đang đấu ngang tay — loss dao động, đúng như mong đợi.' :
+           'Gần điểm cân bằng lý tưởng: D khó phân biệt thật/giả (D(G(z)) ≈ 0.5).';
+  } else {
+    // strong D: probability stays low, G stuck
+    const t = e/30;
+    dgz = 0.05 * Math.exp(-t*0.2) + 0.01;
+    note = e < 6 ? 'D học rất nhanh, đã vượt trội hơn G.' :
+           e < 18 ? '⚠️ D gần như luôn bắt được ảnh giả — gradient cho G gần bằng 0.' :
+           '❌ G bị "đóng băng" tiến bộ — nguy cơ mode collapse hoặc ảnh giả không cải thiện thêm.';
+  }
+  dgzVal.textContent = dgz.toFixed(2);
+  dgzBar.style.width = (dgz*100).toFixed(0) + '%';
+  dgzBar.style.background = demoMode==='balanced' ? 'var(--ok)' : 'var(--alert)';
+  dgzNote.textContent = note;
+  // noise overlay opacity: balanced clears up, strongD stays noisy/stuck
+  const noiseOpacity = demoMode==='balanced' ? Math.max(0.05, 1 - e/28) : Math.max(0.55, 1 - e/70);
+  noiseLayer.style.opacity = noiseOpacity;
+}
+epochRange.addEventListener('input', updateDemo);
+document.getElementById('modeBalanced').addEventListener('click', ()=>{
+  demoMode = 'balanced';
+  document.getElementById('modeBalanced').classList.add('active');
+  document.getElementById('modeStrongD').classList.remove('active');
+  updateDemo();
+});
+document.getElementById('modeStrongD').addEventListener('click', ()=>{
+  demoMode = 'strongD';
+  document.getElementById('modeStrongD').classList.add('active');
+  document.getElementById('modeBalanced').classList.remove('active');
+  updateDemo();
+});
+updateDemo();
+
+/* ================= BATCH TRACE ================= */
+const BATCH = [
+  {type:'real'}, {type:'real'}, {type:'fake'}, {type:'real'},
+  {type:'fake'}, {type:'fake'}, {type:'real'}, {type:'fake'}
+];
+const batchGrid = document.getElementById('batchGrid');
+BATCH.forEach((b,i)=>{
+  const cell = document.createElement('div');
+  cell.className = `bcell ${b.type}`;
+  cell.id = `bcell-${i}`;
+  cell.innerHTML = `${b.type==='real'?'REAL':'FAKE'}<span class="mark" id="bmark-${i}"></span>`;
+  batchGrid.appendChild(cell);
+});
+document.getElementById('judgeBatch').addEventListener('click', ()=>{
+  let correct = 0;
+  BATCH.forEach((b,i)=>{
+    // Simulate an imperfect early discriminator: ~80% accuracy
+    const isCorrect = Math.random() < 0.8;
+    const cell = document.getElementById(`bcell-${i}`);
+    const mark = document.getElementById(`bmark-${i}`);
+    cell.classList.remove('correct','wrong');
+    if(isCorrect){
+      cell.classList.add('correct'); mark.textContent = '✓ đoán đúng'; correct++;
+    } else {
+      cell.classList.add('wrong'); mark.textContent = '✗ bị lừa';
+    }
+  });
+  document.getElementById('batchScore').textContent =
+    `Thám tử chấm đúng ${correct}/${BATCH.length} ảnh trong lô này. ` +
+    (correct===BATCH.length ? '🕵️ Vẫn còn nhạy — Generator cần cải thiện thêm.' : '🎨 Một vài ảnh giả đã qua mặt được thám tử!');
+});
+
+/* ================= scroll reveal for cards ================= */
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){ en.target.classList.add('in-view'); io.unobserve(en.target); }
+  });
+}, {threshold:.12});
+document.querySelectorAll('.state-card').forEach(c=>io.observe(c));
+
+/* ================= theme toggle (manual override, persisted per-viewer) ================= */
+(function(){
+  const root = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  try{
+    const saved = localStorage.getItem('gan-lesson-theme');
+    if(saved) root.setAttribute('data-theme', saved);
+  }catch(e){}
+  btn.addEventListener('click', ()=>{
+    const current = root.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : (current === 'light' ? null : (matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark'));
+    if(next) root.setAttribute('data-theme', next); else root.removeAttribute('data-theme');
+    try{ localStorage.setItem('gan-lesson-theme', next || ''); }catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
