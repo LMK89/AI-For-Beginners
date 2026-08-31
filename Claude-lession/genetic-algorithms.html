@@ -1,0 +1,904 @@
+<title>Thuật Toán Di Truyền</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --paper:#eef1e2;
+    --surface:#ffffff;
+    --surface-2:#e4e9d6;
+    --ink:#1c2b1f;
+    --ink-dim:#57654f;
+    --line:#c9d0b8;
+    --accent-fit:#a8761f;
+    --accent-fit-soft:#e9d4a4;
+    --accent-cross:#1c7a68;
+    --accent-cross-soft:#c9e6de;
+    --accent-mutate:#9c3d75;
+    --accent-mutate-soft:#ecd0e1;
+    --good:#2f8f4e;
+    --good-soft:#d3ead9;
+    --bad:#bc3b2d;
+    --bad-soft:#f4d9d3;
+    --shadow: 0 1px 0 rgba(28,43,31,.06), 0 8px 24px -16px rgba(28,43,31,.35);
+    --radius: 10px;
+    --font-display: 'Spectral', ui-serif, Georgia, serif;
+    --font-body: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#111c15;
+      --surface:#17241c;
+      --surface-2:#1e2e23;
+      --ink:#ecf1e5;
+      --ink-dim:#a3b39c;
+      --line:#2c3d30;
+      --accent-fit:#e0ac47;
+      --accent-fit-soft:#3a3222;
+      --accent-cross:#43c8ac;
+      --accent-cross-soft:#183530;
+      --accent-mutate:#e07ec0;
+      --accent-mutate-soft:#3a2233;
+      --good:#59c37e;
+      --good-soft:#1c3324;
+      --bad:#e3776a;
+      --bad-soft:#3a2220;
+      --shadow: 0 1px 0 rgba(0,0,0,.3), 0 8px 28px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#111c15;
+    --surface:#17241c;
+    --surface-2:#1e2e23;
+    --ink:#ecf1e5;
+    --ink-dim:#a3b39c;
+    --line:#2c3d30;
+    --accent-fit:#e0ac47;
+    --accent-fit-soft:#3a3222;
+    --accent-cross:#43c8ac;
+    --accent-cross-soft:#183530;
+    --accent-mutate:#e07ec0;
+    --accent-mutate-soft:#3a2233;
+    --good:#59c37e;
+    --good-soft:#1c3324;
+    --bad:#e3776a;
+    --bad-soft:#3a2220;
+    --shadow: 0 1px 0 rgba(0,0,0,.3), 0 8px 28px -16px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:var(--font-display); text-wrap:balance; margin:0 0 .4em; color:var(--ink);}
+  p{margin:0 0 1em; max-width:66ch;}
+  a{color:var(--accent-cross);}
+  code, .mono{font-family:var(--font-mono);}
+  ::selection{background:var(--accent-fit-soft); color:var(--ink);}
+  :focus-visible{outline:2px solid var(--accent-cross); outline-offset:2px;}
+
+  /* ---------- rail ---------- */
+  #rail{
+    position:fixed; left:0; top:0; bottom:0; width:5px; z-index:50;
+    background:var(--line);
+  }
+  #rail-fill{
+    position:absolute; left:0; top:0; width:100%; height:0%;
+    background:linear-gradient(180deg,var(--accent-cross),var(--accent-fit));
+    transition:height .12s linear;
+  }
+  .tick{
+    position:absolute; left:0; width:11px; height:2px; margin-left:-3px;
+    background:var(--line); transition:background .2s,width .2s;
+  }
+  .tick.active{background:var(--accent-mutate); width:15px;}
+
+  /* ---------- layout shell ---------- */
+  .wrap{max-width:840px; margin:0 auto; padding:0 28px 120px 40px;}
+  @media (max-width:640px){ .wrap{padding:0 18px 90px 26px;} }
+
+  /* ---------- hero ---------- */
+  .hero{padding:76px 0 40px;}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:.75rem; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--accent-cross); margin-bottom:18px; display:flex; gap:10px; align-items:center;
+  }
+  .eyebrow::before{content:"⌗"; font-size:1rem;}
+  .hero h1{font-size:clamp(2.3rem,6vw,3.4rem); font-weight:600; font-style:italic; letter-spacing:-.01em;}
+  .hero .lede{font-size:1.08rem; color:var(--ink-dim); max-width:62ch;}
+
+  .hero-strip{
+    margin-top:34px; padding:20px; border:1px solid var(--line); border-radius:var(--radius);
+    background:var(--surface); box-shadow:var(--shadow);
+  }
+  .hero-strip-label{font-family:var(--font-mono); font-size:.72rem; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px; display:flex; justify-content:space-between;}
+  .gene-row{display:flex; gap:4px; flex-wrap:wrap;}
+  .gene{
+    width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:.82rem; font-weight:700; border-radius:5px;
+    background:var(--surface-2); color:var(--ink-dim); transition:background .25s, color .25s, transform .2s;
+  }
+  .gene.match{background:var(--good-soft); color:var(--good);}
+
+  /* ---------- entries (journal cards) ---------- */
+  .entry{
+    position:relative; margin-top:56px; padding-top:28px;
+    border-top:1px dashed var(--line);
+    opacity:0; transform:translateY(18px);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .entry.in{opacity:1; transform:translateY(0);}
+  .entry h2{font-size:1.6rem; font-weight:600;}
+  .entry .kicker{
+    font-family:var(--font-mono); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-dim); margin-bottom:8px;
+  }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px 22px; box-shadow:var(--shadow); margin:18px 0;
+  }
+  .note{
+    border-left:3px solid var(--accent-fit); background:var(--accent-fit-soft);
+    padding:12px 16px; border-radius:0 8px 8px 0; font-size:.94rem; margin:18px 0; color:var(--ink);
+  }
+
+  /* ---------- table ---------- */
+  .tbl-wrap{overflow-x:auto; margin:18px 0; border:1px solid var(--line); border-radius:var(--radius);}
+  table{border-collapse:collapse; width:100%; min-width:640px; font-size:.92rem;}
+  th,td{padding:11px 14px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top;}
+  thead th{
+    font-family:var(--font-mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em;
+    background:var(--surface-2); color:var(--ink-dim);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  td.mono, th.mono{font-family:var(--font-mono);}
+  .tag{display:inline-flex; align-items:center; gap:5px; font-weight:600; white-space:nowrap;}
+  .tag.good{color:var(--good);}
+  .tag.warn{color:var(--accent-fit);}
+  .tag.bad{color:var(--bad);}
+
+  /* ---------- code ---------- */
+  pre{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:8px;
+    padding:14px 16px; overflow-x:auto; font-family:var(--font-mono); font-size:.85rem; line-height:1.55;
+  }
+
+  /* ---------- dna divider ---------- */
+  .dna-divider{display:flex; gap:3px; margin:34px 0; overflow:hidden;}
+  .dna-divider span{flex:1; height:6px; border-radius:3px; background:var(--surface-2);}
+  .dna-divider span:nth-child(3n+1){background:var(--accent-cross-soft);}
+  .dna-divider span:nth-child(5n+2){background:var(--accent-fit-soft);}
+  .dna-divider span:nth-child(7n+3){background:var(--accent-mutate-soft);}
+
+  /* ---------- state trace blocks ---------- */
+  .state-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:20px 0;}
+  @media (max-width:720px){ .state-grid{grid-template-columns:repeat(2,1fr);} }
+  .state-card{
+    border:1px solid var(--line); border-radius:8px; padding:14px; background:var(--surface);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .state-card .num{font-family:var(--font-mono); font-size:.72rem; color:var(--ink-dim);}
+  .state-card .name{font-weight:700; font-size:.95rem;}
+  .state-card .viz{font-family:var(--font-mono); font-size:.78rem; background:var(--surface-2); border-radius:6px; padding:8px; letter-spacing:1px;}
+  .state-card .desc{font-size:.82rem; color:var(--ink-dim);}
+  .state-card.active{border-color:var(--accent-cross); box-shadow:0 0 0 3px var(--accent-cross-soft);}
+
+  /* ---------- buttons / inputs ---------- */
+  .btn{
+    font-family:var(--font-body); font-weight:600; font-size:.9rem; cursor:pointer;
+    padding:9px 18px; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); transition:background .2s,border-color .2s,transform .1s;
+  }
+  .btn:hover{border-color:var(--accent-cross);}
+  .btn:active{transform:scale(.97);}
+  .btn.primary{background:var(--accent-cross); border-color:var(--accent-cross); color:#fff;}
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn.ghost{background:transparent;}
+  .btn[disabled]{opacity:.45; cursor:not-allowed;}
+
+  input[type="text"], input[type="number"]{
+    font-family:var(--font-mono); font-size:.92rem; padding:8px 12px; border-radius:6px;
+    border:1px solid var(--line); background:var(--surface-2); color:var(--ink); width:100%;
+  }
+  label.field{display:flex; flex-direction:column; gap:6px; font-size:.82rem; color:var(--ink-dim); font-weight:600;}
+  input[type="range"]{width:100%; accent-color:var(--accent-cross);}
+
+  /* ---------- demo ---------- */
+  .demo-controls{display:grid; grid-template-columns:1.3fr 1fr 1fr auto auto; gap:14px; align-items:end;}
+  @media (max-width:720px){ .demo-controls{grid-template-columns:1fr 1fr;} }
+  .demo-stats{display:flex; gap:22px; flex-wrap:wrap; margin:16px 0; font-family:var(--font-mono); font-size:.85rem;}
+  .demo-stats b{display:block; font-size:1.35rem; font-family:var(--font-mono); color:var(--accent-cross);}
+  .pop-grid{display:flex; flex-direction:column; gap:6px; margin-top:14px;}
+  .pop-row{display:flex; align-items:center; gap:10px;}
+  .pop-row .rank{width:22px; font-family:var(--font-mono); font-size:.72rem; color:var(--ink-dim); text-align:right;}
+  .pop-row .chars{display:flex; gap:2px;}
+  .pop-row .bar-wrap{flex:1; height:8px; border-radius:4px; background:var(--surface-2); overflow:hidden;}
+  .pop-row .bar{height:100%; background:var(--accent-cross); transition:width .25s;}
+  .pop-row .pct{width:44px; font-family:var(--font-mono); font-size:.72rem; color:var(--ink-dim); text-align:right;}
+
+  /* ---------- use cases ---------- */
+  .use-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:18px 0;}
+  @media (max-width:720px){ .use-grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:480px){ .use-grid{grid-template-columns:1fr;} }
+  .use-card{border:1px solid var(--line); border-radius:8px; padding:14px; background:var(--surface);}
+  .use-card .ico{font-size:1.4rem;}
+  .use-card h4{margin:8px 0 4px; font-size:.96rem;}
+  .use-card p{font-size:.82rem; color:var(--ink-dim); margin:0;}
+
+  /* ---------- quiz / warmup ---------- */
+  .quiz-q{margin-bottom:22px;}
+  .quiz-q p.q{font-weight:700; margin-bottom:10px;}
+  .opt{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line);
+    border-radius:8px; margin-bottom:8px; cursor:pointer; transition:border-color .15s, background .15s;
+    background:var(--surface);
+  }
+  .opt:hover{border-color:var(--accent-cross);}
+  .opt.correct{border-color:var(--good); background:var(--good-soft);}
+  .opt.wrong{border-color:var(--bad); background:var(--bad-soft);}
+  .opt input{accent-color:var(--accent-cross);}
+  .feedback{font-size:.86rem; margin-top:6px; padding:10px 12px; border-radius:8px; display:none;}
+  .feedback.show{display:block;}
+  .feedback.ok{background:var(--good-soft); color:var(--good);}
+  .feedback.no{background:var(--bad-soft); color:var(--bad);}
+
+  .blank-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:12px 0;}
+  .blank-row input{max-width:220px;}
+
+  .match-wrap{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  @media (max-width:600px){ .match-wrap{grid-template-columns:1fr;} }
+  .match-item{
+    padding:10px 12px; border:1px solid var(--line); border-radius:8px; cursor:pointer; font-size:.88rem;
+    background:var(--surface); transition:all .15s;
+  }
+  .match-item.selected{border-color:var(--accent-cross); background:var(--accent-cross-soft);}
+  .match-item.locked{border-color:var(--good); background:var(--good-soft); cursor:default; opacity:.85;}
+  .match-item.shake{animation:shake .35s;}
+  @keyframes shake{25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+  .match-progress{font-family:var(--font-mono); font-size:.8rem; color:var(--ink-dim); margin-top:10px;}
+
+  footer{margin-top:80px; padding-top:24px; border-top:1px solid var(--line); font-size:.85rem; color:var(--ink-dim);}
+  footer a{color:var(--ink-dim); text-decoration:underline;}
+
+  @keyframes fadeInDown{from{opacity:0; transform:translateY(-14px);} to{opacity:1; transform:translateY(0);}}
+  @keyframes slideUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.55;}}
+  .anim-in{animation:fadeInDown .7s ease both;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  }
+</style>
+
+<div id="rail"><div id="rail-fill"></div></div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow anim-in">AI For Beginners · Bài 21 · Nhóm "Thuật toán khác"</div>
+    <h1 class="anim-in" style="animation-delay:.05s">Thuật Toán Di Truyền</h1>
+    <p class="lede anim-in" style="animation-delay:.1s">
+      Genetic Algorithm (GA) không "học" từ dữ liệu như Neural Network — nó <b>tiến hóa</b> lời giải,
+      giống cách tự nhiên chọn lọc những cá thể khỏe nhất qua nhiều thế hệ. Bạn tạo ra một quần thể lời giải ngẫu nhiên,
+      chấm điểm chúng, giữ lại cái tốt, lai ghép và đột biến — lặp lại đến khi có lời giải đủ tốt.
+    </p>
+    <div class="hero-strip card" style="margin-top:24px; padding:18px;">
+      <div class="hero-strip-label"><span>Quần thể mẫu — mục tiêu: "AI"</span><span id="hero-gen">thế hệ 0</span></div>
+      <div class="gene-row" id="hero-genes"></div>
+    </div>
+  </header>
+
+  <!-- ============ WARM-UP ============ -->
+  <section class="entry" id="warmup">
+    <div class="kicker">Khởi động — 3 phút</div>
+    <h2>🔥 Khởi Động Nhanh</h2>
+    <p>Trả lời nhanh 3 dạng bài trước khi vào lý thuyết — đừng lo sai, đáp án hiện ngay lập tức.</p>
+
+    <div class="card">
+      <p class="q" style="font-weight:700; margin-bottom:10px;">1️⃣ Trắc nghiệm — Thứ tự đúng của một vòng lặp GA là gì?</p>
+      <div class="opt" data-correct="false" data-group="w1">Đột biến → Chọn lọc → Khởi tạo → Lai ghép</div>
+      <div class="opt" data-correct="true" data-group="w1">Khởi tạo quần thể → Chọn lọc → Lai ghép → Đột biến</div>
+      <div class="opt" data-correct="false" data-group="w1">Lai ghép → Đột biến → Khởi tạo → Chọn lọc</div>
+      <div class="feedback" id="fb-w1"></div>
+    </div>
+
+    <div class="card">
+      <p style="font-weight:700; margin-bottom:10px;">2️⃣ Điền khuyết — Hàm dùng để "chấm điểm" một lời giải trong GA gọi là hàm ____.</p>
+      <div class="blank-row">
+        <input type="text" id="blank1" placeholder="gõ câu trả lời...">
+        <button class="btn primary" id="checkBlank1">Kiểm tra</button>
+      </div>
+      <div class="feedback" id="fb-blank1"></div>
+    </div>
+
+    <div class="card">
+      <p style="font-weight:700; margin-bottom:6px;">3️⃣ Đối chiếu — Nối thuật ngữ (trái) với đúng bản mô tả (phải). Bấm 1 thuật ngữ rồi bấm 1 mô tả.</p>
+      <div class="match-wrap">
+        <div id="match-terms"></div>
+        <div id="match-defs"></div>
+      </div>
+      <div class="match-progress" id="match-progress">Hoàn thành: 0/5</div>
+    </div>
+  </section>
+
+  <div class="dna-divider" aria-hidden="true" id="dna1"></div>
+
+  <!-- ============ CONCEPT ============ -->
+  <section class="entry" id="concept">
+    <div class="kicker">Khái niệm</div>
+    <h2>4 "nguyên liệu" bắt buộc phải có</h2>
+    <p>Muốn cài một GA cho bài toán bất kỳ, bạn chỉ cần định nghĩa 4 thứ sau. Thiếu cái nào, thuật toán không chạy được:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Thành phần</th><th>Ý nghĩa</th><th>Ví dụ (bài toán 8 quân hậu)</th></tr></thead>
+        <tbody>
+          <tr><td><b>Gene</b></td><td>Cách mã hoá 1 lời giải thành chuỗi số/bit</td><td class="mono">[3,1,6,2,7,4,0,5] — vị trí hậu ở mỗi cột</td></tr>
+          <tr><td><b>Hàm fitness</b></td><td>Chấm điểm lời giải tốt hay dở</td><td class="mono">fit = số cặp hậu ăn nhau (càng nhỏ càng tốt)</td></tr>
+          <tr><td><b>Crossover</b></td><td>Lai 2 gene cha mẹ ra 1 gene con</td><td class="mono">cắt tại vị trí 4, ghép nửa đầu cha + nửa sau mẹ</td></tr>
+          <tr><td><b>Mutation</b></td><td>Đột biến ngẫu nhiên để thoát cực trị địa phương</td><td class="mono">đổi ngẫu nhiên 1 cột sang vị trí khác</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">💡 <b>Ghi nhớ:</b> Fitness càng <i>rõ ràng, đo lường được</i> thì GA càng hội tụ nhanh. Đây là phần dễ làm sai nhất khi mới học — xem mục "Dữ liệu tốt vs xấu" bên dưới.</div>
+  </section>
+
+  <!-- ============ 4 STATES ============ -->
+  <section class="entry" id="states">
+    <div class="kicker">Vòng lặp tiến hóa</div>
+    <h2>4 Trạng Thái Của Một Thế Hệ</h2>
+    <p>Mỗi thế hệ (generation) đi qua đúng 4 bước sau. Ví dụ dưới dùng quần thể chuỗi bit độ dài 6, mục tiêu là toàn số 1 (<span class="mono">111111</span>):</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Trạng Thái</th><th>Input</th><th>Xử Lý</th><th>Output</th><th>Đánh giá</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>① Khởi tạo</b></td>
+            <td class="mono">rỗng</td>
+            <td>Sinh N chuỗi ngẫu nhiên</td>
+            <td class="mono">010110, 101001...</td>
+            <td><span class="tag warn">⚠️ Đa dạng thấp → dễ kẹt sớm</span></td>
+          </tr>
+          <tr>
+            <td><b>② Chọn lọc</b></td>
+            <td class="mono">quần thể N cá thể</td>
+            <td>Chấm fitness, giữ cá thể điểm cao</td>
+            <td class="mono">101011 (fit=4) giữ lại</td>
+            <td><span class="tag good">✅ Áp lực chọn lọc vừa phải</span></td>
+          </tr>
+          <tr>
+            <td><b>③ Lai ghép</b></td>
+            <td class="mono">cha 101011 + mẹ 110110</td>
+            <td>Cắt & ghép tại 1 điểm ngẫu nhiên</td>
+            <td class="mono">con = 101110</td>
+            <td><span class="tag good">✅ Giữ gene tốt của cả 2</span></td>
+          </tr>
+          <tr>
+            <td><b>④ Đột biến</b></td>
+            <td class="mono">101110</td>
+            <td>Lật ngẫu nhiên 1 bit, xác suất nhỏ (~1-5%)</td>
+            <td class="mono">101111</td>
+            <td><span class="tag bad">❌ Tỉ lệ quá cao → phá vỡ lời giải tốt</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="state-grid" id="stateCards">
+      <div class="state-card" data-i="0">
+        <div class="num">BƯỚC 1</div>
+        <div class="name">Khởi tạo quần thể</div>
+        <div class="viz">[ ▢▣▢▣▣▢ ]<br>[ ▣▢▣▢▢▣ ]<br>[ ▢▢▣▣▢▣ ]</div>
+        <div class="desc">Random hoàn toàn, chưa có chọn lọc nào cả.</div>
+      </div>
+      <div class="state-card" data-i="1">
+        <div class="num">BƯỚC 2</div>
+        <div class="name">Chọn lọc (Selection)</div>
+        <div class="viz">▣▣▣▢▣▣ fit=5 ✓<br>▢▢▣▢▢▣ fit=2 ✗<br>▣▢▣▣▣▢ fit=4 ✓</div>
+        <div class="desc">Cá thể yếu (✗) bị loại khỏi vòng lai ghép.</div>
+      </div>
+      <div class="state-card" data-i="2">
+        <div class="num">BƯỚC 3</div>
+        <div class="name">Lai ghép (Crossover)</div>
+        <div class="viz">▣▣▣ | ▢▣▣<br>▣▢▣ | ▣▣▢<br>─────────<br>con: ▣▣▣▣▣▢</div>
+        <div class="desc">Điểm cắt ngẫu nhiên, ghép 2 nửa cha/mẹ.</div>
+      </div>
+      <div class="state-card" data-i="3">
+        <div class="num">BƯỚC 4</div>
+        <div class="name">Đột biến (Mutation)</div>
+        <div class="viz">▣▣▣▣▣▢<br>&nbsp;&nbsp;&nbsp;&nbsp;↑ lật<br>▣▣▢▣▣▢</div>
+        <div class="desc">1 bit đổi ngẫu nhiên → khám phá vùng lời giải mới.</div>
+      </div>
+    </div>
+
+    <pre><code>def evolve(population):
+    scored   = [(fit(g), g) for g in population]
+    parents  = select_best(scored, k=len(population)//2)
+    children = [crossover(p1, p2) for p1, p2 in pairs(parents)]
+    children = [mutate(c, rate=0.02) for c in children]
+    return parents + children   # thế hệ tiếp theo</code></pre>
+  </section>
+
+  <div class="dna-divider" aria-hidden="true" id="dna2"></div>
+
+  <!-- ============ LIVE DEMO ============ -->
+  <section class="entry" id="demo">
+    <div class="kicker">Thực hành trực tiếp</div>
+    <h2>🧪 Demo Sống: Tiến Hóa Một Chuỗi Ký Tự</h2>
+    <p>Đây là bài toán GA kinh điển: cho quần thể chuỗi ký tự ngẫu nhiên tiến hóa đến khi trùng khớp một chuỗi mục tiêu.
+       Đổi mục tiêu, tỉ lệ đột biến, rồi bấm <b>Chạy</b> để xem chọn lọc + lai ghép + đột biến diễn ra theo thời gian thực.</p>
+
+    <div class="card">
+      <div class="demo-controls">
+        <label class="field">Chuỗi mục tiêu
+          <input type="text" id="targetInput" maxlength="14" value="AI FOR BEGINNERS" style="text-transform:uppercase">
+        </label>
+        <label class="field">Tỉ lệ đột biến: <span id="mutVal">3%</span>
+          <input type="range" id="mutRange" min="0" max="30" value="3">
+        </label>
+        <label class="field">Kích thước quần thể: <span id="popVal">80</span>
+          <input type="range" id="popRange" min="20" max="200" value="80" step="10">
+        </label>
+        <button class="btn primary" id="playBtn">▶ Chạy</button>
+        <button class="btn ghost" id="resetBtn">↺ Reset</button>
+      </div>
+
+      <div class="demo-stats">
+        <div>Thế hệ<b id="genCount">0</b></div>
+        <div>Fitness tốt nhất<b id="bestFit">0%</b></div>
+        <div>Fitness trung bình<b id="avgFit">0%</b></div>
+        <div>Trạng thái<b id="statusTxt" style="font-size:.95rem;">chờ chạy</b></div>
+      </div>
+
+      <div class="pop-grid" id="popGrid"></div>
+    </div>
+    <div class="note">🎯 <b>Quan sát:</b> ký tự nền xanh = trùng đúng vị trí với mục tiêu (giống ô "✓" trong Wordle). Fitness = % ký tự trùng khớp.</div>
+  </section>
+
+  <!-- ============ DATA QUALITY ============ -->
+  <section class="entry" id="data-quality">
+    <div class="kicker">Thiết kế hàm fitness</div>
+    <h2>Dữ Liệu / Hàm Fitness: Tốt vs Xấu</h2>
+    <p>GA "chỉ giỏi bằng hàm fitness bạn viết ra". Đây là nơi 90% lỗi của người mới xảy ra:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Trường hợp</th><th>Ví dụ fitness</th><th>Điều gì xảy ra</th><th>Đánh giá</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Fitness liên tục, có gradient</td>
+            <td class="mono">fit = số ký tự trùng / tổng độ dài</td>
+            <td>Mỗi cải thiện nhỏ đều được thưởng điểm → quần thể tiến bộ dần đều</td>
+            <td><span class="tag good">✅ Tốt</span></td>
+          </tr>
+          <tr>
+            <td>Fitness nhị phân (đúng/sai)</td>
+            <td class="mono">fit = 1 nếu khớp 100%, else 0</td>
+            <td>Gần như mọi cá thể đều điểm 0 → GA "mù", không biết hướng nào tốt hơn</td>
+            <td><span class="tag bad">❌ Xấu — mất tín hiệu học</span></td>
+          </tr>
+          <tr>
+            <td>Quần thể khởi tạo quá giống nhau</td>
+            <td class="mono">80 cá thể đều = "AAAAAAAA..."</td>
+            <td>Thiếu đa dạng gene → lai ghép không tạo ra cái gì mới</td>
+            <td><span class="tag bad">❌ Xấu — hội tụ sớm giả</span></td>
+          </tr>
+          <tr>
+            <td>Tỉ lệ đột biến quá cao (&gt;20%)</td>
+            <td class="mono">mutation_rate = 0.25</td>
+            <td>Phá luôn cả gene tốt vừa lai ghép được → như đi bộ ngẫu nhiên</td>
+            <td><span class="tag bad">❌ Xấu — không hội tụ</span></td>
+          </tr>
+          <tr>
+            <td>Tỉ lệ đột biến quá thấp (~1-5%) + giữ elitism</td>
+            <td class="mono">mutation_rate = 0.02, giữ lại top 2</td>
+            <td>Vừa khai thác lời giải tốt, vừa đủ khám phá cái mới</td>
+            <td><span class="tag good">✅ Tốt — cân bằng explore/exploit</span></td>
+          </tr>
+          <tr>
+            <td>Mã hoá gene sai kiểu dữ liệu</td>
+            <td class="mono">dùng số thực cho bài toán tổ hợp rời rạc (8 hậu)</td>
+            <td>Crossover sinh ra lời giải không hợp lệ, phải sửa lại liên tục</td>
+            <td><span class="tag warn">⚠️ Trung bình — tốn thêm code "sửa lỗi"</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="dna-divider" aria-hidden="true" id="dna3"></div>
+
+  <!-- ============ USE CASES ============ -->
+  <section class="entry" id="usecases">
+    <div class="kicker">Ngoài đời</div>
+    <h2>Ứng Dụng Thực Tế</h2>
+    <div class="use-grid">
+      <div class="use-card"><div class="ico">🗓️</div><h4>Xếp lịch / ca làm</h4><p>Tối ưu lịch trực bệnh viện, lịch bay, lịch thi sao cho ít xung đột nhất.</p></div>
+      <div class="use-card"><div class="ico">📦</div><h4>Đóng gói tối ưu</h4><p>Xếp hàng vào container/kho sao cho tận dụng không gian tối đa (bin packing).</p></div>
+      <div class="use-card"><div class="ico">✂️</div><h4>Cắt vật liệu</h4><p>Cắt tấm kim loại/vải sao cho ít phế liệu thừa nhất.</p></div>
+      <div class="use-card"><div class="ico">🕹️</div><h4>AI chơi game</h4><p>MarI/O dùng GA tiến hóa mạng neural để tự học chơi Super Mario.</p></div>
+      <div class="use-card"><div class="ico">📡</div><h4>Thiết kế ăng-ten NASA</h4><p>NASA dùng GA tiến hóa hình dạng ăng-ten vệ tinh ST5 — hình dạng kỳ lạ nhưng hiệu quả hơn thiết kế thủ công.</p></div>
+      <div class="use-card"><div class="ico">🔍</div><h4>Tăng tốc tìm kiếm</h4><p>Thu hẹp không gian tìm kiếm cho bài toán tổ hợp quá lớn để duyệt vét cạn (brute-force).</p></div>
+    </div>
+  </section>
+
+  <!-- ============ EXERCISE ============ -->
+  <section class="entry" id="exercise">
+    <div class="kicker">Bài tập nhỏ</div>
+    <h2>✍️ Tự Tay Làm Một Thế Hệ</h2>
+    <div class="card">
+      <p><b>Đề bài:</b> Giải phương trình Diophantine <span class="mono">a + 2b + 3c + 4d = 30</span> bằng tay,
+         với gene = <span class="mono">[a, b, c, d]</span>, mỗi số trong khoảng [0, 30].</p>
+      <p>1. Viết hàm fitness dạng: <span class="mono">fit = |30 − (a+2b+3c+4d)|</span> (càng gần 0 càng tốt).<br>
+         2. Cho 2 cha mẹ: <span class="mono">[5, 3, 2, 1]</span> và <span class="mono">[2, 8, 1, 0]</span>. Tự lai ghép 1 điểm cắt ở giữa gene, tính fitness con lai.<br>
+         3. Đột biến 1 gene ngẫu nhiên của con lai (±1), tính lại fitness — có tốt hơn không?</p>
+      <p style="color:var(--ink-dim); font-size:.88rem;">Gợi ý: mở notebook gốc <span class="mono">Diophantine.ipynb</span> trong bài học để code lại và so kết quả.</p>
+    </div>
+    <div class="card">
+      <p><b>Câu hỏi tự kiểm tra (tự trả lời trong đầu trước khi xem đáp án phần Quiz bên dưới):</b></p>
+      <p style="margin-bottom:0;">• Nếu hàm fitness của bạn luôn trả về đúng 1 giá trị cho mọi cá thể, GA có học được không? Vì sao?<br>
+      • Điều gì xảy ra nếu bạn đặt tỉ lệ đột biến = 100%?<br>
+      • Elitism (giữ lại cá thể tốt nhất mỗi thế hệ) giải quyết vấn đề gì?</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="entry" id="quiz">
+    <div class="kicker">Tự kiểm tra</div>
+    <h2>📝 Quiz Cuối Bài</h2>
+
+    <div class="quiz-q">
+      <p class="q">1. Mục đích chính của đột biến (mutation) trong GA là gì?</p>
+      <div class="opt" data-correct="false" data-group="q1">Tăng tốc độ hội tụ tối đa</div>
+      <div class="opt" data-correct="true" data-group="q1">Thoát khỏi cực trị địa phương (local minimum)</div>
+      <div class="opt" data-correct="false" data-group="q1">Giảm kích thước quần thể</div>
+      <div class="feedback" id="fb-q1"></div>
+    </div>
+
+    <div class="quiz-q">
+      <p class="q">2. Hàm fitness nào sau đây là <b>lựa chọn tốt</b> cho GA?</p>
+      <div class="opt" data-correct="false" data-group="q2">Chỉ trả 0 hoặc 1 (đúng tuyệt đối / sai hoàn toàn)</div>
+      <div class="opt" data-correct="true" data-group="q2">Trả về một giá trị liên tục thể hiện mức độ "gần đúng"</div>
+      <div class="opt" data-correct="false" data-group="q2">Luôn trả về cùng một số cho mọi cá thể</div>
+      <div class="feedback" id="fb-q2"></div>
+    </div>
+
+    <div class="quiz-q">
+      <p class="q">3. Tỉ lệ đột biến 40% thường gây ra hậu quả gì?</p>
+      <div class="opt" data-correct="true" data-group="q3">Phá vỡ các lời giải tốt vừa tìm được, GA gần như thành ngẫu nhiên</div>
+      <div class="opt" data-correct="false" data-group="q3">Giúp GA hội tụ nhanh và ổn định hơn</div>
+      <div class="opt" data-correct="false" data-group="q3">Không ảnh hưởng gì đến kết quả</div>
+      <div class="feedback" id="fb-q3"></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Bài học gốc: <a href="../lessons/6-Other/21-GeneticAlgorithms/README.md">lessons/6-Other/21-GeneticAlgorithms</a> · Bài tiếp theo: <a href="../lessons/6-Other/22-DeepRL/README.md">22 — Deep Reinforcement Learning</a></p>
+    <p>Được biên soạn tương tác cho người mới học AI · Claude-lession</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- scroll reveal + rail ---------- */
+  var entries = Array.prototype.slice.call(document.querySelectorAll(".entry"));
+  var railFill = document.getElementById("rail-fill");
+  var rail = document.getElementById("rail");
+
+  entries.forEach(function(el){
+    var tick = document.createElement("div");
+    tick.className = "tick";
+    rail.appendChild(el._tick = tick);
+  });
+
+  function layoutTicks(){
+    var docH = document.documentElement.scrollHeight - window.innerHeight;
+    entries.forEach(function(el){
+      var pct = docH > 0 ? (el.offsetTop / docH) * 100 : 0;
+      el._tick.style.top = Math.min(98, pct) + "%";
+    });
+  }
+
+  function onScroll(){
+    var doc = document.documentElement;
+    var scrolled = doc.scrollTop || document.body.scrollTop;
+    var height = doc.scrollHeight - doc.clientHeight;
+    var pct = height > 0 ? (scrolled / height) * 100 : 0;
+    railFill.style.height = pct + "%";
+  }
+
+  var io = new IntersectionObserver(function(entriesList){
+    entriesList.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add("in");
+        e.target._tick.classList.add("active");
+      } else {
+        e.target._tick.classList.remove("active");
+      }
+    });
+  }, {threshold:0.18});
+  entries.forEach(function(el){ io.observe(el); });
+
+  window.addEventListener("scroll", onScroll, {passive:true});
+  window.addEventListener("resize", layoutTicks);
+  layoutTicks(); onScroll();
+
+  /* ---------- state card highlight cycle ---------- */
+  var stateCards = Array.prototype.slice.call(document.querySelectorAll("#stateCards .state-card"));
+  if(!reduced && stateCards.length){
+    var si = 0;
+    setInterval(function(){
+      stateCards.forEach(function(c){ c.classList.remove("active"); });
+      stateCards[si % stateCards.length].classList.add("active");
+      si++;
+    }, 1400);
+  }
+
+  /* ---------- MCQ (warmup + quiz) ---------- */
+  function wireMCQ(groupName, feedbackId, okText, noText){
+    var opts = Array.prototype.slice.call(document.querySelectorAll('.opt[data-group="'+groupName+'"]'));
+    var fb = document.getElementById(feedbackId);
+    opts.forEach(function(opt){
+      opt.addEventListener("click", function(){
+        if(opt.dataset.locked) return;
+        opts.forEach(function(o){ o.dataset.locked = "1"; });
+        var correct = opt.dataset.correct === "true";
+        opt.classList.add(correct ? "correct" : "wrong");
+        if(!correct){
+          opts.forEach(function(o){ if(o.dataset.correct === "true") o.classList.add("correct"); });
+        }
+        fb.textContent = correct ? okText : noText;
+        fb.className = "feedback show " + (correct ? "ok" : "no");
+      });
+    });
+  }
+  wireMCQ("w1","fb-w1","✅ Chính xác! Khởi tạo → Chọn lọc → Lai ghép → Đột biến, lặp lại.","❌ Chưa đúng. Thứ tự chuẩn là: Khởi tạo → Chọn lọc → Lai ghép → Đột biến.");
+  wireMCQ("q1","fb-q1","✅ Đúng! Không có đột biến, GA dễ kẹt ở một lời giải 'khá tốt' nhưng không phải tốt nhất.","❌ Chưa đúng. Đột biến giúp thoát cực trị địa phương, không phải tăng tốc hội tụ.");
+  wireMCQ("q2","fb-q2","✅ Đúng! Fitness liên tục cho GA biết 'hướng nào đang tốt hơn'.","❌ Chưa đúng — fitness nhị phân hoặc cố định khiến GA mất phương hướng.");
+  wireMCQ("q3","fb-q3","✅ Đúng! Đột biến quá cao phá huỷ gene tốt, quần thể gần như đi ngẫu nhiên.","❌ Chưa đúng — tỉ lệ đột biến quá cao gây phá vỡ lời giải tốt, không giúp hội tụ nhanh hơn.");
+
+  /* ---------- fill-in-blank ---------- */
+  document.getElementById("checkBlank1").addEventListener("click", function(){
+    var val = document.getElementById("blank1").value.trim().toLowerCase();
+    var fb = document.getElementById("fb-blank1");
+    var ok = val === "fitness" || val === "hàm fitness" || val === "fit";
+    fb.textContent = ok ? "✅ Chính xác — hàm fitness (hàm thích nghi)." : "❌ Đáp án đúng: 'fitness' (hàm thích nghi / hàm mục tiêu).";
+    fb.className = "feedback show " + (ok ? "ok" : "no");
+  });
+
+  /* ---------- matching game ---------- */
+  var pairs = [
+    {term:"Quần thể", def:"Tập hợp các lời giải (cá thể) đang tồn tại ở một thế hệ"},
+    {term:"Gene", def:"Cách mã hoá một lời giải thành chuỗi số/bit"},
+    {term:"Chọn lọc", def:"Giữ lại những cá thể có fitness cao để sinh sản"},
+    {term:"Lai ghép", def:"Kết hợp gene của 2 cá thể cha mẹ để tạo cá thể con"},
+    {term:"Đột biến", def:"Thay đổi ngẫu nhiên nhỏ để tránh kẹt ở cực trị địa phương"}
+  ];
+  function shuffle(arr){ return arr.slice().sort(function(){ return Math.random()-0.5; }); }
+  var termsEl = document.getElementById("match-terms");
+  var defsEl = document.getElementById("match-defs");
+  var shuffledDefs = shuffle(pairs);
+  pairs.forEach(function(p, i){
+    var d = document.createElement("div");
+    d.className = "match-item"; d.textContent = p.term; d.dataset.term = p.term;
+    termsEl.appendChild(d);
+  });
+  shuffledDefs.forEach(function(p){
+    var d = document.createElement("div");
+    d.className = "match-item"; d.textContent = p.def; d.dataset.term = p.term;
+    defsEl.appendChild(d);
+  });
+  var selectedTerm = null, matched = 0;
+  var progressEl = document.getElementById("match-progress");
+  termsEl.addEventListener("click", function(e){
+    var el = e.target.closest(".match-item");
+    if(!el || el.classList.contains("locked")) return;
+    Array.prototype.forEach.call(termsEl.children, function(c){ c.classList.remove("selected"); });
+    el.classList.add("selected");
+    selectedTerm = el;
+  });
+  defsEl.addEventListener("click", function(e){
+    var el = e.target.closest(".match-item");
+    if(!el || el.classList.contains("locked") || !selectedTerm) return;
+    if(el.dataset.term === selectedTerm.dataset.term){
+      el.classList.add("locked"); selectedTerm.classList.add("locked");
+      el.classList.remove("selected"); selectedTerm.classList.remove("selected");
+      matched++;
+      progressEl.textContent = "Hoàn thành: " + matched + "/" + pairs.length + (matched===pairs.length ? "  🎉 Xong hết!" : "");
+      selectedTerm = null;
+    } else {
+      el.classList.add("shake"); selectedTerm.classList.add("shake");
+      setTimeout(function(){
+        el.classList.remove("shake"); selectedTerm.classList.remove("shake");
+        selectedTerm.classList.remove("selected");
+        selectedTerm = null;
+      }, 350);
+    }
+  });
+
+  /* ---------- Genetic string engine (shared) ---------- */
+  var ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
+  function randChar(){ return ALPHABET[Math.floor(Math.random()*ALPHABET.length)]; }
+  function randString(len){ var s=""; for(var i=0;i<len;i++) s+=randChar(); return s; }
+  function fitness(s, target){
+    var m=0; for(var i=0;i<target.length;i++){ if(s[i]===target[i]) m++; }
+    return m;
+  }
+  function crossover(a,b){
+    var cut = Math.floor(Math.random()*a.length);
+    return a.slice(0,cut)+b.slice(cut);
+  }
+  function mutate(s, rate){
+    var out="";
+    for(var i=0;i<s.length;i++){
+      out += Math.random()<rate ? randChar() : s[i];
+    }
+    return out;
+  }
+  function tournament(pop, scored){
+    var i = Math.floor(Math.random()*pop.length);
+    var j = Math.floor(Math.random()*pop.length);
+    return scored[i][0] > scored[j][0] ? pop[i] : pop[j];
+  }
+
+  function makeGA(opts){
+    var target = opts.target, popSize = opts.popSize, mutRate = opts.mutRate;
+    var pop = []; for(var i=0;i<popSize;i++) pop.push(randString(target.length));
+    var gen = 0;
+    function step(){
+      var scored = pop.map(function(s){ return [fitness(s,target), s]; });
+      scored.sort(function(a,b){ return b[0]-a[0]; });
+      var elite = scored.slice(0,2).map(function(x){ return x[1]; });
+      var next = elite.slice();
+      while(next.length < popSize){
+        var p1 = tournament(pop, scored);
+        var p2 = tournament(pop, scored);
+        var child = mutate(crossover(p1,p2), mutRate);
+        next.push(child);
+      }
+      pop = next; gen++;
+      return scored;
+    }
+    return { step: step, get gen(){ return gen; }, get population(){ return pop; } };
+  }
+
+  /* ---------- hero mini demo ---------- */
+  var heroGenesEl = document.getElementById("hero-genes");
+  var heroGenEl = document.getElementById("hero-gen");
+  if(heroGenesEl){
+    var heroTarget = "AI";
+    var heroGA = makeGA({target:heroTarget, popSize:24, mutRate:0.08});
+    function renderHero(scored){
+      var best = scored[0][1];
+      heroGenesEl.innerHTML = "";
+      for(var i=0;i<best.length;i++){
+        var g = document.createElement("div");
+        g.className = "gene" + (best[i]===heroTarget[i] ? " match" : "");
+        g.textContent = best[i]===" " ? "·" : best[i];
+        heroGenesEl.appendChild(g);
+      }
+      heroGenEl.textContent = "thế hệ " + heroGA.gen;
+    }
+    if(!reduced){
+      var heroTimer = null;
+      function heroTick(){
+        var scored = heroGA.step();
+        renderHero(scored);
+        if(scored[0][0] === heroTarget.length){
+          clearInterval(heroTimer);
+          setTimeout(function(){
+            heroGA = makeGA({target:heroTarget, popSize:24, mutRate:0.08});
+            heroTimer = setInterval(heroTick, 220);
+          }, 1600);
+        }
+      }
+      heroTimer = setInterval(heroTick, 220);
+    } else {
+      renderHero([[heroTarget.length, heroTarget]]);
+    }
+  }
+
+  /* ---------- main interactive demo ---------- */
+  var targetInput = document.getElementById("targetInput");
+  var mutRange = document.getElementById("mutRange");
+  var popRange = document.getElementById("popRange");
+  var mutVal = document.getElementById("mutVal");
+  var popVal = document.getElementById("popVal");
+  var playBtn = document.getElementById("playBtn");
+  var resetBtn = document.getElementById("resetBtn");
+  var genCount = document.getElementById("genCount");
+  var bestFit = document.getElementById("bestFit");
+  var avgFit = document.getElementById("avgFit");
+  var statusTxt = document.getElementById("statusTxt");
+  var popGrid = document.getElementById("popGrid");
+
+  var ga = null, timer = null, playing = false;
+
+  mutRange.addEventListener("input", function(){ mutVal.textContent = mutRange.value + "%"; });
+  popRange.addEventListener("input", function(){ popVal.textContent = popRange.value; });
+
+  function currentTarget(){
+    return (targetInput.value || "AI").toUpperCase().replace(/[^A-Z ]/g,"").slice(0,14) || "AI";
+  }
+
+  function renderPop(scored, target){
+    popGrid.innerHTML = "";
+    var top = scored.slice(0, 10);
+    top.forEach(function(pair, idx){
+      var fit = pair[0], s = pair[1];
+      var pct = Math.round((fit/target.length)*100);
+      var row = document.createElement("div");
+      row.className = "pop-row";
+
+      var rank = document.createElement("div"); rank.className="rank"; rank.textContent = idx+1;
+      var chars = document.createElement("div"); chars.className="chars";
+      for(var i=0;i<s.length;i++){
+        var c = document.createElement("div");
+        c.className = "gene" + (s[i]===target[i] ? " match" : "");
+        c.style.width="20px"; c.style.height="20px"; c.style.fontSize=".68rem";
+        c.textContent = s[i]===" " ? "·" : s[i];
+        chars.appendChild(c);
+      }
+      var barWrap = document.createElement("div"); barWrap.className="bar-wrap";
+      var bar = document.createElement("div"); bar.className="bar"; bar.style.width=pct+"%";
+      barWrap.appendChild(bar);
+      var pctEl = document.createElement("div"); pctEl.className="pct"; pctEl.textContent = pct+"%";
+
+      row.appendChild(rank); row.appendChild(chars); row.appendChild(barWrap); row.appendChild(pctEl);
+      popGrid.appendChild(row);
+    });
+  }
+
+  function resetGA(){
+    if(timer){ clearInterval(timer); timer=null; }
+    playing = false; playBtn.textContent = "▶ Chạy";
+    var target = currentTarget();
+    ga = makeGA({target:target, popSize: +popRange.value, mutRate: +mutRange.value/100});
+    genCount.textContent = "0"; bestFit.textContent="0%"; avgFit.textContent="0%";
+    statusTxt.textContent = "chờ chạy";
+    var initScored = ga.population.map(function(s){ return [fitness(s,target), s]; }).sort(function(a,b){return b[0]-a[0];});
+    renderPop(initScored, target);
+  }
+
+  function tick(){
+    var target = currentTarget();
+    var scored = ga.step();
+    var best = scored[0][0];
+    var avg = scored.reduce(function(a,b){return a+b[0];},0)/scored.length;
+    genCount.textContent = ga.gen;
+    bestFit.textContent = Math.round((best/target.length)*100)+"%";
+    avgFit.textContent = Math.round((avg/target.length)*100)+"%";
+    renderPop(scored, target);
+    if(best === target.length){
+      statusTxt.textContent = "✅ đã hội tụ!";
+      clearInterval(timer); timer=null; playing=false; playBtn.textContent="▶ Chạy";
+    } else if(ga.gen > 800){
+      statusTxt.textContent = "⏹ dừng (quá 800 thế hệ)";
+      clearInterval(timer); timer=null; playing=false; playBtn.textContent="▶ Chạy";
+    } else {
+      statusTxt.textContent = "đang tiến hoá...";
+    }
+  }
+
+  playBtn.addEventListener("click", function(){
+    if(!ga) resetGA();
+    if(playing){
+      clearInterval(timer); timer=null; playing=false; playBtn.textContent="▶ Chạy";
+      statusTxt.textContent = "tạm dừng";
+    } else {
+      playing = true; playBtn.textContent = "⏸ Tạm dừng";
+      timer = setInterval(tick, reduced ? 0 : 90);
+    }
+  });
+  resetBtn.addEventListener("click", resetGA);
+  resetGA();
+
+})();
+</script>
