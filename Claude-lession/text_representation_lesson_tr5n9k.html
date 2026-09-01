@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biến Chữ Thành Số</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #f0eef6;
+    --surface: #ffffff;
+    --surface-alt: #e6e1f2;
+    --text: #17141f;
+    --text-muted: #544f66;
+    --border: #cdc5e0;
+    --accent: #5b3fd6;
+    --accent-2: #d6408f;
+    --good: #2f8f5c;
+    --warn: #b8842a;
+    --bad: #c04a3c;
+    --good-bg: #e3f3ea;
+    --warn-bg: #f7ecd9;
+    --bad-bg: #f6e3e0;
+    --shadow: 0 1px 2px rgba(23, 20, 31, 0.06), 0 8px 24px rgba(23, 20, 31, 0.06);
+    --radius: 10px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14101e;
+      --surface: #1e1830;
+      --surface-alt: #251d3a;
+      --text: #ede9f7;
+      --text-muted: #b0a6cc;
+      --border: #38294f;
+      --accent: #a58bf7;
+      --accent-2: #f28ac2;
+      --good: #57c98a;
+      --warn: #e0b756;
+      --bad: #e2695c;
+      --good-bg: #17342a;
+      --warn-bg: #33291a;
+      --bad-bg: #341f1c;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14101e; --surface: #1e1830; --surface-alt: #251d3a;
+    --text: #ede9f7; --text-muted: #b0a6cc; --border: #38294f;
+    --accent: #a58bf7; --accent-2: #f28ac2;
+    --good: #57c98a; --warn: #e0b756; --bad: #e2695c;
+    --good-bg: #17342a; --warn-bg: #33291a; --bad-bg: #341f1c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 8px 30px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    line-height: 1.65; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 2.5rem 1.25rem 6rem; }
+  h1, h2, h3 { font-family: 'IBM Plex Mono', ui-monospace, monospace; text-wrap: balance; letter-spacing: -0.01em; }
+  code, .mono, table { font-variant-numeric: tabular-nums; font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+
+  @keyframes fadeInDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulseDot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.4); } }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(91,63,214,0.35); } 50% { box-shadow: 0 0 0 8px rgba(91,63,214,0); } }
+  @keyframes chipIn { from { opacity: 0; transform: translateY(10px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  .hero { padding: 2.4rem 0 1.6rem; border-bottom: 1px dashed var(--border); opacity: 0; animation: fadeInDown 0.7s ease forwards; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); background: var(--surface-alt);
+    border: 1px solid var(--border); padding: 0.3rem 0.7rem; border-radius: 999px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulseDot 1.6s ease-in-out infinite; }
+  h1.title { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0.8rem 0 0.4rem; font-weight: 600; }
+  .subtitle { color: var(--text-muted); font-size: 1.05rem; max-width: 640px; }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.4rem 0 0; }
+  nav.toc a {
+    font-size: 0.82rem; color: var(--text-muted); text-decoration: none;
+    border: 1px solid var(--border); padding: 0.35rem 0.7rem; border-radius: 999px;
+    background: var(--surface); transition: all 0.25s ease;
+  }
+  nav.toc a:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
+
+  section { margin-top: 3rem; opacity: 0; animation: slideUp 0.7s ease forwards; }
+  section.s2 { animation-delay: 0.05s; }
+  section.s3 { animation-delay: 0.1s; }
+  section.s4 { animation-delay: 0.15s; }
+
+  h2 { font-size: 1.4rem; display: flex; align-items: center; gap: 0.6rem; }
+  h2 .num {
+    font-size: 0.8rem; background: var(--accent); color: #fff; width: 1.7rem; height: 1.7rem;
+    display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; flex-shrink: 0;
+  }
+  p { color: var(--text-muted); }
+  strong { color: var(--text); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.2rem 1.4rem; box-shadow: var(--shadow); margin: 1rem 0;
+  }
+
+  /* ---- ASCII diagram box ---- */
+  .diagram {
+    background: var(--surface-alt); border: 1px dashed var(--border); border-radius: var(--radius);
+    padding: 1rem 1.2rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem;
+    overflow-x: auto; white-space: pre; color: var(--text); margin: 0.8rem 0;
+  }
+
+  /* ---- comparison table ---- */
+  .tbl-wrap { overflow-x: auto; }
+  table.cmp { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  table.cmp th, table.cmp td { border: 1px solid var(--border); padding: 0.55rem 0.7rem; text-align: left; vertical-align: top; }
+  table.cmp th { background: var(--surface-alt); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.cmp tr:nth-child(even) td { background: var(--surface-alt); }
+
+  .tag { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; white-space: nowrap; }
+  .tag.good { background: var(--good-bg); color: var(--good); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+
+  pre.code {
+    background: #16121f; color: #e5deff; border-radius: var(--radius); padding: 1rem 1.2rem;
+    overflow-x: auto; font-size: 0.82rem; border: 1px solid var(--border); line-height: 1.55;
+  }
+  :root[data-theme="light"] pre.code, @media (prefers-color-scheme: light) { }
+  pre.code .c { color: #8f89b0; } pre.code .k { color: #f28ac2; } pre.code .s { color: #a5f7c8; } pre.code .fn { color: #8bd0f7; }
+
+  /* ---- state cards grid ---- */
+  .state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .state-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); }
+  .state-card h3 { margin: 0 0 0.4rem; font-size: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+  .state-card .flow { font-size: 0.8rem; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; margin: 0.5rem 0; }
+
+  /* ---- interactive demo blocks ---- */
+  .demo { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.3rem; background: var(--surface); box-shadow: var(--shadow); }
+  .demo h3 { margin-top: 0; }
+  textarea, input[type="text"] {
+    width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 0.86rem; padding: 0.6rem 0.7rem;
+    border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); resize: vertical;
+  }
+  label.field-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: block; margin: 0.7rem 0 0.3rem; }
+  .btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff; padding: 0.55rem 1rem;
+    border-radius: 8px; margin: 0.9rem 0.4rem 0.2rem 0; transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn.small { padding: 0.35rem 0.7rem; font-size: 0.75rem; margin: 0.2rem 0.3rem 0.2rem 0; }
+  .btn.active { background: var(--accent-2); border-color: var(--accent-2); }
+
+  .out { margin-top: 1rem; }
+  .out.show { animation: slideDown 0.5s ease forwards; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
+  .chip {
+    background: var(--surface-alt); border: 1px solid var(--border); color: var(--text);
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; padding: 0.3rem 0.6rem; border-radius: 8px;
+    opacity: 0; animation: chipIn 0.4s ease forwards;
+  }
+
+  .onehot-grid { display: flex; gap: 0.4rem; margin-top: 0.8rem; flex-wrap: wrap; }
+  .cell {
+    width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+    background: var(--surface-alt); transition: all 0.3s ease;
+  }
+  .cell.hit { background: var(--accent); color: #fff; border-color: var(--accent); animation: pulse 1.2s ease 1; }
+  .cell-label { font-size: 0.65rem; color: var(--text-muted); text-align: center; width: 42px; }
+
+  .note { font-size: 0.85rem; padding: 0.7rem 0.9rem; border-radius: 8px; margin-top: 0.7rem; }
+  .note.good { background: var(--good-bg); color: var(--good); }
+  .note.bad { background: var(--bad-bg); color: var(--bad); }
+  .note.warn { background: var(--warn-bg); color: var(--warn); }
+
+  /* ---- quiz ---- */
+  .quiz-item { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.2rem; margin: 1rem 0; background: var(--surface); }
+  .quiz-item p.q { font-weight: 600; color: var(--text); margin: 0 0 0.6rem; }
+  .opt {
+    display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; border-radius: 8px;
+    cursor: pointer; border: 1px solid transparent; transition: background 0.2s ease;
+  }
+  .opt:hover { background: var(--surface-alt); }
+  .opt input { accent-color: var(--accent); }
+  .opt.correct { background: var(--good-bg); border-color: var(--good); }
+  .opt.incorrect { background: var(--bad-bg); border-color: var(--bad); }
+  .fb { font-size: 0.85rem; margin-top: 0.5rem; display: none; }
+  .fb.show { display: block; animation: slideDown 0.4s ease forwards; }
+  .fb.ok { color: var(--good); } .fb.no { color: var(--bad); }
+
+  .score-bar {
+    position: sticky; bottom: 1rem; margin-top: 1.5rem; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; padding: 0.6rem 1.1rem; box-shadow: var(--shadow); display: flex; align-items: center;
+    justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem;
+  }
+
+  footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border); color: var(--text-muted); font-size: 0.85rem; }
+  a { color: var(--accent); }
+  ::selection { background: var(--accent); color: #fff; }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 1.6rem 1rem 5rem; }
+    table.cmp { font-size: 0.78rem; }
+    .cell { width: 34px; height: 34px; font-size: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow"><span class="dot"></span> AI For Beginners · Bài 13 · NLP</span>
+    <h1 class="title">Biến Chữ Thành Số: Text Representation</h1>
+    <p class="subtitle">Máy tính không đọc được chữ như con người — nó chỉ nhân ma trận. Bài này giảng 4 cách "dịch" văn bản thành tensor: từ one-hot cấp ký tự cho tới Bag-of-Words và TF-IDF, kèm demo bấm-là-chạy.</p>
+    <nav class="toc">
+      <a href="#khainiem">① Vấn đề gốc</a>
+      <a href="#sosanh">② 4 cách biểu diễn</a>
+      <a href="#demo">③ Demo tương tác</a>
+      <a href="#data">④ Data tốt/xấu</a>
+      <a href="#baitap">⑤ Bài tập</a>
+      <a href="#quiz">⑥ Quiz</a>
+    </nav>
+  </header>
+
+  <section id="khainiem" class="s2">
+    <h2><span class="num">1</span> Vì sao phải biến chữ thành số?</h2>
+    <p>Mạng nơ-ron chỉ làm được một việc: nhân — cộng ma trận số. Nó không "đọc hiểu" chữ cái như bạn. Vì vậy bước đầu tiên của mọi bài toán NLP là <strong>token hóa</strong> (cắt câu thành từ/ký tự) rồi <strong>mã hóa</strong> mỗi token thành số.</p>
+    <div class="diagram">"AI" ──token hóa──▶ ['A','I']  hoặc ['ai']
+                    │
+                    ▼
+        tra từ điển (vocabulary) → gán chỉ số (index)
+                    │
+                    ▼
+     one-hot encoding:  index=3 trong từ điển 10.000 từ
+     ┌─┬─┬─┬■┬─┬─┬─┬─┬─┬─┐   ← chỉ 1 vị trí = 1, còn lại = 0
+     0 1 2 3 4 5 6 7 8 9      → vector THƯA (sparse), tốn bộ nhớ</div>
+    <p>Câu hỏi then chốt: <strong>token là ký tự hay là từ?</strong> Và sau khi có nhiều token, làm sao gộp chúng lại thành <strong>một</strong> vector duy nhất cho cả câu/văn bản? Đó là nội dung 4 "trạng thái" bên dưới.</p>
+  </section>
+
+  <section id="sosanh" class="s3">
+    <h2><span class="num">2</span> 4 cách biểu diễn văn bản</h2>
+    <p>Mỗi cách xử lý một trade-off khác nhau giữa <em>kích thước từ điển</em>, <em>giữ ngữ cảnh</em> và <em>độ phức tạp tính toán</em>.</p>
+
+    <div class="state-grid">
+      <div class="state-card">
+        <h3>① Ký tự (Character-level) <span class="tag warn">⚠️ Trung bình</span></h3>
+        <div class="flow">"Hi" → [H, i] → one-hot theo bảng chữ cái</div>
+        <div class="diagram">Bảng chữ cái C=26 (A-Z)
+"Hi" → ma trận 2×26:
+H → [0...1(pos 7)...0]
+i → [0...1(pos 8)...0]</div>
+        <p style="font-size:0.85rem">Từ điển nhỏ, không bao giờ gặp "từ lạ" — nhưng ký tự đơn lẻ gần như vô nghĩa, mạng phải tự học ghép chữ thành nghĩa → cần mô hình sâu hơn, chậm hơn.</p>
+      </div>
+
+      <div class="state-card">
+        <h3>② Từ (Word-level one-hot) <span class="tag warn">⚠️ Trung bình</span></h3>
+        <div class="flow">"AI học" → [AI, học] → one-hot theo từ điển</div>
+        <div class="diagram">Từ điển V=50.000 từ
+"học" ở vị trí 1204
+→ vector 1×50.000, chỉ 1 số ≠ 0</div>
+        <p style="font-size:0.85rem">Giữ được nghĩa cấp từ — tốt hơn ký tự. Nhưng từ điển thật (tiếng Việt/Anh) có hàng chục nghìn từ → vector <strong>cao chiều, cực thưa</strong>, tốn RAM, dễ overfit nếu ít dữ liệu.</p>
+      </div>
+
+      <div class="state-card">
+        <h3>③ N-gram <span class="tag warn">⚠️ Trung bình</span></h3>
+        <div class="flow">"đi câu cá" → [đi_câu, câu_cá]</div>
+        <div class="diagram">bigram giữ NGỮ CẢNH gần:
+"mạng nơ-ron" ≠ "mạng lưới điện"
+nhưng: "đi câu" & "đi chợ"
+   → 2 token KHÔNG liên quan
+   dù cùng chung từ "đi"</div>
+        <p style="font-size:0.85rem">Bắt được cụm từ đi liền nhau (ngữ cảnh cục bộ). Đổi lại từ điển phình to rất nhanh (kết hợp tổ hợp), và các cụm chia sẻ 1 từ chung lại không chia sẻ vector.</p>
+      </div>
+
+      <div class="state-card">
+        <h3>④ Bag-of-Words / TF-IDF <span class="tag good">✅ Tốt cho phân loại</span></h3>
+        <div class="flow">"AI học AI" → đếm tần suất → [AI:2, học:1]</div>
+        <div class="diagram">BoW:  đếm thô   → "và","là" áp đảo
+TF-IDF: đếm thô × log(N/df)
+        → hạ trọng số từ phổ biến
+        → nâng trọng số từ ĐẶC TRƯNG</div>
+        <p style="font-size:0.85rem">Vector <strong>cố định kích thước</strong> dù văn bản dài ngắn khác nhau — rất hợp để đưa vào bộ phân loại. Nhược điểm: mất hoàn toàn <strong>thứ tự từ</strong> ("chó cắn mèo" = "mèo cắn chó").</p>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+    <table class="cmp">
+      <tr><th>Trạng Thái</th><th>Input</th><th>Xử Lý</th><th>Output</th><th>Đánh Giá</th></tr>
+      <tr>
+        <td>Ký tự (char-level)</td><td>Chuỗi ký tự</td><td>One-hot theo bảng chữ cái (~26-100 ký tự)</td><td>Ma trận N×C thưa</td><td><span class="tag warn">⚠️ Từ điển nhỏ, nhưng mất nghĩa cấp từ</span></td>
+      </tr>
+      <tr>
+        <td>Từ (word-level)</td><td>Chuỗi từ đã token hóa</td><td>One-hot theo từ điển V từ</td><td>Ma trận N×V, V có thể &gt; 50.000</td><td><span class="tag bad">❌ Vector siêu thưa, tốn bộ nhớ nếu V lớn</span></td>
+      </tr>
+      <tr>
+        <td>N-gram (2-3 từ)</td><td>Chuỗi từ</td><td>Gộp cụm 2-3 từ liền kề thành 1 token</td><td>Vector theo từ điển tổ hợp</td><td><span class="tag warn">⚠️ Giữ ngữ cảnh gần, nhưng từ điển bùng nổ</span></td>
+      </tr>
+      <tr>
+        <td>Bag-of-Words</td><td>Toàn bộ văn bản</td><td>Đếm tần suất mỗi từ, gộp thành 1 vector</td><td>Vector đếm tần suất, kích thước = |V|</td><td><span class="tag warn">⚠️ Stopword ("và","là") lấn át từ quan trọng</span></td>
+      </tr>
+      <tr>
+        <td>TF-IDF</td><td>Toàn bộ văn bản + tập ngữ liệu</td><td>Tần suất × log(N / số văn bản chứa từ)</td><td>Vector trọng số đã cân bằng</td><td><span class="tag good">✅ Nổi bật từ đặc trưng, dùng tốt cho phân loại/tìm kiếm</span></td>
+      </tr>
+    </table>
+    </div>
+
+    <pre class="code"><span class="c"># Python — 4 cách encode nhanh với sklearn/thư viện chuẩn</span>
+<span class="c"># ① One-hot cấp từ (thủ công)</span>
+vocab = {"ai": 0, "hoc": 1, "tu": 2, "du": 3, "lieu": 4}
+<span class="k">def</span> <span class="fn">one_hot</span>(word):
+    v = [0]*len(vocab)
+    <span class="k">if</span> word <span class="k">in</span> vocab: v[vocab[word]] = 1
+    <span class="k">return</span> v
+
+<span class="c"># ② Bag-of-Words với sklearn</span>
+<span class="k">from</span> sklearn.feature_extraction.text <span class="k">import</span> CountVectorizer
+cv = CountVectorizer()
+X = cv.fit_transform(<span class="s">["AI học từ dữ liệu", "Máy học là một nhánh của AI"]</span>)
+
+<span class="c"># ③ TF-IDF với sklearn</span>
+<span class="k">from</span> sklearn.feature_extraction.text <span class="k">import</span> TfidfVectorizer
+tf = TfidfVectorizer(ngram_range=(1,2))  <span class="c"># bật cả bigram luôn</span>
+X_tfidf = tf.fit_transform(docs)</pre>
+  </section>
+
+  <section id="demo" class="s4">
+    <h2><span class="num">3</span> Demo tương tác — bấm và xem kết quả</h2>
+
+    <div class="demo">
+      <h3>🔎 Demo 1 — Tra One-Hot &amp; hiện tượng "từ ngoài từ điển" (OOV)</h3>
+      <p style="font-size:0.85rem">Từ điển demo chỉ có 5 từ: <code>ai, hoc, tu, du, lieu</code>. Gõ 1 từ và bấm "Tra" để xem vector one-hot — hoặc thấy vì sao từ lạ sẽ vỡ trận.</p>
+      <label class="field-label">Nhập một từ (không dấu, ví dụ: hoc)</label>
+      <input type="text" id="oh-input" placeholder="hoc" value="hoc">
+      <button class="btn" onclick="demoOneHot()">▶ Tra One-Hot</button>
+      <div id="oh-out" class="out"></div>
+    </div>
+
+    <div class="demo" style="margin-top:1.4rem">
+      <h3>🔎 Demo 2 — Sinh N-gram</h3>
+      <label class="field-label">Câu ví dụ</label>
+      <input type="text" id="ng-input" value="may hoc tu du lieu">
+      <div style="margin-top:0.6rem">
+        <button class="btn small active" data-n="1" onclick="setN(1,this)">Unigram (n=1)</button>
+        <button class="btn small" data-n="2" onclick="setN(2,this)">Bigram (n=2)</button>
+        <button class="btn small" data-n="3" onclick="setN(3,this)">Trigram (n=3)</button>
+      </div>
+      <button class="btn" onclick="demoNgram()">▶ Sinh N-gram</button>
+      <div id="ng-out" class="out"></div>
+    </div>
+
+    <div class="demo" style="margin-top:1.4rem">
+      <h3>🔎 Demo 3 — Bag-of-Words vs TF-IDF trên 2 văn bản</h3>
+      <label class="field-label">Văn bản A</label>
+      <textarea id="doc-a" rows="2">ai hoc tu du lieu de dua ra du doan chinh xac</textarea>
+      <label class="field-label">Văn bản B</label>
+      <textarea id="doc-b" rows="2">may hoc la mot nhanh cua ai giup may tinh hoc tu du lieu</textarea>
+      <button class="btn" onclick="demoTfidf()">▶ Tính BoW &amp; TF-IDF</button>
+      <div id="tfidf-out" class="out"></div>
+    </div>
+  </section>
+
+  <section id="data" class="s2">
+    <h2><span class="num">4</span> Data nào tốt, data nào làm hỏng thuật toán?</h2>
+    <div class="tbl-wrap">
+    <table class="cmp">
+      <tr><th>Loại Dữ Liệu</th><th>Ví Dụ</th><th>Ảnh Hưởng</th><th>Đánh Giá</th></tr>
+      <tr>
+        <td>Văn bản sạch, đủ dài, đa dạng chủ đề</td><td>Bộ tin tức AG News: mỗi bài 30-100 từ, 4 nhãn cân bằng (Thế giới/Thể thao/Kinh doanh/Khoa học)</td><td>Từ điển học được phản ánh đúng từng chủ đề → phân loại chính xác</td><td><span class="tag good">✅ Tốt</span></td>
+      </tr>
+      <tr>
+        <td>Câu quá ngắn / thiếu ngữ cảnh</td><td>"Rất tốt", "Không thích" (1-2 từ, không rõ đối tượng)</td><td>BoW/TF-IDF gần như trống → mô hình đoán mò</td><td><span class="tag bad">❌ Lỗi/Underfitting</span></td>
+      </tr>
+      <tr>
+        <td>Toàn từ dừng (stopwords), thiếu tiền xử lý</td><td>"của và là thì mà ở trên dưới..." lặp lại dày đặc</td><td>BoW thô bị stopword áp đảo, che mất từ khóa thật sự quan trọng</td><td><span class="tag warn">⚠️ Sai lệch (cần TF-IDF hoặc loại stopword)</span></td>
+      </tr>
+      <tr>
+        <td>Từ vựng lệch xa từ điển huấn luyện</td><td>Slang/tiếng lóng, lỗi chính tả: "iu", "ko", "bik"</td><td>Rơi vào Out-Of-Vocabulary (OOV) → one-hot/BoW coi như "không tồn tại"</td><td><span class="tag bad">❌ Mất thông tin</span></td>
+      </tr>
+      <tr>
+        <td>Nhãn mất cân bằng nặng</td><td>9000 mẫu "spam", chỉ 50 mẫu "không spam"</td><td>Vector đặc trưng có thể đúng, nhưng bộ phân loại thiên vị lớp đa số</td><td><span class="tag warn">⚠️ Cần cân bằng lại dữ liệu</span></td>
+      </tr>
+      <tr>
+        <td>Trộn lẫn nhiều ngôn ngữ không kiểm soát</td><td>1 câu vừa tiếng Việt vừa tiếng Anh không nhất quán</td><td>Từ điển nhân đôi cho cùng 1 khái niệm ("học" và "learn" tách biệt)</td><td><span class="tag warn">⚠️ Làm loãng đặc trưng</span></td>
+      </tr>
+    </table>
+    </div>
+    <div class="note bad">❌ Ví dụ lỗi thực tế: nếu tập huấn luyện chỉ có tiếng Việt <em>có dấu</em> nhưng khi triển khai người dùng gõ <em>không dấu</em> ("khong thich san pham nay"), từ điển one-hot/BoW sẽ không khớp — toàn bộ câu biến thành OOV, mô hình "mù" hoàn toàn dù dữ liệu gốc rất tốt.</div>
+  </section>
+
+  <section id="baitap" class="s3">
+    <h2><span class="num">5</span> Bài tập nhỏ — Đối chiếu với bản mẫu</h2>
+    <div class="card">
+      <p>Cho câu: <code>"may hoc tu du lieu may cai thien"</code></p>
+      <p>Từ điển (đã sắp xếp theo bảng chữ cái, mỗi từ 1 lần): <code id="ex-vocab">cai, du, hoc, lieu, may, thien, tu</code></p>
+      <p>👉 Hãy tự đếm tần suất từng từ theo đúng thứ tự từ điển trên, rồi nhập 7 số cách nhau bởi dấu phẩy (ví dụ: <code>1,1,1,1,2,1,1</code>).</p>
+      <label class="field-label">Vector Bag-of-Words của bạn</label>
+      <input type="text" id="ex-input" placeholder="vd: 1,1,1,1,2,1,1">
+      <button class="btn" onclick="checkExercise()">✔ Đối chiếu bản mẫu</button>
+      <div id="ex-out" class="out"></div>
+    </div>
+  </section>
+
+  <section id="usecase" class="s4">
+    <h2><span class="num">6</span> Use case thực tế</h2>
+    <ul>
+      <li><strong>Lọc thư rác (spam filter):</strong> BoW + TF-IDF trên nội dung email, các từ như "khuyến mãi", "miễn phí", "click ngay" có TF-IDF cao trong lớp spam.</li>
+      <li><strong>Phân loại tin tức (AG News — đúng bộ dữ liệu trong bài gốc):</strong> mỗi bài báo → 1 vector TF-IDF → đưa vào classifier để gán nhãn Thế giới/Thể thao/Kinh doanh/Khoa học.</li>
+      <li><strong>Phân tích cảm xúc review sản phẩm:</strong> N-gram giúp bắt cụm phủ định như "không tốt" thay vì tách rời "không" và "tốt".</li>
+      <li><strong>Tìm kiếm văn bản (search engine cơ bản):</strong> TF-IDF xếp hạng độ liên quan giữa truy vấn và tài liệu — nền tảng của BM25 trong Elasticsearch.</li>
+    </ul>
+  </section>
+
+  <section id="quiz" class="s2">
+    <h2><span class="num">7</span> Khởi động nhanh — Trắc nghiệm &amp; Điền khuyết</h2>
+
+    <div class="quiz-item">
+      <p class="q">Câu 1 (Trắc nghiệm). Vì sao máy tính không thể xử lý trực tiếp văn bản dạng chữ?</p>
+      <label class="opt" data-correct="false"><input type="radio" name="q1"> Vì máy tính có bộ nhớ quá nhỏ</label>
+      <label class="opt" data-correct="true"><input type="radio" name="q1"> Vì mạng nơ-ron chỉ thực hiện được phép toán trên số (tensor), không "hiểu" ký tự trực tiếp</label>
+      <label class="opt" data-correct="false"><input type="radio" name="q1"> Vì chữ cái tốn nhiều dung lượng hơn số nguyên</label>
+      <label class="opt" data-correct="false"><input type="radio" name="q1"> Vì Python không hỗ trợ xử lý chuỗi</label>
+      <div class="fb"></div>
+    </div>
+
+    <div class="quiz-item">
+      <p class="q">Câu 2 (Trắc nghiệm). Nhược điểm chính của one-hot cấp TỪ (word-level) so với cấp KÝ TỰ là gì?</p>
+      <label class="opt" data-correct="false"><input type="radio" name="q2"> Không thể biểu diễn số</label>
+      <label class="opt" data-correct="true"><input type="radio" name="q2"> Từ điển lớn (hàng chục nghìn từ) → vector cao chiều, cực thưa, tốn bộ nhớ</label>
+      <label class="opt" data-correct="false"><input type="radio" name="q2"> Không dùng được cho tiếng Việt</label>
+      <label class="opt" data-correct="false"><input type="radio" name="q2"> Luôn cần GPU mới chạy được</label>
+      <div class="fb"></div>
+    </div>
+
+    <div class="quiz-item">
+      <p class="q">Câu 3 (Trắc nghiệm). Vấn đề chính của N-gram (ví dụ bigram) là gì?</p>
+      <label class="opt" data-correct="false"><input type="radio" name="q3"> N-gram không giữ được thứ tự từ</label>
+      <label class="opt" data-correct="true"><input type="radio" name="q3"> Từ điển tổ hợp bùng nổ, và các cụm như "đi câu"/"đi chợ" không chia sẻ ngữ nghĩa dù chung từ "đi"</label>
+      <label class="opt" data-correct="false"><input type="radio" name="q3"> Chỉ áp dụng được cho văn bản tiếng Anh</label>
+      <label class="opt" data-correct="false"><input type="radio" name="q3"> Không thể cài đặt bằng máy tính</label>
+      <div class="fb"></div>
+    </div>
+
+    <div class="quiz-item">
+      <p class="q">Câu 4 (Trắc nghiệm). TF-IDF cải thiện Bag-of-Words thô ở điểm nào?</p>
+      <label class="opt" data-correct="false"><input type="radio" name="q4"> Làm vector ngắn hơn hẳn</label>
+      <label class="opt" data-correct="true"><input type="radio" name="q4"> Giảm trọng số các từ phổ biến (stopwords) xuất hiện ở hầu hết văn bản, tăng trọng số từ đặc trưng riêng</label>
+      <label class="opt" data-correct="false"><input type="radio" name="q4"> Giữ được đúng thứ tự từ trong câu</label>
+      <label class="opt" data-correct="false"><input type="radio" name="q4"> Loại bỏ hoàn toàn các từ hiếm gặp</label>
+      <div class="fb"></div>
+    </div>
+
+    <div class="quiz-item">
+      <p class="q">Câu 5 (Điền khuyết). "Bag-of-Words biểu diễn văn bản bằng cách đếm ______ của mỗi từ xuất hiện trong văn bản."</p>
+      <input type="text" id="fb1" placeholder="Nhập từ còn thiếu...">
+      <button class="btn small" onclick="checkFB('fb1', ['tan suat','tần suất','so lan','số lần','tan so','tần số'])">Kiểm tra</button>
+      <div class="fb" id="fb1-fb"></div>
+    </div>
+
+    <div class="quiz-item">
+      <p class="q">Câu 6 (Điền khuyết). Công thức: TF-IDF = TF × ______, trong đó phần này đo độ hiếm của từ trên toàn bộ tập dữ liệu.</p>
+      <input type="text" id="fb2" placeholder="Nhập viết tắt còn thiếu...">
+      <button class="btn small" onclick="checkFB('fb2', ['idf'])">Kiểm tra</button>
+      <div class="fb" id="fb2-fb"></div>
+    </div>
+
+    <div class="score-bar">
+      <span>📊 Điểm trắc nghiệm: <strong id="score">0</strong> / 4</span>
+      <span id="score-msg" style="color:var(--text-muted)">Chọn đáp án ở trên</span>
+    </div>
+  </section>
+
+  <footer>
+    Bài học gốc: <code>lessons/5-NLP/13-TextRep/README.md</code> — kho <strong>AI-For-Beginners</strong> (Microsoft).
+    Bước tiếp theo trong khoá học: <em>Word Embeddings</em> (Word2Vec, GloVe) để văn bản mang cả ngữ nghĩa lẫn ngữ cảnh, thay vì chỉ đếm tần suất.
+  </footer>
+
+</div>
+
+<script>
+  // ---------- Demo 1: One-Hot & OOV ----------
+  const OH_VOCAB = ["ai","hoc","tu","du","lieu"];
+  function demoOneHot() {
+    const raw = document.getElementById('oh-input').value.trim().toLowerCase();
+    const out = document.getElementById('oh-out');
+    const idx = OH_VOCAB.indexOf(raw);
+    let html = '<div class="onehot-grid">';
+    OH_VOCAB.forEach((w, i) => {
+      html += `<div><div class="cell ${i===idx?'hit':''}">${i===idx?'1':'0'}</div><div class="cell-label">${w}</div></div>`;
+    });
+    html += '</div>';
+    if (idx === -1) {
+      html += `<div class="note bad">❌ "${raw || '(rỗng)'}" không có trong từ điển 5 từ này → <strong>Out-Of-Vocabulary (OOV)</strong>. Mọi vị trí = 0, mô hình coi như không có thông tin gì.</div>`;
+    } else {
+      html += `<div class="note good">✅ "${raw}" nằm ở vị trí ${idx} trong từ điển → vector one-hot có đúng 1 số "1".</div>`;
+    }
+    out.innerHTML = html;
+    out.classList.remove('show'); void out.offsetWidth; out.classList.add('show');
+  }
+
+  // ---------- Demo 2: N-gram ----------
+  let currentN = 1;
+  function setN(n, btn) {
+    currentN = n;
+    document.querySelectorAll('[data-n]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  function tokenize(text) {
+    return text.toLowerCase().replace(/[^a-zà-ỹ0-9\s]/gi, '').split(/\s+/).filter(Boolean);
+  }
+  function demoNgram() {
+    const text = document.getElementById('ng-input').value;
+    const tokens = tokenize(text);
+    const grams = [];
+    for (let i = 0; i <= tokens.length - currentN; i++) {
+      grams.push(tokens.slice(i, i + currentN).join('_'));
+    }
+    const out = document.getElementById('ng-out');
+    let html = `<p style="font-size:0.85rem;color:var(--text-muted)">Số token gốc: ${tokens.length} → số ${currentN}-gram sinh ra: <strong>${grams.length}</strong> (từ điển thô, chưa loại trùng)</p><div class="chip-row">`;
+    grams.forEach((g, i) => { html += `<span class="chip" style="animation-delay:${i*0.06}s">${g}</span>`; });
+    html += '</div>';
+    if (currentN > 1) {
+      html += `<div class="note warn">⚠️ Từ điển ${currentN}-gram lớn hơn hẳn unigram — thử tăng n để thấy số lượng token tăng nhanh cỡ nào.</div>`;
+    }
+    out.innerHTML = html;
+    out.classList.remove('show'); void out.offsetWidth; out.classList.add('show');
+  }
+
+  // ---------- Demo 3: BoW & TF-IDF ----------
+  function demoTfidf() {
+    const a = tokenize(document.getElementById('doc-a').value);
+    const b = tokenize(document.getElementById('doc-b').value);
+    const vocab = Array.from(new Set([...a, ...b])).sort();
+    const countIn = (arr, w) => arr.filter(x => x === w).length;
+    const rows = vocab.map(w => {
+      const ca = countIn(a, w), cb = countIn(b, w);
+      const tfA = ca / a.length, tfB = cb / b.length;
+      const df = (ca > 0 ? 1 : 0) + (cb > 0 ? 1 : 0);
+      const idf = Math.log(2 / df);
+      return { w, ca, cb, tfA, tfB, df, idf, tfidfA: tfA*idf, tfidfB: tfB*idf };
+    });
+    let html = '<div class="tbl-wrap"><table class="cmp"><tr><th>Từ</th><th>Đếm A</th><th>Đếm B</th><th>DF</th><th>IDF</th><th>TF-IDF A</th><th>TF-IDF B</th></tr>';
+    rows.forEach(r => {
+      const flag = r.df === 2 ? '<span class="tag warn">⚠️ chung 2 vb</span>' : '<span class="tag good">✅ đặc trưng</span>';
+      html += `<tr><td>${r.w} ${flag}</td><td>${r.ca}</td><td>${r.cb}</td><td>${r.df}</td><td>${r.idf.toFixed(2)}</td><td>${r.tfidfA.toFixed(3)}</td><td>${r.tfidfB.toFixed(3)}</td></tr>`;
+    });
+    html += '</table></div>';
+    const topA = [...rows].sort((x,y) => y.tfidfA - x.tfidfA)[0];
+    const topB = [...rows].sort((x,y) => y.tfidfB - x.tfidfB)[0];
+    html += `<div class="note good">✅ Từ đặc trưng nhất của Văn bản A: <strong>${topA.w}</strong> (TF-IDF=${topA.tfidfA.toFixed(3)}) · của Văn bản B: <strong>${topB.w}</strong> (TF-IDF=${topB.tfidfB.toFixed(3)}). Các từ có DF=2 (xuất hiện ở cả hai) bị IDF kéo trọng số về gần 0 — đúng như lý thuyết TF-IDF.</div>`;
+    const out = document.getElementById('tfidf-out');
+    out.innerHTML = html;
+    out.classList.remove('show'); void out.offsetWidth; out.classList.add('show');
+  }
+
+  // ---------- Exercise: template compare ----------
+  function checkExercise() {
+    const expected = [1,1,1,1,2,1,1];
+    const raw = document.getElementById('ex-input').value.trim();
+    const out = document.getElementById('ex-out');
+    const nums = raw.split(',').map(s => parseInt(s.trim(), 10));
+    const vocabArr = document.getElementById('ex-vocab').textContent.split(',').map(s=>s.trim());
+    let html = '<div class="onehot-grid">';
+    vocabArr.forEach((w, i) => {
+      const ok = nums[i] === expected[i];
+      html += `<div><div class="cell ${ok ? 'hit' : ''}" style="${!ok && nums.length ? 'border-color:var(--bad);color:var(--bad)' : ''}">${nums[i] !== undefined ? nums[i] : '?'}</div><div class="cell-label">${w}</div></div>`;
+    });
+    html += '</div>';
+    const isCorrect = nums.length === expected.length && expected.every((v,i) => v === nums[i]);
+    html += isCorrect
+      ? '<div class="note good">✅ Chính xác! Vector Bag-of-Words của bạn khớp bản mẫu: [1,1,1,1,2,1,1] — "may" xuất hiện 2 lần nên có giá trị 2.</div>'
+      : `<div class="note bad">❌ Chưa khớp bản mẫu. Gợi ý: đếm lại từng từ theo đúng thứ tự <code>${vocabArr.join(', ')}</code>. Đáp án đúng: <code>${expected.join(',')}</code>.</div>`;
+    out.innerHTML = html;
+    out.classList.remove('show'); void out.offsetWidth; out.classList.add('show');
+  }
+
+  // ---------- Quiz: multiple choice ----------
+  let score = 0;
+  const answered = {};
+  document.querySelectorAll('.quiz-item').forEach(item => {
+    const opts = item.querySelectorAll('.opt');
+    if (!opts.length) return;
+    const name = opts[0].querySelector('input')?.getAttribute('name');
+    opts.forEach(opt => {
+      opt.addEventListener('click', () => {
+        if (answered[name]) return;
+        answered[name] = true;
+        opt.querySelector('input').checked = true;
+        const correct = opt.getAttribute('data-correct') === 'true';
+        opts.forEach(o => {
+          if (o.getAttribute('data-correct') === 'true') o.classList.add('correct');
+          else if (o === opt) o.classList.add('incorrect');
+        });
+        const fb = item.querySelector('.fb');
+        fb.textContent = correct ? '✅ Chính xác!' : '❌ Chưa đúng — đáp án đúng đã tô xanh ở trên.';
+        fb.classList.add(correct ? 'ok' : 'no', 'show');
+        if (correct) score++;
+        document.getElementById('score').textContent = score;
+        const msg = document.getElementById('score-msg');
+        if (Object.keys(answered).length === 4) {
+          msg.textContent = score === 4 ? '🎉 Xuất sắc — nắm chắc bài rồi!' : score >= 2 ? '👍 Khá tốt, xem lại câu sai nhé.' : '📖 Nên đọc lại phần 2 trước khi làm bài tập.';
+        } else {
+          msg.textContent = `Còn ${4 - Object.keys(answered).length} câu chưa trả lời`;
+        }
+      });
+    });
+  });
+
+  // ---------- Fill in blank ----------
+  function checkFB(id, accepted) {
+    const val = document.getElementById(id).value.trim().toLowerCase();
+    const fb = document.getElementById(id + '-fb');
+    const ok = accepted.some(a => val === a.toLowerCase() || val.includes(a.toLowerCase()));
+    fb.textContent = ok ? '✅ Chính xác!' : `❌ Chưa đúng. Đáp án gợi ý: "${accepted[0]}"`;
+    fb.className = 'fb show ' + (ok ? 'ok' : 'no');
+  }
+</script>
+</body>
+</html>
