@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Transfer Learning — Học Lỏm Từ Mạng Đã Giỏi Sẵn</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg: #f1f5f8;
+  --bg-alt: #e4ecf1;
+  --panel: #ffffff;
+  --ink: #142333;
+  --ink-soft: #4c5f70;
+  --line: rgba(20,35,51,0.13);
+  --accent: #2554c7;        /* pretrained knowledge - blue */
+  --accent-soft: #dbe6fb;
+  --frozen: #0891b2;        /* frozen layers - icy teal */
+  --frozen-soft: #d7f2f6;
+  --trainable: #d9631e;     /* trainable layers - warm fire */
+  --trainable-soft: #fbe3cf;
+  --good: #178a4c;
+  --good-soft: #d9f3e3;
+  --warn: #b8790f;
+  --warn-soft: #faecd0;
+  --bad: #c53a3a;
+  --bad-soft: #f9dcdc;
+  --shadow: 0 10px 30px -14px rgba(20,35,51,0.35);
+  --radius: 14px;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Karla', -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg: #0c1620;
+    --bg-alt: #101d2a;
+    --panel: #14232f;
+    --ink: #e9eff5;
+    --ink-soft: #a8bacb;
+    --line: rgba(233,239,245,0.14);
+    --accent: #6f9aef;
+    --accent-soft: #1b2d47;
+    --frozen: #4fd3e8;
+    --frozen-soft: #0f2f36;
+    --trainable: #f0925a;
+    --trainable-soft: #3a2415;
+    --good: #56c98a;
+    --good-soft: #123423;
+    --warn: #e3ab4f;
+    --warn-soft: #3a2b10;
+    --bad: #e8746f;
+    --bad-soft: #3a1717;
+    --shadow: 0 10px 34px -14px rgba(0,0,0,0.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg: #0c1620;
+  --bg-alt: #101d2a;
+  --panel: #14232f;
+  --ink: #e9eff5;
+  --ink-soft: #a8bacb;
+  --line: rgba(233,239,245,0.14);
+  --accent: #6f9aef;
+  --accent-soft: #1b2d47;
+  --frozen: #4fd3e8;
+  --frozen-soft: #0f2f36;
+  --trainable: #f0925a;
+  --trainable-soft: #3a2415;
+  --good: #56c98a;
+  --good-soft: #123423;
+  --warn: #e3ab4f;
+  --warn-soft: #3a2b10;
+  --bad: #e8746f;
+  --bad-soft: #3a1717;
+  --shadow: 0 10px 34px -14px rgba(0,0,0,0.6);
+}
+
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  line-height:1.6;
+  transition:background .4s ease, color .4s ease;
+}
+.wrap{max-width:920px; margin:0 auto; padding:0 20px 80px;}
+h1,h2,h3{font-family:var(--font-display); font-weight:600; line-height:1.2; margin:0 0 .4em;}
+h2{font-size:clamp(1.4rem,3vw,1.9rem); color:var(--ink);}
+h3{font-size:1.15rem;}
+p{margin:0 0 1em;}
+code, .mono{font-family:var(--font-mono);}
+a{color:var(--accent);}
+
+/* ---------- theme toggle ---------- */
+.theme-toggle{
+  position:fixed; top:14px; right:14px; z-index:50;
+  background:var(--panel); color:var(--ink);
+  border:1px solid var(--line); border-radius:999px;
+  padding:8px 16px; font-family:var(--font-body); font-size:.85rem; font-weight:600;
+  cursor:pointer; box-shadow:var(--shadow); transition:transform .25s ease, background .3s ease;
+}
+.theme-toggle:hover{transform:translateY(-2px);}
+
+/* ---------- animations ---------- */
+@keyframes fadeInDown{
+  from{opacity:0; transform:translateY(-22px);}
+  to{opacity:1; transform:translateY(0);}
+}
+@keyframes slideUp{
+  from{opacity:0; transform:translateY(28px);}
+  to{opacity:1; transform:translateY(0);}
+}
+@keyframes slideDown{
+  from{opacity:0; transform:translateY(-14px); max-height:0;}
+  to{opacity:1; transform:translateY(0); max-height:800px;}
+}
+@keyframes pulse{
+  0%,100%{opacity:1; transform:scale(1);}
+  50%{opacity:.55; transform:scale(1.12);}
+}
+@keyframes flowArrow{
+  0%{transform:translateY(0); opacity:.4;}
+  50%{transform:translateY(6px); opacity:1;}
+  100%{transform:translateY(0); opacity:.4;}
+}
+
+/* ---------- hero ---------- */
+.hero{
+  padding:64px 0 30px;
+  animation:fadeInDown .8s ease both;
+}
+.eyebrow{
+  font-family:var(--font-mono); font-size:.78rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--accent); margin-bottom:10px;
+}
+.hero h1{font-size:clamp(2.2rem,6vw,3.4rem);}
+.subtitle{font-size:1.15rem; color:var(--ink-soft); font-weight:600; margin-bottom:14px;}
+.lede{font-size:1.02rem; color:var(--ink-soft); max-width:64ch;}
+.quicknav{display:flex; flex-wrap:wrap; gap:8px; margin-top:20px;}
+.quicknav a{
+  font-family:var(--font-mono); font-size:.78rem; text-decoration:none;
+  background:var(--panel); border:1px solid var(--line); color:var(--ink-soft);
+  padding:6px 12px; border-radius:999px; transition:all .25s ease;
+}
+.quicknav a:hover{background:var(--accent-soft); color:var(--accent); border-color:var(--accent);}
+
+/* ---------- section ---------- */
+.section{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:32px clamp(18px,4vw,40px); margin-bottom:26px; box-shadow:var(--shadow);
+  animation:slideUp .7s ease both;
+}
+.section:nth-of-type(2){animation-delay:.05s;}
+.section:nth-of-type(3){animation-delay:.1s;}
+.section:nth-of-type(4){animation-delay:.15s;}
+.section:nth-of-type(5){animation-delay:.2s;}
+.section:nth-of-type(6){animation-delay:.25s;}
+.section:nth-of-type(7){animation-delay:.3s;}
+
+.badge{
+  display:inline-block; font-family:var(--font-mono); font-size:.72rem;
+  padding:2px 10px; border-radius:999px; font-weight:600; letter-spacing:.02em;
+}
+.badge.good{background:var(--good-soft); color:var(--good);}
+.badge.warn{background:var(--warn-soft); color:var(--warn);}
+.badge.bad{background:var(--bad-soft); color:var(--bad);}
+
+/* ---------- warm-up (fill in the blank) ---------- */
+.fill-item{
+  border:1px dashed var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px;
+  background:var(--bg-alt);
+}
+.fill-item p{margin:0 0 10px; font-weight:600;}
+.fill-row{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+.fill-row input[type=text]{
+  flex:1 1 200px; padding:9px 12px; border-radius:8px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink); font-family:var(--font-body); font-size:.95rem;
+}
+.fill-row input[type=text]:focus{outline:2px solid var(--accent); outline-offset:1px;}
+.btn{
+  font-family:var(--font-body); font-weight:700; font-size:.88rem; cursor:pointer;
+  border:none; border-radius:8px; padding:9px 18px; background:var(--accent); color:#fff;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.btn:hover{transform:translateY(-2px); box-shadow:0 8px 18px -8px var(--accent);}
+.btn.secondary{background:var(--bg-alt); color:var(--ink); border:1px solid var(--line);}
+.fill-feedback{margin-top:8px; font-size:.88rem; font-weight:600; display:none;}
+.fill-feedback.show{display:block; animation:slideDown .35s ease both;}
+.fill-feedback.correct{color:var(--good);}
+.fill-feedback.wrong{color:var(--bad);}
+
+/* ---------- diagram ---------- */
+.diagram{
+  display:flex; flex-direction:column; align-items:stretch; gap:0; margin:24px 0;
+  font-family:var(--font-mono); font-size:.86rem;
+}
+.dlayer{
+  border-radius:10px; padding:14px 16px; border:1.5px solid var(--line);
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  transition:transform .3s ease;
+}
+.dlayer:hover{transform:scale(1.015);}
+.dlayer .tag{font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+.dlayer.frozen{background:var(--frozen-soft); border-color:var(--frozen);}
+.dlayer.frozen .tag{background:var(--frozen); color:#04262b;}
+.dlayer.trainable{background:var(--trainable-soft); border-color:var(--trainable);}
+.dlayer.trainable .tag{background:var(--trainable); color:#2c1200;}
+.darrow{
+  text-align:center; color:var(--ink-soft); font-size:1.1rem; padding:4px 0;
+  animation:flowArrow 1.8s ease-in-out infinite;
+}
+
+/* ---------- comparison table ---------- */
+.table-wrap{overflow-x:auto; margin:18px 0;}
+table{width:100%; border-collapse:collapse; font-size:.92rem; min-width:640px;}
+th,td{padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top;}
+th{font-family:var(--font-mono); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);}
+tr:hover td{background:var(--bg-alt);}
+
+/* ---------- state cards ---------- */
+.state-card{
+  border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-bottom:18px;
+  background:var(--bg-alt); animation:slideUp .6s ease both;
+}
+.state-card h3{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.state-meta{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:14px 0;}
+.state-meta div{background:var(--panel); border-radius:8px; padding:10px 12px; border:1px solid var(--line);}
+.state-meta b{display:block; font-family:var(--font-mono); font-size:.68rem; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px;}
+pre{
+  background:#0e1a24; color:#d7e6f5; border-radius:10px; padding:14px 16px; overflow-x:auto;
+  font-family:var(--font-mono); font-size:.82rem; line-height:1.55; margin:10px 0 0;
+}
+:root[data-theme="light"] pre, :root:not([data-theme="dark"]) pre{background:#101c28; color:#dbe9f7;}
+
+/* ---------- demo ---------- */
+.demo-controls{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:16px;}
+.demo-controls label{display:block; font-weight:600; font-size:.88rem; margin-bottom:6px;}
+select{
+  width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink); font-family:var(--font-body); font-size:.92rem;
+}
+.demo-result{
+  margin-top:16px; padding:18px 20px; border-radius:10px; border:1px solid var(--line);
+  background:var(--bg-alt); display:none;
+}
+.demo-result.show{display:block; animation:slideDown .45s ease both;}
+.demo-result h4{margin:0 0 8px; font-family:var(--font-display); font-size:1.1rem;}
+
+/* ---------- exercise ---------- */
+textarea{
+  width:100%; min-height:100px; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink); font-family:var(--font-body); font-size:.94rem; resize:vertical;
+}
+.reveal-box{
+  margin-top:14px; padding:16px 18px; border-radius:10px; background:var(--good-soft);
+  border:1px solid var(--good); display:none;
+}
+.reveal-box.show{display:block; animation:slideDown .4s ease both;}
+
+/* ---------- quiz ---------- */
+.quiz-q{border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin-bottom:16px; background:var(--bg-alt);}
+.quiz-q p.q-title{font-weight:700; margin-bottom:10px;}
+.quiz-opts label{
+  display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border-radius:8px;
+  cursor:pointer; margin-bottom:6px; transition:background .2s ease;
+}
+.quiz-opts label:hover{background:var(--panel);}
+.quiz-opts input{margin-top:3px;}
+.q-feedback{margin-top:8px; font-size:.85rem; font-weight:600; display:none;}
+.q-feedback.show{display:block; animation:slideDown .3s ease both;}
+.q-feedback.correct{color:var(--good);}
+.q-feedback.wrong{color:var(--bad);}
+.score-box{
+  margin-top:10px; padding:18px 20px; border-radius:10px; text-align:center;
+  font-family:var(--font-display); font-size:1.3rem; font-weight:600; display:none;
+}
+.score-box.show{display:block; animation:slideDown .5s ease both;}
+
+/* ---------- data table highlights ---------- */
+.row-good td{border-left:4px solid var(--good);}
+.row-warn td{border-left:4px solid var(--warn);}
+.row-bad td{border-left:4px solid var(--bad);}
+
+footer{
+  text-align:center; color:var(--ink-soft); font-size:.84rem; padding:30px 0 10px;
+}
+footer a{color:var(--ink-soft); text-decoration:underline;}
+
+@media (max-width:600px){
+  .hero{padding:80px 0 24px;}
+  .section{padding:24px 16px;}
+  table{font-size:.82rem;}
+}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" type="button">🌓 Đổi giao diện</button>
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">AI For Beginners · Computer Vision · Bài 08</p>
+    <h1>Transfer Learning</h1>
+    <p class="subtitle">Học Lỏm Từ Mạng Nơ-ron Đã Giỏi Sẵn</p>
+    <p class="lede">Thay vì dạy một "đứa trẻ" AI mới sinh nhận diện mèo từ con số 0, ta mượn luôn bộ não của một "chuyên gia thị giác" đã học qua hàng triệu bức ảnh (ImageNet), rồi chỉ dạy thêm cho nó vài điều mới. Đó chính là <b>Transfer Learning</b>.</p>
+    <nav class="quicknav">
+      <a href="#warmup">🔥 Khởi động</a>
+      <a href="#concept">🧠 Khái niệm</a>
+      <a href="#states">⚙️ 4 cách làm</a>
+      <a href="#demo">🎮 Demo</a>
+      <a href="#data">📊 Data tốt/xấu</a>
+      <a href="#exercise">✍️ Bài tập</a>
+      <a href="#quiz">📝 Quiz</a>
+    </nav>
+  </header>
+
+  <!-- ============ WARM-UP: FILL IN THE BLANK ============ -->
+  <section id="warmup" class="section">
+    <h2>🔥 Khởi Động Nhanh — Điền Khuyết</h2>
+    <p>Đoán thử trước khi đọc bài, không sao nếu sai — cứ điền rồi bấm <b>Kiểm tra</b>.</p>
+
+    <div class="fill-item">
+      <p>1. Transfer Learning nghĩa là tái sử dụng <u>______</u> (trọng số/đặc trưng) mà một mạng nơ-ron khác đã học được, thay vì học lại từ đầu.</p>
+      <div class="fill-row">
+        <input type="text" class="fill-input" data-answer="kiến thức,trọng số,features,đặc trưng,weights">
+        <button class="btn" onclick="checkFill(this)">Kiểm tra</button>
+      </div>
+      <div class="fill-feedback"></div>
+    </div>
+
+    <div class="fill-item">
+      <p>2. Khi ta "đóng băng" (freeze) một lớp, các trọng số của lớp đó sẽ <u>______</u> trong lúc huấn luyện.</p>
+      <div class="fill-row">
+        <input type="text" class="fill-input" data-answer="không thay đổi,không đổi,không cập nhật,giữ nguyên,cố định">
+        <button class="btn" onclick="checkFill(this)">Kiểm tra</button>
+      </div>
+      <div class="fill-feedback"></div>
+    </div>
+
+    <div class="fill-item">
+      <p>3. Bộ dữ liệu khổng lồ thường dùng để huấn luyện trước (pre-train) các mạng CNN nổi tiếng như VGG, ResNet là <u>______</u>.</p>
+      <div class="fill-row">
+        <input type="text" class="fill-input" data-answer="imagenet">
+        <button class="btn" onclick="checkFill(this)">Kiểm tra</button>
+      </div>
+      <div class="fill-feedback"></div>
+    </div>
+  </section>
+
+  <!-- ============ CONCEPT ============ -->
+  <section id="concept" class="section">
+    <h2>🧠 Transfer Learning Là Gì?</h2>
+    <p><b>Định nghĩa ngắn gọn:</b> Transfer Learning là kỹ thuật lấy một mạng nơ-ron <b>đã được huấn luyện sẵn</b> trên một bộ dữ liệu lớn (thường là ImageNet, ~1.2 triệu ảnh, 1000 lớp), rồi <b>tái sử dụng</b> nó cho một bài toán mới — thay vì huấn luyện từ đầu (train from scratch).</p>
+    <p><b>Ví von đời thường:</b> Một người đã học giỏi Toán (tư duy logic, phân tích) khi chuyển sang học Vật Lý sẽ tiếp thu nhanh hơn nhiều so với người chưa học gì — vì họ đã có sẵn "nền tảng tư duy" dùng chung. Mạng CNN cũng vậy: các lớp đầu học được các đặc trưng <i>rất chung</i> (cạnh, màu sắc, hoạ tiết) — thứ mà <i>ảnh nào cũng có</i>, dù là ảnh mèo, xe hơi hay cái ghế.</p>
+
+    <h3>Sơ đồ: Ảnh mới chảy qua mạng đã học sẵn</h3>
+    <div class="diagram">
+      <div class="dlayer frozen">
+        <span>📥 Ảnh đầu vào mới (VD: ảnh mèo/chó của bạn)</span>
+      </div>
+      <div class="darrow">↓</div>
+      <div class="dlayer frozen">
+        <span>Conv Block 1 — trích đặc trưng <i>cấp thấp</i>: cạnh, màu, đường nét</span>
+        <span class="tag">🧊 ĐÓNG BĂNG</span>
+      </div>
+      <div class="darrow">↓</div>
+      <div class="dlayer frozen">
+        <span>Conv Block 2 — đặc trưng <i>cấp trung</i>: hoạ tiết, hình khối</span>
+        <span class="tag">🧊 ĐÓNG BĂNG</span>
+      </div>
+      <div class="darrow">↓</div>
+      <div class="dlayer trainable">
+        <span>Conv Block 3 (cuối) — đặc trưng <i>cấp cao</i>: mắt, tai, mõm...</span>
+        <span class="tag">🔥 TUỲ CHIẾN LƯỢC</span>
+      </div>
+      <div class="darrow">↓</div>
+      <div class="dlayer trainable">
+        <span>Lớp phân loại mới (Fully Connected) — học riêng cho bài toán CỦA BẠN</span>
+        <span class="tag">🔥 LUÔN TRAIN</span>
+      </div>
+      <div class="darrow">↓</div>
+      <div class="dlayer frozen" style="background:var(--accent-soft); border-color:var(--accent);">
+        <span>📤 Nhãn dự đoán: <b>Mèo</b> hoặc <b>Chó</b></span>
+      </div>
+    </div>
+    <p style="color:var(--ink-soft); font-size:.92rem;">💡 Càng lên cao (gần đầu ra), đặc trưng càng <i>chuyên biệt</i> cho bài toán gốc (ImageNet). Vì vậy phần đầu mạng gần như luôn được giữ nguyên (đóng băng), còn phần cuối là nơi ta quyết định "học lại bao nhiêu".</p>
+  </section>
+
+  <!-- ============ 4 STATES ============ -->
+  <section id="states" class="section">
+    <h2>⚙️ 4 Cách Áp Dụng Transfer Learning</h2>
+    <p>Không phải lúc nào cũng đóng băng hết hay mở khoá hết — có 4 "trạng thái" phổ biến, khác nhau ở <b>bao nhiêu phần mạng được train lại</b>.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Trạng thái</th><th>Input</th><th>Xử lý</th><th>Output</th><th>Đánh giá</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>1. Train From Scratch</b></td>
+            <td>Trọng số random + data của bạn</td>
+            <td>Train <i>toàn bộ</i> mạng từ số 0</td>
+            <td>Cần hàng chục nghìn ảnh, train rất lâu</td>
+            <td><span class="badge bad">❌ Xấu khi ít data</span></td>
+          </tr>
+          <tr>
+            <td><b>2. Feature Extraction</b></td>
+            <td>Pretrained weights, đóng băng hết base</td>
+            <td>Chỉ train lớp FC mới ở cuối</td>
+            <td>Train nhanh (vài phút), cần ít data</td>
+            <td><span class="badge good">✅ Tốt khi data nhỏ &amp; domain giống ImageNet</span></td>
+          </tr>
+          <tr>
+            <td><b>3. Fine-Tuning một phần</b></td>
+            <td>Pretrained weights, mở khoá vài block cuối</td>
+            <td>Train block cuối + FC, learning rate rất nhỏ</td>
+            <td>Chính xác hơn Feature Extraction</td>
+            <td><span class="badge good">✅ Tốt nhất đa số trường hợp</span></td>
+          </tr>
+          <tr>
+            <td><b>4. Fine-Tuning toàn bộ</b></td>
+            <td>Pretrained weights làm điểm khởi đầu</td>
+            <td>Mở khoá <i>toàn bộ</i> mạng, learning rate cực nhỏ</td>
+            <td>Có thể chính xác nhất, nhưng rủi ro cao</td>
+            <td><span class="badge warn">⚠️ Cần nhiều data + cẩn trọng</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="state-card">
+      <h3>1️⃣ Train From Scratch <span class="badge bad">❌</span></h3>
+      <div class="state-meta">
+        <div><b>Khi nào dùng</b>Có &gt;50,000 ảnh, domain hoàn toàn khác biệt (VD: ảnh vệ tinh, ảnh y tế đặc thù)</div>
+        <div><b>Rủi ro</b>Overfitting nặng nếu ít data, tốn nhiều GPU/thời gian</div>
+      </div>
+      <pre>model = build_cnn_from_scratch()   # trọng số random
+model.fit(my_small_dataset, epochs=100)  # cần RẤT nhiều epoch &amp; data
+# → dễ overfit nếu dataset &lt; 10,000 ảnh/lớp</pre>
+    </div>
+
+    <div class="state-card">
+      <h3>2️⃣ Feature Extraction — Đóng Băng Toàn Bộ <span class="badge good">✅</span></h3>
+      <div class="state-meta">
+        <div><b>Khi nào dùng</b>Data nhỏ (&lt;1,000 ảnh/lớp), ảnh đời thường (mèo, chó, xe, đồ vật)</div>
+        <div><b>Ưu điểm</b>Train cực nhanh, khó overfit vì rất ít tham số cần học</div>
+      </div>
+      <pre>base = VGG16(weights='imagenet', include_top=False)
+base.trainable = False              # 🧊 đóng băng TOÀN BỘ base
+model = Sequential([base, GlobalAveragePooling2D(),
+                     Dense(2, activation='softmax')])  # 🔥 lớp mới
+model.fit(cats_vs_dogs, epochs=10)   # nhanh, chỉ train vài nghìn tham số</pre>
+    </div>
+
+    <div class="state-card">
+      <h3>3️⃣ Fine-Tuning Một Phần <span class="badge good">✅</span></h3>
+      <div class="state-meta">
+        <div><b>Khi nào dùng</b>Data vừa (vài nghìn ảnh), domain hơi khác ImageNet</div>
+        <div><b>Ưu điểm</b>Cân bằng tốt giữa tốc độ, độ chính xác và chống overfit</div>
+      </div>
+      <pre>base = ResNet50(weights='imagenet', include_top=False)
+base.trainable = True
+for layer in base.layers[:-20]:      # 🧊 đóng băng phần lớn
+    layer.trainable = False
+# 20 layer cuối + lớp FC mới: 🔥 trainable
+model.compile(optimizer=Adam(learning_rate=1e-5))  # LR rất nhỏ!
+model.fit(my_dataset, epochs=15)</pre>
+    </div>
+
+    <div class="state-card">
+      <h3>4️⃣ Fine-Tuning Toàn Bộ <span class="badge warn">⚠️</span></h3>
+      <div class="state-meta">
+        <div><b>Khi nào dùng</b>Data lớn (chục nghìn ảnh), domain khác biệt đáng kể (X-quang, vệ tinh)</div>
+        <div><b>Rủi ro</b>"Quên" kiến thức gốc (catastrophic forgetting) nếu LR quá lớn hoặc data ít</div>
+      </div>
+      <pre>base = ResNet50(weights='imagenet', include_top=False)
+base.trainable = True                # 🔥 mở khoá TOÀN BỘ
+model.compile(optimizer=Adam(learning_rate=1e-6))  # LR CỰC nhỏ
+model.fit(large_medical_dataset, epochs=30)
+# chỉ an toàn khi có nhiều data để "giữ" model không lệch quá xa</pre>
+    </div>
+  </section>
+
+  <!-- ============ INTERACTIVE DEMO ============ -->
+  <section id="demo" class="section">
+    <h2>🎮 Demo: Gợi Ý Chiến Lược Cho Bài Toán Của Bạn</h2>
+    <p>Chọn 2 thông tin về bài toán của bạn, bấm nút để xem hệ thống gợi ý chiến lược Transfer Learning nào phù hợp nhất.</p>
+    <div class="demo-controls">
+      <div>
+        <label for="dsize">📦 Kích thước dataset</label>
+        <select id="dsize">
+          <option value="small">Rất nhỏ (&lt; 300 ảnh)</option>
+          <option value="mid">Vừa (300 – 5,000 ảnh)</option>
+          <option value="large">Lớn (&gt; 5,000 ảnh)</option>
+        </select>
+      </div>
+      <div>
+        <label for="domain">🌍 Domain ảnh</label>
+        <select id="domain">
+          <option value="similar">Giống đời thường (động vật, xe, đồ vật...)</option>
+          <option value="different">Khác biệt lớn (y tế, vệ tinh, X-quang...)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="runDemo()">▶️ Gợi ý chiến lược</button>
+    <div class="demo-result" id="demoResult">
+      <h4 id="demoTitle"></h4>
+      <p id="demoText"></p>
+    </div>
+  </section>
+
+  <!-- ============ DATA GOOD VS BAD ============ -->
+  <section id="data" class="section">
+    <h2>📊 Dữ Liệu Nào Tốt, Dữ Liệu Nào Gây Lỗi?</h2>
+    <p>Transfer Learning rất mạnh, nhưng vẫn "sập bẫy" nếu dữ liệu đầu vào có vấn đề. Dưới đây là các tình huống thường gặp:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tình huống dữ liệu</th><th>Vấn đề</th><th>Hệ quả</th><th>Đánh giá</th></tr></thead>
+        <tbody>
+          <tr class="row-good">
+            <td>Ảnh mèo/chó nhiều góc chụp, ánh sáng khác nhau, đã resize đúng 224×224, chuẩn hoá theo mean/std ImageNet</td>
+            <td>Không có — đây là setup chuẩn</td>
+            <td>Model học nhanh, chính xác cao ngay cả với vài trăm ảnh</td>
+            <td><span class="badge good">✅ Tốt</span></td>
+          </tr>
+          <tr class="row-good">
+            <td>Nhãn gán chính xác, số lượng ảnh cân bằng giữa các lớp (VD: 500 mèo / 500 chó)</td>
+            <td>Không có</td>
+            <td>Model không bị thiên vị về một lớp</td>
+            <td><span class="badge good">✅ Tốt</span></td>
+          </tr>
+          <tr class="row-warn">
+            <td>Domain hơi khác ImageNet nhưng vẫn là ảnh tự nhiên (VD: ảnh vệ tinh, ảnh vi mô)</td>
+            <td>Đặc trưng cấp cao của ImageNet không hoàn toàn khớp</td>
+            <td>Feature Extraction thuần không đủ tốt — cần Fine-tuning một phần</td>
+            <td><span class="badge warn">⚠️ Trung bình</span></td>
+          </tr>
+          <tr class="row-bad">
+            <td>Quên resize/chuẩn hoá ảnh về đúng kích thước input của model pretrained (VD: đưa ảnh 32×32 vào VGG cần 224×224)</td>
+            <td>Sai kích thước tensor</td>
+            <td>Lỗi <code>shape mismatch</code>, chương trình crash</td>
+            <td><span class="badge bad">❌ Lỗi kỹ thuật</span></td>
+          </tr>
+          <tr class="row-bad">
+            <td>Ảnh grayscale (1 kênh) đưa thẳng vào mạng pretrained trên ảnh RGB (3 kênh) mà không xử lý</td>
+            <td>Sai số kênh màu</td>
+            <td>Lỗi <code>channel mismatch</code> hoặc kết quả vô nghĩa</td>
+            <td><span class="badge bad">❌ Lỗi kỹ thuật</span></td>
+          </tr>
+          <tr class="row-bad">
+            <td>Dữ liệu mất cân bằng nặng (990 ảnh mèo, chỉ 10 ảnh chó)</td>
+            <td>Model học "cứ đoán mèo là đúng gần hết"</td>
+            <td>Accuracy cao giả tạo (99%) nhưng model vô dụng với lớp thiểu số</td>
+            <td><span class="badge bad">❌ Sai lệch mô hình</span></td>
+          </tr>
+          <tr class="row-bad">
+            <td>Domain hoàn toàn khác biệt (X-quang phổi) nhưng chỉ dùng Feature Extraction (đóng băng hết)</td>
+            <td>Đặc trưng ImageNet (lông, màu tự nhiên, texture đời thường) không liên quan đến mô phổi</td>
+            <td>Độ chính xác thấp, model "bối rối"</td>
+            <td><span class="badge bad">❌ Chọn sai chiến lược</span></td>
+          </tr>
+          <tr class="row-bad">
+            <td>Ảnh bị gán nhãn sai (label noise) — VD: ảnh chó bị gán nhãn "mèo"</td>
+            <td>Tín hiệu học sai ngay từ đầu</td>
+            <td>Model học nhầm pattern, dự đoán sai có hệ thống</td>
+            <td><span class="badge bad">❌ Nhiễu nhãn</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ EXERCISE ============ -->
+  <section id="exercise" class="section">
+    <h2>✍️ Bài Tập Nhỏ — Đối Chiếu Với Bản Mẫu</h2>
+    <p><b>Tình huống:</b> Bạn có <b>250 ảnh X-quang phổi</b> (2 lớp: <i>viêm phổi</i> / <i>bình thường</i>) để xây dựng bộ phân loại hỗ trợ bác sĩ. Domain này khác khá xa so với ImageNet (ảnh đời thường).</p>
+    <p>👉 Bạn sẽ chọn chiến lược Transfer Learning nào (trong 4 cách ở trên)? Vì sao? Viết suy nghĩ của bạn vào ô bên dưới, sau đó bấm <b>Xem gợi ý</b> để đối chiếu.</p>
+    <textarea id="exerciseInput" placeholder="VD: Vì dataset chỉ có 250 ảnh nên mình sẽ chọn... vì..."></textarea>
+    <div style="margin-top:12px;">
+      <button class="btn secondary" onclick="revealExercise()">💡 Xem gợi ý</button>
+    </div>
+    <div class="reveal-box" id="exerciseReveal">
+      <p style="margin:0 0 8px;"><b>Gợi ý bản mẫu:</b></p>
+      <p style="margin:0 0 8px;">Dataset chỉ có 250 ảnh → rất nhỏ → nếu Fine-tune toàn bộ (cách 4) hoặc Train from scratch (cách 1) sẽ overfit gần như chắc chắn. Nên <b>bắt đầu bằng Feature Extraction (cách 2)</b> làm baseline an toàn.</p>
+      <p style="margin:0 0 8px;">Nhưng vì domain (X-quang) khác khá xa ImageNet (đồ vật đời thường), đặc trưng cấp cao của ImageNet có thể không đủ khớp → nên thử thêm <b>Fine-tuning một phần (cách 3)</b>: mở khoá 1–2 block cuối, learning rate cực nhỏ (1e-5).</p>
+      <p style="margin:0;">Kết hợp thêm <b>data augmentation</b> mạnh (xoay nhẹ, lật, thay đổi độ sáng) để "nhân bản" dữ liệu ít ỏi, và theo dõi validation loss sát sao để dừng sớm (early stopping) nếu thấy overfit.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section id="quiz" class="section">
+    <h2>📝 Quiz Tổng Kết</h2>
+    <p>Trả lời 5 câu hỏi để kiểm tra lại kiến thức vừa học.</p>
+
+    <div class="quiz-q" data-correct="b">
+      <p class="q-title">1. Transfer Learning giúp ích nhất khi nào?</p>
+      <div class="quiz-opts">
+        <label><input type="radio" name="q1" value="a"> Khi có hàng triệu ảnh gắn nhãn cho bài toán mới</label>
+        <label><input type="radio" name="q1" value="b"> Khi có ít dữ liệu và domain giống dataset gốc (VD: ImageNet)</label>
+        <label><input type="radio" name="q1" value="c"> Khi muốn train mạng từ số 0 để hiểu rõ cơ chế</label>
+        <label><input type="radio" name="q1" value="d"> Khi không quan tâm đến độ chính xác</label>
+      </div>
+      <div class="q-feedback"></div>
+    </div>
+
+    <div class="quiz-q" data-correct="b">
+      <p class="q-title">2. "Đóng băng" (freeze) một lớp trong mạng nghĩa là gì?</p>
+      <div class="quiz-opts">
+        <label><input type="radio" name="q2" value="a"> Xoá lớp đó khỏi mạng</label>
+        <label><input type="radio" name="q2" value="b"> Giữ nguyên trọng số, không cập nhật trong lúc huấn luyện</label>
+        <label><input type="radio" name="q2" value="c"> Tăng tốc độ học (learning rate) cho lớp đó</label>
+        <label><input type="radio" name="q2" value="d"> Chuyển lớp đó sang chạy trên GPU khác</label>
+      </div>
+      <div class="q-feedback"></div>
+    </div>
+
+    <div class="quiz-q" data-correct="c">
+      <p class="q-title">3. Vì sao khi Fine-tune toàn bộ mạng, ta cần learning rate rất nhỏ?</p>
+      <div class="quiz-opts">
+        <label><input type="radio" name="q3" value="a"> Để train nhanh hơn</label>
+        <label><input type="radio" name="q3" value="b"> Vì máy tính quá yếu</label>
+        <label><input type="radio" name="q3" value="c"> Để tránh phá vỡ các đặc trưng tốt đã học được (catastrophic forgetting)</label>
+        <label><input type="radio" name="q3" value="d"> Vì thư viện Keras/PyTorch bắt buộc như vậy</label>
+      </div>
+      <div class="q-feedback"></div>
+    </div>
+
+    <div class="quiz-q" data-correct="b">
+      <p class="q-title">4. Trường hợp nào KHÔNG nên chỉ dùng "Feature Extraction" (đóng băng toàn bộ)?</p>
+      <div class="quiz-opts">
+        <label><input type="radio" name="q4" value="a"> 500 ảnh mèo và chó thuộc nhiều giống khác nhau</label>
+        <label><input type="radio" name="q4" value="b"> Ảnh X-quang y tế phân biệt viêm phổi (domain rất khác ImageNet)</label>
+        <label><input type="radio" name="q4" value="c"> Ảnh các loại xe hơi đời thường</label>
+        <label><input type="radio" name="q4" value="d"> Ảnh động vật hoang dã trong tự nhiên</label>
+      </div>
+      <div class="q-feedback"></div>
+    </div>
+
+    <div class="quiz-q" data-correct="b">
+      <p class="q-title">5. Dữ liệu 990 ảnh lớp A và chỉ 10 ảnh lớp B sẽ gây ra vấn đề gì?</p>
+      <div class="quiz-opts">
+        <label><input type="radio" name="q5" value="a"> Model học nhanh hơn bình thường</label>
+        <label><input type="radio" name="q5" value="b"> Model thiên vị, luôn đoán lớp A, accuracy cao giả tạo</label>
+        <label><input type="radio" name="q5" value="c"> Không ảnh hưởng gì đến kết quả</label>
+        <label><input type="radio" name="q5" value="d"> Giúp tránh overfitting tốt hơn</label>
+      </div>
+      <div class="q-feedback"></div>
+    </div>
+
+    <button class="btn" onclick="submitQuiz()">✅ Nộp bài &amp; xem điểm</button>
+    <div class="score-box" id="scoreBox"></div>
+  </section>
+
+  <footer>
+    <p>Bài giảng tương tác này do Claude tự động biên soạn (tiếng Việt), dựa theo nội dung gốc bài <a href="../lessons/4-ComputerVision/08-TransferLearning/README.md">08-TransferLearning</a> trong khoá học <a href="https://github.com/microsoft/AI-For-Beginners">AI-For-Beginners</a> của Microsoft.</p>
+  </footer>
+</div>
+
+<script>
+// ---------- theme toggle (manual override, persisted per-viewer) ----------
+(function(){
+  const btn = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  try{
+    const saved = localStorage.getItem('tl-theme');
+    if(saved) root.setAttribute('data-theme', saved);
+  }catch(e){}
+  btn.addEventListener('click', function(){
+    const current = root.getAttribute('data-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let next;
+    if(!current){ next = prefersDark ? 'light' : 'dark'; }
+    else{ next = current === 'dark' ? 'light' : 'dark'; }
+    root.setAttribute('data-theme', next);
+    try{ localStorage.setItem('tl-theme', next); }catch(e){}
+  });
+})();
+
+// ---------- warm-up fill-in-the-blank ----------
+function checkFill(button){
+  const row = button.parentElement;
+  const input = row.querySelector('.fill-input');
+  const feedback = row.parentElement.querySelector('.fill-feedback');
+  const answers = input.dataset.answer.split(',').map(a => a.trim().toLowerCase());
+  const val = input.value.trim().toLowerCase();
+  feedback.classList.add('show');
+  if(answers.some(a => val.includes(a) || a.includes(val)) && val.length > 1){
+    feedback.textContent = '✅ Chính xác!';
+    feedback.className = 'fill-feedback show correct';
+  } else {
+    feedback.textContent = '❌ Chưa đúng — đáp án gợi ý: ' + input.dataset.answer.split(',')[0];
+    feedback.className = 'fill-feedback show wrong';
+  }
+}
+
+// ---------- interactive demo ----------
+function runDemo(){
+  const size = document.getElementById('dsize').value;
+  const domain = document.getElementById('domain').value;
+  const resultBox = document.getElementById('demoResult');
+  const title = document.getElementById('demoTitle');
+  const text = document.getElementById('demoText');
+
+  let strategy, reason;
+  if(size === 'small' && domain === 'similar'){
+    strategy = '2️⃣ Feature Extraction (đóng băng toàn bộ)';
+    reason = 'Dataset rất nhỏ nhưng domain giống ImageNet → đặc trưng có sẵn đã rất phù hợp, chỉ cần train lớp phân loại mới.';
+  } else if(size === 'small' && domain === 'different'){
+    strategy = '2️⃣ Feature Extraction, kèm cảnh báo ⚠️';
+    reason = 'Dataset quá nhỏ nên chưa thể fine-tune sâu (dễ overfit). Bắt đầu bằng Feature Extraction làm baseline, kết hợp data augmentation mạnh để bù dữ liệu ít, và cân nhắc thử fine-tune 1-2 layer cuối nếu kết quả chưa đủ tốt.';
+  } else if(size === 'mid' && domain === 'similar'){
+    strategy = '3️⃣ Fine-Tuning một phần';
+    reason = 'Dataset đủ lớn để fine-tune vài block cuối mà không sợ overfit quá nhiều, giúp tăng độ chính xác so với chỉ Feature Extraction.';
+  } else if(size === 'mid' && domain === 'different'){
+    strategy = '3️⃣ Fine-Tuning một phần (learning rate rất nhỏ + augmentation)';
+    reason = 'Domain khác biệt cần "học lại" nhiều hơn ở các lớp cao cấp, nhưng data chỉ ở mức vừa nên vẫn cần đóng băng phần lớn mạng và dùng learning rate cực nhỏ để tránh phá vỡ đặc trưng gốc.';
+  } else if(size === 'large' && domain === 'similar'){
+    strategy = '4️⃣ Fine-Tuning toàn bộ (hoặc Train From Scratch cũng khả thi)';
+    reason = 'Dataset đủ lớn để an toàn mở khoá toàn bộ mạng, có thể đạt độ chính xác cao nhất. Train from scratch cũng là lựa chọn hợp lý nếu bạn có đủ tài nguyên tính toán.';
+  } else {
+    strategy = '4️⃣ Fine-Tuning toàn bộ';
+    reason = 'Domain khác biệt lớn (VD: y tế, vệ tinh) cần mạng "học lại" nhiều đặc trưng, và dataset đủ lớn để làm điều đó an toàn mà không bị catastrophic forgetting. Vẫn nên dùng learning rate cực nhỏ.';
+  }
+
+  title.textContent = '👉 Gợi ý: ' + strategy;
+  text.textContent = reason;
+  resultBox.classList.remove('show');
+  void resultBox.offsetWidth; // restart animation
+  resultBox.classList.add('show');
+}
+
+// ---------- exercise reveal ----------
+function revealExercise(){
+  document.getElementById('exerciseReveal').classList.add('show');
+}
+
+// ---------- quiz ----------
+function submitQuiz(){
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let unanswered = 0;
+  questions.forEach(q => {
+    const correct = q.dataset.correct;
+    const name = q.querySelector('input').name;
+    const chosen = q.querySelector('input[name="' + name + '"]:checked');
+    const feedback = q.querySelector('.q-feedback');
+    feedback.classList.add('show');
+    if(!chosen){
+      feedback.textContent = '⚠️ Bạn chưa chọn đáp án.';
+      feedback.className = 'q-feedback show wrong';
+      unanswered++;
+      return;
+    }
+    if(chosen.value === correct){
+      score++;
+      feedback.textContent = '✅ Chính xác!';
+      feedback.className = 'q-feedback show correct';
+    } else {
+      feedback.textContent = '❌ Sai rồi — đáp án đúng là ý ' + correct.toUpperCase() + '.';
+      feedback.className = 'q-feedback show wrong';
+    }
+  });
+
+  const scoreBox = document.getElementById('scoreBox');
+  const total = questions.length;
+  let msg;
+  if(unanswered > 0){
+    msg = '📋 Bạn còn ' + unanswered + ' câu chưa trả lời. Điểm tạm tính: ' + score + '/' + total;
+  } else if(score === total){
+    msg = '🏆 Xuất sắc! ' + score + '/' + total + ' — Bạn đã nắm vững Transfer Learning!';
+  } else if(score >= total - 1){
+    msg = '👍 Khá tốt! ' + score + '/' + total + ' — Xem lại câu sai một chút nhé.';
+  } else {
+    msg = '📚 ' + score + '/' + total + ' — Nên đọc lại phần "4 Cách Áp Dụng" ở trên rồi thử lại!';
+  }
+  scoreBox.textContent = msg;
+  scoreBox.classList.remove('show');
+  void scoreBox.offsetWidth;
+  scoreBox.classList.add('show');
+}
+</script>
+</body>
+</html>
