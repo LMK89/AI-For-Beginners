@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Object Detection – Tìm Vật Thể Trong Ảnh</title>
+<style>
+:root{
+  --bg:#f5f6fa; --card:#ffffff; --text:#1b1f27; --sub:#5a6270;
+  --brand:#4f6df5; --brand2:#7c5cff; --good:#1fa971; --warn:#e0a11c; --bad:#e5484d;
+  --border:#e3e5ec; --code-bg:#101425; --code-text:#d7e0ff; --shadow:0 8px 24px rgba(30,40,80,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#11131a; --card:#191c26; --text:#eef0f6; --sub:#a6acbd;
+    --brand:#7c93ff; --brand2:#a98cff; --good:#3fd18f; --warn:#f0bb4a; --bad:#ff6b6f;
+    --border:#2a2e3c; --code-bg:#0b0d15; --code-text:#c9d6ff; --shadow:0 8px 28px rgba(0,0,0,.45);
+  }
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6;}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 80px;}
+
+/* ---------- animations ---------- */
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-24px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-14px);max-height:0;}to{opacity:1;transform:translateY(0);max-height:600px;}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(79,109,245,.55);}70%{box-shadow:0 0 0 14px rgba(79,109,245,0);}100%{box-shadow:0 0 0 0 rgba(79,109,245,0);}}
+@keyframes pulseGood{0%{box-shadow:0 0 0 0 rgba(31,169,113,.6);}70%{box-shadow:0 0 0 12px rgba(31,169,113,0);}100%{box-shadow:0 0 0 0 rgba(31,169,113,0);}}
+@keyframes pulseBad{0%{box-shadow:0 0 0 0 rgba(229,72,77,.6);}70%{box-shadow:0 0 0 12px rgba(229,72,77,0);}100%{box-shadow:0 0 0 0 rgba(229,72,77,0);}}
+@keyframes dashSlide{to{stroke-dashoffset:-40;}}
+
+header.hero{animation:fadeInDown .7s ease both;text-align:center;padding:28px 10px 8px;}
+header.hero h1{font-size:clamp(24px,4.5vw,38px);margin:0 0 8px;background:linear-gradient(90deg,var(--brand),var(--brand2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+header.hero p.tag{color:var(--sub);margin:0;font-size:15px;}
+.badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
+.badge{background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--sub);box-shadow:var(--shadow);}
+
+section{margin-top:38px;opacity:0;animation:slideUp .6s ease forwards;}
+section:nth-of-type(1){animation-delay:.05s;}
+section:nth-of-type(2){animation-delay:.1s;}
+section:nth-of-type(3){animation-delay:.15s;}
+section:nth-of-type(4){animation-delay:.2s;}
+section:nth-of-type(5){animation-delay:.25s;}
+section:nth-of-type(6){animation-delay:.3s;}
+section:nth-of-type(7){animation-delay:.32s;}
+section:nth-of-type(8){animation-delay:.34s;}
+
+h2{font-size:22px;display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+h2 .num{width:32px;height:32px;flex:0 0 32px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;}
+h3{font-size:16px;margin:18px 0 8px;color:var(--text);}
+.lede{color:var(--sub);margin-top:0;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow);}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:820px){.grid3{grid-template-columns:1fr;}.grid2{grid-template-columns:1fr;}}
+
+.approach-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow);transition:transform .25s ease;}
+.approach-card:hover{transform:translateY(-4px);}
+.approach-card h4{margin:0 0 4px;font-size:15px;}
+.tier{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;font-weight:600;margin-bottom:8px;}
+.tier.good{background:rgba(31,169,113,.14);color:var(--good);}
+.tier.warn{background:rgba(224,161,28,.16);color:var(--warn);}
+.tier.bad{background:rgba(229,72,77,.14);color:var(--bad);}
+
+pre{background:var(--code-bg);color:var(--code-text);padding:14px 16px;border-radius:12px;overflow-x:auto;font-size:12.5px;margin:10px 0 0;}
+code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+.inline-code{background:var(--code-bg);color:var(--code-text);padding:1px 6px;border-radius:6px;font-size:.92em;}
+
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13.5px;}
+th,td{border:1px solid var(--border);padding:9px 10px;text-align:left;vertical-align:top;}
+th{background:rgba(124,92,255,.08);}
+tr:hover td{background:rgba(124,92,255,.05);}
+.tag-ok{color:var(--good);font-weight:700;}
+.tag-warn{color:var(--warn);font-weight:700;}
+.tag-bad{color:var(--bad);font-weight:700;}
+
+.ascii{background:var(--code-bg);color:var(--code-text);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:12px;white-space:pre;font-family:monospace;}
+
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
+.flow .step{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:13px;box-shadow:var(--shadow);}
+.flow .arrow{font-size:20px;color:var(--brand);animation:pulse 1.8s infinite;}
+
+.demo-box{border:1px dashed var(--border);border-radius:14px;padding:16px;background:var(--card);}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;align-items:center;}
+label.small{font-size:12.5px;color:var(--sub);}
+input[type=range]{width:150px;}
+button{cursor:pointer;border:none;border-radius:10px;padding:9px 16px;font-size:13.5px;font-weight:600;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;transition:transform .15s ease,opacity .2s;}
+button:hover{transform:translateY(-2px);}
+button.secondary{background:var(--card);color:var(--text);border:1px solid var(--border);}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+
+canvas{width:100%;max-width:420px;height:auto;border-radius:12px;background:#2b2f3d;display:block;border:1px solid var(--border);}
+.iou-readout{font-size:14px;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(79,109,245,.08);}
+.iou-readout b{font-size:18px;}
+
+.log{margin-top:10px;font-size:13px;max-height:220px;overflow-y:auto;}
+.log-row{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;margin-bottom:4px;background:rgba(124,92,255,.05);animation:slideDown .35s ease both;}
+.log-row .mark{width:20px;text-align:center;font-weight:700;}
+.log-row.keep .mark{color:var(--good);}
+.log-row.drop .mark{color:var(--bad);}
+.log-row.info .mark{color:var(--brand);}
+
+.quiz-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.quiz-tab{padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--sub);}
+.quiz-tab.active{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-color:transparent;}
+.quiz-pane{display:none;}
+.quiz-pane.active{display:block;animation:slideDown .4s ease both;}
+
+.q{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px;}
+.q .options{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-size:13.5px;}
+.opt:hover{background:rgba(124,92,255,.06);}
+.opt input{accent-color:var(--brand);}
+.feedback{margin-top:10px;font-size:13.5px;font-weight:600;padding:8px 10px;border-radius:10px;display:none;}
+.feedback.show{display:block;animation:slideDown .35s ease both;}
+.feedback.correct{background:rgba(31,169,113,.14);color:var(--good);animation:pulseGood .6s ease;}
+.feedback.wrong{background:rgba(229,72,77,.14);color:var(--bad);animation:pulseBad .6s ease;}
+
+.blank-input{border:1px solid var(--border);border-radius:8px;padding:5px 8px;font-size:13.5px;width:120px;background:var(--bg);color:var(--text);}
+.template-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+@media(max-width:700px){.template-compare{grid-template-columns:1fr;}}
+.template-box{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--code-bg);color:var(--code-text);font-family:monospace;font-size:12.5px;}
+.template-box h5{margin:0 0 8px;color:var(--sub);font-family:-apple-system,sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.5px;}
+.diff-ok{color:#7effb0;}
+.diff-bad{color:#ff9797;text-decoration:line-through;}
+
+.score-banner{margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(79,109,245,.1);font-weight:700;display:none;}
+.score-banner.show{display:block;animation:slideDown .4s ease both;}
+
+.usecase{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--border);}
+.usecase:last-child{border-bottom:none;}
+.usecase .ico{font-size:22px;}
+footer{text-align:center;color:var(--sub);font-size:12.5px;margin-top:60px;}
+.toc{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;}
+.toc a{font-size:12.5px;color:var(--brand);text-decoration:none;border:1px solid var(--border);padding:5px 10px;border-radius:999px;background:var(--card);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>🎯 Object Detection — Tìm Vật Thể Trong Ảnh</h1>
+  <p class="tag">Từ AI-For-Beginners · Bài 11 (4-ComputerVision) · Giảng bằng tiếng Việt, có demo tương tác</p>
+  <div class="badges">
+    <span class="badge">📦 Bounding Box</span>
+    <span class="badge">📐 IoU</span>
+    <span class="badge">🧹 Non-Max Suppression</span>
+    <span class="badge">⚡ YOLO / R-CNN</span>
+  </div>
+  <div class="toc">
+    <a href="#dinhnghia">1. Định nghĩa</a>
+    <a href="#cachtiepcan">2. 3 cách tiếp cận</a>
+    <a href="#iou">3. Demo IoU</a>
+    <a href="#nms">4. Demo NMS (state trace)</a>
+    <a href="#data">5. Data tốt/xấu</a>
+    <a href="#usecase">6. Use case thực tế</a>
+    <a href="#quiz">7. Khởi động nhanh</a>
+  </div>
+</header>
+
+<section id="dinhnghia">
+  <h2><span class="num">1</span>Object Detection là gì?</h2>
+  <p class="lede">Classification chỉ trả lời <b>"trong ảnh có gì?"</b>. Object Detection trả lời thêm câu hỏi <b>"nó nằm ở đâu?"</b> — tức là vừa phải đoán <b>lớp (class)</b>, vừa phải đoán <b>khung bao (bounding box)</b> toạ độ <code class="inline-code">(x, y, w, h)</code> của từng vật thể.</p>
+  <div class="ascii">Input:  1 tấm ảnh có nhiều vật thể
+Output: [ { class: "chó",  box: (x=40, y=40, w=140,h=120), conf: 0.95 },
+          { class: "mèo",  box: (x=220,y=150,w=120,h=100), conf: 0.89 } ]
+
+Classification only :  "Ảnh này có chó"                → 1 nhãn cho cả ảnh
+Object Detection    :  "Có 1 con chó ở góc trái-trên"    → nhiều nhãn + toạ độ</div>
+</section>
+
+<section id="cachtiepcan">
+  <h2><span class="num">2</span>3 cách tiếp cận — từ ngây thơ đến hiện đại</h2>
+  <p class="lede">Cùng một bài toán "tìm chó trong ảnh", có 3 trường phái xử lý hoàn toàn khác nhau.</p>
+  <div class="grid3">
+    <div class="approach-card">
+      <span class="tier bad">❌ Ngây thơ / chậm</span>
+      <h4>Cách 1: Sliding Window</h4>
+      <p style="font-size:13px;color:var(--sub);margin:6px 0;">Cắt ảnh thành nhiều ô nhỏ (tile), chạy classifier trên <i>từng ô</i>, ô nào activation cao thì coi như có vật thể.</p>
+      <pre><code>for tile in slide_windows(image, sizes):
+    score = classifier(tile)
+    if score > 0.9:
+        boxes.append(tile.coords)</code></pre>
+      <p style="font-size:12.5px;color:var(--sub)">Box rất thô, tốn hàng nghìn lần forward-pass ⇒ cực chậm, không dùng trong thực tế.</p>
+    </div>
+    <div class="approach-card">
+      <span class="tier warn">⚠️ Chính xác nhưng chậm</span>
+      <h4>Cách 2: R-CNN family</h4>
+      <p style="font-size:13px;color:var(--sub);margin:6px 0;">Dùng thuật toán (Selective Search) đề xuất trước vài nghìn "vùng nghi ngờ" (Region of Interest), rồi mới chạy CNN + hồi quy toạ độ trên từng vùng.</p>
+      <pre><code>rois = selective_search(image)   # ~2000 vùng
+for roi in rois:
+    feat = cnn(roi)
+    cls  = svm(feat)
+    box  = regressor(feat)</code></pre>
+      <p style="font-size:12.5px;color:var(--sub)">Faster R-CNN cải tiến bằng cách để mạng tự đề xuất ROI (Region Proposal Network) — nhanh hơn nhưng vẫn 2 giai đoạn (2-stage).</p>
+    </div>
+    <div class="approach-card">
+      <span class="tier good">✅ Nhanh + Real-time</span>
+      <h4>Cách 3: YOLO / SSD (One-pass)</h4>
+      <p style="font-size:13px;color:var(--sub);margin:6px 0;">Chia ảnh thành lưới <code class="inline-code">S×S</code>, mỗi ô lưới <b>1 lần duy nhất</b> dự đoán luôn cả class + box + confidence. Không cần bước đề xuất vùng riêng.</p>
+      <pre><code>grid = split(image, S=13)
+for cell in grid:
+    cls, box, conf = model(cell)  # 1 pass duy nhất</code></pre>
+      <p style="font-size:12.5px;color:var(--sub)">"You Only Look Once" — đây là lý do YOLO chạy được real-time trên video, dùng nhiều trong xe tự lái, camera an ninh.</p>
+    </div>
+  </div>
+
+  <h3>Bảng so sánh</h3>
+  <table>
+    <tr><th>Trạng Thái</th><th>Input</th><th>Xử Lý</th><th>Output</th><th>Đánh Giá</th></tr>
+    <tr><td>Sliding Window</td><td>1 ảnh</td><td>→ hàng nghìn tile → classifier từng tile →</td><td>Box thô, nhiều trùng lặp</td><td class="tag-bad">❌ Rất chậm, không chính xác</td></tr>
+    <tr><td>R-CNN / Faster R-CNN</td><td>1 ảnh</td><td>→ đề xuất ROI → CNN + regressor trên từng ROI →</td><td>Box chính xác cao</td><td class="tag-warn">⚠️ Chính xác nhưng chậm (2-stage)</td></tr>
+    <tr><td>YOLO / SSD / RetinaNet</td><td>1 ảnh</td><td>→ chia lưới → dự đoán 1 lần duy nhất →</td><td>Class + box + confidence cùng lúc</td><td class="tag-ok">✅ Nhanh, real-time, dùng phổ biến nhất</td></tr>
+  </table>
+
+  <h3>Diagram quy trình YOLO</h3>
+  <div class="flow">
+    <div class="step">📷 Ảnh gốc</div>
+    <div class="arrow">➜</div>
+    <div class="step">🔲 Chia lưới S×S</div>
+    <div class="arrow">➜</div>
+    <div class="step">🧠 CNN 1 pass</div>
+    <div class="arrow">➜</div>
+    <div class="step">📦 N box thô + confidence</div>
+    <div class="arrow">➜</div>
+    <div class="step">🧹 Non-Max Suppression</div>
+    <div class="arrow">➜</div>
+    <div class="step">✅ Box cuối cùng</div>
+  </div>
+</section>
+
+<section id="iou">
+  <h2><span class="num">3</span>Khái niệm lõi: IoU (Intersection over Union)</h2>
+  <p class="lede">Để biết 1 box dự đoán "đúng" hay "sai" so với box thật (ground-truth), ta không so bằng mắt mà đo bằng công thức:</p>
+  <div class="ascii">           Diện tích phần GIAO NHAU (Intersection)
+   IoU  =  ───────────────────────────────────────
+           Diện tích phần HỢP NHAU (Union)
+
+   IoU = 1.0  → 2 box trùng khít hoàn toàn
+   IoU = 0.0  → 2 box không chạm nhau chút nào
+   IoU > 0.5  → thường được coi là "phát hiện đúng" (PASCAL VOC chuẩn)</div>
+
+  <div class="demo-box">
+    <h3>🎮 Demo: kéo thanh trượt để thay đổi box B, xem IoU đổi theo thời gian thực</h3>
+    <div class="grid2">
+      <div>
+        <canvas id="iouCanvas" width="380" height="280"></canvas>
+      </div>
+      <div>
+        <div class="controls">
+          <label class="small">Box B — dịch ngang (x): <span id="bxVal">30</span>px</label>
+          <input type="range" id="bx" min="-40" max="180" value="30">
+        </div>
+        <div class="controls">
+          <label class="small">Box B — dịch dọc (y): <span id="byVal">25</span>px</label>
+          <input type="range" id="by" min="-40" max="180" value="25">
+        </div>
+        <div class="iou-readout">
+          IoU hiện tại: <b id="iouVal">0.00</b><br>
+          <span id="iouVerdict" style="font-size:13px;"></span>
+        </div>
+        <button class="secondary" id="resetIou" style="margin-top:8px;">↺ Reset về giữa</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="nms">
+  <h2><span class="num">4</span>Non-Max Suppression — trace từng bước (✓ giữ / ✗ loại)</h2>
+  <p class="lede">Model thường bắn ra <b>rất nhiều box chồng lấn</b> cho cùng 1 vật thể. NMS là thuật toán "dọn dẹp": duyệt các box theo confidence giảm dần, giữ box tốt nhất, loại các box overlap quá nhiều (IoU cao) với nó.</p>
+
+  <div class="ascii">Bước 1: Lọc theo ngưỡng confidence (loại box quá yếu, có thể là nhiễu)
+Bước 2: Sắp xếp box còn lại theo confidence GIẢM DẦN
+Bước 3: Con trỏ i chạy từ box confidence cao nhất:
+   [ giữ box i ✓ ]  →  tính IoU(box i, mọi box còn lại)
+                     →  IoU > ngưỡng ⇒ loại (✗, cùng 1 vật, box thừa)
+                     →  IoU ≤ ngưỡng ⇒ giữ lại xét tiếp (vật thể khác)
+   lặp lại với box i tiếp theo chưa bị loại</div>
+
+  <div class="demo-box">
+    <h3>🎮 Demo: bấm "Bước tiếp theo" để xem NMS xử lý 5 box dự đoán</h3>
+    <div class="grid2">
+      <div>
+        <canvas id="nmsCanvas" width="380" height="300"></canvas>
+        <div class="controls" style="margin-top:10px;">
+          <label class="small">Ngưỡng confidence: <span id="confThVal">0.50</span></label>
+          <input type="range" id="confTh" min="0" max="1" step="0.05" value="0.5">
+        </div>
+        <div class="controls">
+          <label class="small">Ngưỡng IoU (NMS): <span id="iouThVal">0.40</span></label>
+          <input type="range" id="iouTh" min="0.1" max="0.9" step="0.05" value="0.4">
+        </div>
+      </div>
+      <div>
+        <div class="controls">
+          <button id="nmsNext">▶ Bước tiếp theo</button>
+          <button class="secondary" id="nmsReset">↺ Chạy lại</button>
+        </div>
+        <div class="log" id="nmsLog"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="data">
+  <h2><span class="num">5</span>Data nào tốt — data nào làm model sai?</h2>
+  <table>
+    <tr><th>Loại dữ liệu</th><th>Ví dụ</th><th>Ảnh hưởng đến model</th><th>Đánh giá</th></tr>
+    <tr>
+      <td>Ảnh rõ nét, box nhãn khít vật thể, đa dạng góc chụp/ánh sáng/kích thước</td>
+      <td>Bộ COCO/PASCAL VOC: mỗi ảnh gắn box chuẩn xác, nhiều loại chó (to, nhỏ, đen, trắng, xa, gần)</td>
+      <td>Model học đúng ranh giới vật thể, tổng quát hoá tốt sang ảnh mới</td>
+      <td class="tag-ok">✅ Tốt</td>
+    </tr>
+    <tr>
+      <td>Box nhãn lệch, quá rộng hoặc quá hẹp so với vật thể thật</td>
+      <td>Người gán nhãn vẽ box trùm cả cái bàn thay vì chỉ con mèo trên bàn</td>
+      <td>Model học IoU sai lệch, dự đoán box "phình to" hoặc "cắt cụt" vật thể</td>
+      <td class="tag-bad">❌ Lỗi nhãn (label noise)</td>
+    </tr>
+    <tr>
+      <td>Vật thể bị che khuất nhiều (occlusion), chồng chéo dày đặc</td>
+      <td>Ảnh đông người ở sân bay, các vật thể đè lên nhau &gt;70%</td>
+      <td>NMS dễ loại nhầm 2 vật thể thật thành 1 (vì IoU giữa chúng cao)</td>
+      <td class="tag-warn">⚠️ Khó, cần chỉnh ngưỡng IoU thấp hơn</td>
+    </tr>
+    <tr>
+      <td>Mất cân bằng lớp (class imbalance)</td>
+      <td>10,000 ảnh "xe hơi" nhưng chỉ 50 ảnh "xe cứu hoả"</td>
+      <td>Model gần như không bao giờ nhận ra "xe cứu hoả", thiên vị lớp phổ biến</td>
+      <td class="tag-bad">❌ Sai sót hệ thống (bias)</td>
+    </tr>
+    <tr>
+      <td>Ảnh mờ, thiếu sáng, độ phân giải thấp</td>
+      <td>Camera an ninh ban đêm, xe chạy tốc độ cao gây motion blur</td>
+      <td>Confidence thấp, box trôi lệch, dễ bị lọc nhầm ở bước threshold</td>
+      <td class="tag-bad">❌ Giảm recall nghiêm trọng</td>
+    </tr>
+    <tr>
+      <td>Background đa dạng, có ảnh "âm tính" (negative samples — không có vật thể mục tiêu)</td>
+      <td>Thêm ảnh đường phố không có chó để model học phân biệt "chó" và "không phải chó"</td>
+      <td>Giảm false positive, model không đoán bừa vật thể không tồn tại</td>
+      <td class="tag-ok">✅ Tốt, giúp giảm nhiễu</td>
+    </tr>
+  </table>
+</section>
+
+<section id="usecase">
+  <h2><span class="num">6</span>Use case thực tế</h2>
+  <div class="card">
+    <div class="usecase"><span class="ico">🚗</span><div><b>Xe tự lái</b> — phát hiện người đi bộ, biển báo, xe khác trong thời gian thực (bắt buộc dùng one-pass như YOLO vì cần tốc độ &gt;30 khung hình/giây).</div></div>
+    <div class="usecase"><span class="ico">🎥</span><div><b>Camera an ninh</b> — đếm người ra vào, phát hiện vật thể bị bỏ quên, cảnh báo xâm nhập vùng cấm.</div></div>
+    <div class="usecase"><span class="ico">🏭</span><div><b>Kiểm tra chất lượng sản phẩm</b> — phát hiện vết nứt, lỗi trên dây chuyền sản xuất, định vị chính xác vị trí lỗi để robot xử lý.</div></div>
+    <div class="usecase"><span class="ico">🩺</span><div><b>Y tế</b> — khoanh vùng khối u trong ảnh X-quang/MRI, hỗ trợ bác sĩ định vị vùng bất thường.</div></div>
+    <div class="usecase"><span class="ico">🛒</span><div><b>Bán lẻ</b> — đếm/định vị sản phẩm trên kệ hàng (shelf monitoring), tự động thanh toán kiểu "Amazon Go".</div></div>
+  </div>
+
+  <h3>✍️ Bài tập nhỏ</h3>
+  <div class="card">
+    <p>Cho 2 box: <b>A</b> = (x=10, y=10, w=100, h=100) và <b>B</b> = (x=60, y=60, w=100, h=100).</p>
+    <p>1. Tự tính diện tích phần giao nhau (Intersection) và phần hợp nhau (Union) trên giấy.<br>
+       2. Tính IoU = Intersection / Union.<br>
+       3. Dùng demo IoU ở mục 3 (kéo x=50, y=50) để đối chiếu kết quả.</p>
+    <p style="color:var(--sub);font-size:13px;">💡 Gợi ý: phần giao nhau là hình chữ nhật từ (60,60) đến (110,110) ⇒ diện tích 50×50 = 2500. Diện tích mỗi box = 100×100 = 10000. Union = 10000+10000-2500 = 17500. IoU = 2500/17500 ≈ 0.143.</p>
+  </div>
+</section>
+
+<section id="quiz">
+  <h2><span class="num">7</span>Khởi động nhanh</h2>
+  <p class="lede">Chọn 1 trong 3 kiểu để tự kiểm tra kiến thức vừa học.</p>
+  <div class="quiz-tabs">
+    <div class="quiz-tab active" data-pane="tracnghiem">📝 Trắc nghiệm</div>
+    <div class="quiz-tab" data-pane="dienkhuyet">✏️ Điền khuyết</div>
+    <div class="quiz-tab" data-pane="doichieu">🔍 Đối chiếu với bản mẫu</div>
+  </div>
+
+  <div class="quiz-pane active" id="pane-tracnghiem">
+    <div class="q" data-answer="c">
+      <b>Câu 1.</b> Điểm khác biệt chính giữa Image Classification và Object Detection là gì?
+      <div class="options">
+        <label class="opt"><input type="radio" name="q1" value="a">Classification nhanh hơn Detection</label>
+        <label class="opt"><input type="radio" name="q1" value="b">Detection chỉ dùng được cho ảnh xám (grayscale)</label>
+        <label class="opt"><input type="radio" name="q1" value="c">Detection vừa đoán lớp vừa đoán vị trí (bounding box), Classification chỉ đoán lớp cho cả ảnh</label>
+        <label class="opt"><input type="radio" name="q1" value="d">Không có khác biệt, chỉ là tên gọi khác nhau</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+    <div class="q" data-answer="b">
+      <b>Câu 2.</b> IoU = 0.9 giữa box dự đoán và box thật (ground-truth) nghĩa là gì?
+      <div class="options">
+        <label class="opt"><input type="radio" name="q2" value="a">Model chắc chắn sai vị trí</label>
+        <label class="opt"><input type="radio" name="q2" value="b">Box dự đoán gần như trùng khít với box thật — độ chính xác vị trí rất cao</label>
+        <label class="opt"><input type="radio" name="q2" value="c">Model chỉ đúng 90% về tên lớp (class)</label>
+        <label class="opt"><input type="radio" name="q2" value="d">2 box không hề chạm nhau</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+    <div class="q" data-answer="a">
+      <b>Câu 3.</b> Tại sao YOLO nhanh hơn Faster R-CNN?
+      <div class="options">
+        <label class="opt"><input type="radio" name="q3" value="a">YOLO dự đoán class + box trong 1 lần duy nhất (one-pass), không cần bước đề xuất vùng riêng</label>
+        <label class="opt"><input type="radio" name="q3" value="b">YOLO chỉ chạy trên ảnh có độ phân giải thấp</label>
+        <label class="opt"><input type="radio" name="q3" value="c">YOLO không dùng mạng neural</label>
+        <label class="opt"><input type="radio" name="q3" value="d">Faster R-CNN chạy trên CPU còn YOLO chạy trên GPU</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+    <div class="q" data-answer="c">
+      <b>Câu 4.</b> Non-Max Suppression dùng để làm gì?
+      <div class="options">
+        <label class="opt"><input type="radio" name="q4" value="a">Tăng số lượng box dự đoán lên</label>
+        <label class="opt"><input type="radio" name="q4" value="b">Làm mờ ảnh trước khi đưa vào model</label>
+        <label class="opt"><input type="radio" name="q4" value="c">Loại bỏ các box trùng lặp (IoU cao) của cùng 1 vật thể, chỉ giữ box confidence cao nhất</label>
+        <label class="opt"><input type="radio" name="q4" value="d">Chuyển ảnh màu sang ảnh xám</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+    <button id="checkAll" style="margin-top:6px;">✅ Nộp bài & xem điểm</button>
+    <div class="score-banner" id="scoreBanner"></div>
+  </div>
+
+  <div class="quiz-pane" id="pane-dienkhuyet">
+    <div class="q">
+      <b>Điền khuyết 1.</b> Công thức: IoU = Diện tích <input class="blank-input" id="fk1" placeholder="..."> / Diện tích <input class="blank-input" id="fk2" placeholder="..."> .
+      <div class="feedback" id="fb-fk"></div>
+    </div>
+    <div class="q">
+      <b>Điền khuyết 2.</b> Thuật toán một-lượt-nhìn nổi tiếng, viết tắt của "You Only Look Once" là: <input class="blank-input" id="fk3" placeholder="tên thuật toán">.
+      <div class="feedback" id="fb-fk3"></div>
+    </div>
+    <div class="q">
+      <b>Điền khuyết 3.</b> Khi 2 box overlap quá nhiều (IoU cao) và cùng nhóm confidence thấp hơn bị loại, bước đó gọi là: <input class="blank-input" id="fk4" placeholder="tên bước / thuật toán">.
+      <div class="feedback" id="fb-fk4"></div>
+    </div>
+    <button id="checkBlank">✅ Kiểm tra điền khuyết</button>
+  </div>
+
+  <div class="quiz-pane" id="pane-doichieu">
+    <p style="font-size:13.5px;color:var(--sub)">Hãy tự viết (trên giấy hoặc trong đầu) pseudo-code cho vòng lặp NMS, sau đó bấm nút để đối chiếu với bản mẫu chuẩn.</p>
+    <button id="showTemplate">🔍 Hiện bản mẫu để đối chiếu</button>
+    <div class="template-compare" id="templateCompare" style="display:none;">
+      <div class="template-box">
+        <h5>Ý bạn cần có (checklist)</h5>
+        <pre style="margin:0;white-space:pre-wrap;">1. Lọc box theo ngưỡng confidence
+2. Sắp xếp box còn lại theo confidence GIẢM DẦN
+3. Lặp: lấy box đầu (confidence cao nhất) → giữ ✓
+4. Tính IoU giữa box vừa giữ với các box còn lại
+5. IoU > ngưỡng → loại ✗ (cùng vật thể)
+6. Lặp lại bước 3 với box tiếp theo chưa bị loại
+7. Dừng khi không còn box nào để xét</pre>
+      </div>
+      <div class="template-box">
+        <h5>Bản mẫu chuẩn (NMS pseudo-code)</h5>
+        <pre style="margin:0;"><span class="diff-ok">def nms(boxes, conf_th, iou_th):</span>
+    boxes = [b for b in boxes
+             if b.conf > conf_th]
+    boxes.sort(key=lambda b: -b.conf)
+    keep = []
+    while boxes:
+        best = boxes.pop(0)
+        keep.append(best)
+        boxes = [b for b in boxes
+                 if iou(best, b) <= iou_th]
+    return keep</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">?</span>Câu hỏi tự kiểm tra (không chấm điểm)</h2>
+  <div class="card">
+    <ol style="font-size:14px;">
+      <li>Nếu bạn hạ ngưỡng IoU của NMS xuống rất thấp (ví dụ 0.1), điều gì xảy ra với số lượng box cuối cùng?</li>
+      <li>Vì sao dataset mất cân bằng lớp lại nguy hiểm hơn với Object Detection so với Classification đơn giản?</li>
+      <li>Trong xe tự lái, giữa "chậm nhưng chính xác" (R-CNN) và "nhanh nhưng kém chính xác hơn chút" (YOLO), bạn sẽ chọn hướng nào? Vì sao?</li>
+    </ol>
+  </div>
+</section>
+
+<footer>
+  Bài giảng tự tạo từ nội dung <code class="inline-code">lessons/4-ComputerVision/11-ObjectDetection</code> — Microsoft AI-For-Beginners.<br>
+  Random lesson picker · Interactive HTML lecture · Tiếng Việt
+</footer>
+</div>
+
+<script>
+// ---------- Tabs ----------
+document.querySelectorAll('.quiz-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.quiz-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.quiz-pane').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('pane-'+tab.dataset.pane).classList.add('active');
+  });
+});
+
+// ---------- Multiple choice grading ----------
+document.getElementById('checkAll').addEventListener('click',()=>{
+  const qs = document.querySelectorAll('#pane-tracnghiem .q');
+  let score=0;
+  qs.forEach(q=>{
+    const ans = q.dataset.answer;
+    const checked = q.querySelector('input[type=radio]:checked');
+    const fb = q.querySelector('.feedback');
+    fb.classList.remove('correct','wrong');
+    if(!checked){
+      fb.textContent = '⚠️ Bạn chưa chọn đáp án.';
+      fb.classList.add('wrong','show');
+      return;
+    }
+    if(checked.value===ans){
+      score++;
+      fb.textContent = '✅ Chính xác!';
+      fb.classList.add('correct','show');
+    } else {
+      const correctLabel = q.querySelector(`input[value="${ans}"]`).closest('.opt').textContent.trim();
+      fb.textContent = '❌ Chưa đúng. Đáp án đúng: ' + correctLabel;
+      fb.classList.add('wrong','show');
+    }
+  });
+  const banner = document.getElementById('scoreBanner');
+  banner.textContent = `Điểm của bạn: ${score}/${qs.length} — ` + (score===qs.length ? '🎉 Xuất sắc!' : score>=qs.length/2 ? '👍 Khá tốt, xem lại phần sai nhé.' : '📚 Nên đọc lại mục 2-4 ở trên.');
+  banner.classList.add('show');
+});
+
+// ---------- Fill in the blank ----------
+document.getElementById('checkBlank').addEventListener('click',()=>{
+  function norm(s){return s.trim().toLowerCase().replace(/\s+/g,' ');}
+  const fk1 = norm(document.getElementById('fk1').value);
+  const fk2 = norm(document.getElementById('fk2').value);
+  const fbfk = document.getElementById('fb-fk');
+  const okIntersect = /giao|intersection|chung/.test(fk1);
+  const okUnion = /hợp|union|hop/.test(fk2);
+  fbfk.classList.remove('correct','wrong');
+  if(okIntersect && okUnion){
+    fbfk.textContent='✅ Đúng rồi: IoU = Giao nhau / Hợp nhau.';
+    fbfk.classList.add('correct','show');
+  } else {
+    fbfk.textContent='❌ Gợi ý: ô 1 là "giao nhau" (intersection), ô 2 là "hợp nhau" (union).';
+    fbfk.classList.add('wrong','show');
+  }
+
+  const fk3 = norm(document.getElementById('fk3').value);
+  const fb3 = document.getElementById('fb-fk3');
+  fb3.classList.remove('correct','wrong');
+  if(fk3==='yolo'){
+    fb3.textContent='✅ Chính xác: YOLO (You Only Look Once).';
+    fb3.classList.add('correct','show');
+  } else {
+    fb3.textContent='❌ Đáp án đúng là "YOLO".';
+    fb3.classList.add('wrong','show');
+  }
+
+  const fk4 = norm(document.getElementById('fk4').value);
+  const fb4 = document.getElementById('fb-fk4');
+  fb4.classList.remove('correct','wrong');
+  if(/non.?max|nms|suppression|khu tru/.test(fk4)){
+    fb4.textContent='✅ Chính xác: Non-Max Suppression (NMS).';
+    fb4.classList.add('correct','show');
+  } else {
+    fb4.textContent='❌ Đáp án đúng là "Non-Max Suppression".';
+    fb4.classList.add('wrong','show');
+  }
+});
+
+document.getElementById('showTemplate').addEventListener('click',()=>{
+  const box = document.getElementById('templateCompare');
+  box.style.display = box.style.display==='none' ? 'grid' : 'none';
+});
+
+// ---------- IoU demo ----------
+const iouCanvas = document.getElementById('iouCanvas');
+const ictx = iouCanvas.getContext('2d');
+const A = {x:40,y:40,w:120,h:100};
+function getB(){
+  const bx = parseInt(document.getElementById('bx').value,10);
+  const by = parseInt(document.getElementById('by').value,10);
+  return {x:40+bx, y:40+by, w:120, h:100};
+}
+function iouOf(a,b){
+  const x1=Math.max(a.x,b.x), y1=Math.max(a.y,b.y);
+  const x2=Math.min(a.x+a.w,b.x+b.w), y2=Math.min(a.y+a.h,b.y+b.h);
+  const iw=Math.max(0,x2-x1), ih=Math.max(0,y2-y1);
+  const inter = iw*ih;
+  const union = a.w*a.h + b.w*b.h - inter;
+  return union<=0?0:inter/union;
+}
+function drawIou(){
+  const B = getB();
+  ictx.clearRect(0,0,iouCanvas.width,iouCanvas.height);
+  ictx.fillStyle='#2b2f3d';
+  ictx.fillRect(0,0,iouCanvas.width,iouCanvas.height);
+  // intersection fill
+  const x1=Math.max(A.x,B.x), y1=Math.max(A.y,B.y);
+  const x2=Math.min(A.x+A.w,B.x+B.w), y2=Math.min(A.y+A.h,B.y+B.h);
+  if(x2>x1 && y2>y1){
+    ictx.fillStyle='rgba(124,92,255,.5)';
+    ictx.fillRect(x1,y1,x2-x1,y2-y1);
+  }
+  ictx.lineWidth=3;
+  ictx.strokeStyle='#4f6df5';
+  ictx.strokeRect(A.x,A.y,A.w,A.h);
+  ictx.fillStyle='#4f6df5'; ictx.font='12px sans-serif'; ictx.fillText('A (ground-truth)',A.x,A.y-8);
+  ictx.strokeStyle='#ff9797';
+  ictx.strokeRect(B.x,B.y,B.w,B.h);
+  ictx.fillStyle='#ff9797'; ictx.fillText('B (dự đoán)',B.x,B.y+B.h+16);
+
+  const v = iouOf(A,B);
+  document.getElementById('iouVal').textContent = v.toFixed(3);
+  const verdict = document.getElementById('iouVerdict');
+  if(v>=0.7){verdict.textContent='✅ Rất tốt — box gần như trùng khít.';verdict.style.color='var(--good)';}
+  else if(v>=0.5){verdict.textContent='⚠️ Chấp nhận được — thường được coi là "phát hiện đúng".';verdict.style.color='var(--warn)';}
+  else if(v>0){verdict.textContent='❌ Lệch nhiều — coi như phát hiện sai vị trí.';verdict.style.color='var(--bad)';}
+  else{verdict.textContent='❌ Không chạm nhau — IoU = 0.';verdict.style.color='var(--bad)';}
+}
+['bx','by'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',(e)=>{
+    document.getElementById(id+'Val').textContent = e.target.value;
+    drawIou();
+  });
+});
+document.getElementById('resetIou').addEventListener('click',()=>{
+  document.getElementById('bx').value=30; document.getElementById('by').value=25;
+  document.getElementById('bxVal').textContent=30; document.getElementById('byVal').textContent=25;
+  drawIou();
+});
+drawIou();
+
+// ---------- NMS demo ----------
+const nmsCanvas = document.getElementById('nmsCanvas');
+const nctx = nmsCanvas.getContext('2d');
+const baseBoxes = [
+  {id:'P1',x:30,y:30,w:130,h:110,conf:0.95,color:'#4f6df5',label:'Chó A'},
+  {id:'P2',x:55,y:48,w:120,h:100,conf:0.72,color:'#7c93ff',label:'Chó A-dup'},
+  {id:'P3',x:210,y:150,w:120,h:100,conf:0.89,color:'#1fa971',label:'Mèo B'},
+  {id:'P4',x:228,y:160,w:105,h:90,conf:0.55,color:'#4fd19b',label:'Mèo B-dup'},
+  {id:'P5',x:10,y:220,w:55,h:45,conf:0.28,color:'#e5484d',label:'Nhiễu'},
+];
+let boxes, sortedQueue, kept, dropped, stepIndex, phase, log;
+
+function iouBox(a,b){return iouOf(a,b);}
+
+function resetNms(){
+  boxes = baseBoxes.map(b=>({...b, state:'pending'}));
+  kept=[]; dropped=[]; sortedQueue=[]; stepIndex=0; phase='threshold'; log=[];
+  document.getElementById('nmsLog').innerHTML='';
+  drawNms();
+}
+function pushLog(mark,cls,text){
+  log.push({mark,cls,text});
+  const el = document.getElementById('nmsLog');
+  const row = document.createElement('div');
+  row.className='log-row '+cls;
+  row.innerHTML = `<span class="mark">${mark}</span><span>${text}</span>`;
+  el.appendChild(row);
+  el.scrollTop = el.scrollHeight;
+}
+function drawNms(){
+  nctx.clearRect(0,0,nmsCanvas.width,nmsCanvas.height);
+  nctx.fillStyle='#2b2f3d';
+  nctx.fillRect(0,0,nmsCanvas.width,nmsCanvas.height);
+  boxes.forEach(b=>{
+    nctx.lineWidth = b.state==='keep'? 3.5 : 2;
+    if(b.state==='drop'){
+      nctx.setLineDash([6,4]);
+      nctx.strokeStyle='rgba(229,72,77,.7)';
+    } else if(b.state==='keep'){
+      nctx.setLineDash([]);
+      nctx.strokeStyle='#3fd18f';
+    } else {
+      nctx.setLineDash([]);
+      nctx.strokeStyle=b.color;
+    }
+    nctx.strokeRect(b.x,b.y,b.w,b.h);
+    nctx.setLineDash([]);
+    nctx.fillStyle= b.state==='drop' ? 'rgba(255,151,151,.85)' : '#ffffff';
+    nctx.font='11px sans-serif';
+    const mark = b.state==='keep'?'✓':(b.state==='drop'?'✗':'');
+    nctx.fillText(`${b.label} (${b.conf.toFixed(2)}) ${mark}`, b.x+3, b.y+13);
+  });
+}
+function nextStep(){
+  if(phase==='threshold'){
+    const th = parseFloat(document.getElementById('confTh').value);
+    pushLog('①','info',`Lọc theo ngưỡng confidence ≥ ${th.toFixed(2)}`);
+    boxes.forEach(b=>{
+      if(b.conf < th){
+        b.state='drop';
+        pushLog('✗','drop',`${b.label} bị loại ngay — confidence ${b.conf.toFixed(2)} < ${th.toFixed(2)}`);
+      }
+    });
+    sortedQueue = boxes.filter(b=>b.state!=='drop').sort((a,b)=>b.conf-a.conf);
+    pushLog('②','info',`Sắp xếp ${sortedQueue.length} box còn lại theo confidence giảm dần: ${sortedQueue.map(b=>b.label).join(' → ')}`);
+    phase='nms';
+    drawNms();
+    return;
+  }
+  if(phase==='nms'){
+    // find next pending box in sortedQueue
+    const idx = sortedQueue.findIndex(b=>b.state==='pending');
+    if(idx===-1){
+      pushLog('🏁','info','Hết box để xét — NMS hoàn tất!');
+      phase='done';
+      document.getElementById('nmsNext').disabled=true;
+      return;
+    }
+    const cur = sortedQueue[idx];
+    cur.state='keep';
+    pushLog('✓','keep',`Giữ ${cur.label} (confidence ${cur.conf.toFixed(2)}) — box tốt nhất còn lại`);
+    const iouTh = parseFloat(document.getElementById('iouTh').value);
+    sortedQueue.forEach(other=>{
+      if(other===cur || other.state!=='pending') return;
+      const v = iouBox(cur,other);
+      if(v > iouTh){
+        other.state='drop';
+        pushLog('✗','drop',`Loại ${other.label} — IoU(${cur.label}, ${other.label}) = ${v.toFixed(2)} > ${iouTh.toFixed(2)} ⇒ cùng 1 vật thể`);
+      } else {
+        pushLog('·','info',`Giữ xét tiếp ${other.label} — IoU = ${v.toFixed(2)} ≤ ${iouTh.toFixed(2)} ⇒ vật thể khác`);
+      }
+    });
+    drawNms();
+  }
+}
+document.getElementById('nmsNext').addEventListener('click', nextStep);
+document.getElementById('nmsReset').addEventListener('click', ()=>{
+  document.getElementById('nmsNext').disabled=false;
+  resetNms();
+});
+['confTh','iouTh'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',(e)=>{
+    document.getElementById(id+'Val').textContent = parseFloat(e.target.value).toFixed(2);
+  });
+});
+resetNms();
+</script>
+</body>
+</html>
