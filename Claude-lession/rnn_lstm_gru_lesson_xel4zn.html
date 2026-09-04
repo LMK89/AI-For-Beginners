@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RNN · LSTM · GRU — Bộ Nhớ Của Mạng Neural</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --bg2:#ffffff; --text:#1c2333; --muted:#5b6472;
+    --border:#e2e5ec; --accent:#6d5ef0; --accent2:#00b894;
+    --warn:#f0a500; --bad:#ef4444; --good:#16a34a;
+    --code-bg:#1e1f2b; --code-text:#e6e6f0;
+    --shadow: 0 8px 24px rgba(30,30,60,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12131c; --bg2:#1a1c29; --text:#eef0f8; --muted:#a2a8ba;
+      --border:#2b2e42; --accent:#a48bff; --accent2:#2dd4a7;
+      --code-bg:#0d0e16; --code-text:#d8dcff;
+      --shadow: 0 8px 28px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12131c; --bg2:#1a1c29; --text:#eef0f8; --muted:#a2a8ba;
+    --border:#2b2e42; --accent:#a48bff; --accent2:#2dd4a7;
+    --code-bg:#0d0e16; --code-text:#d8dcff;
+    --shadow: 0 8px 28px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.6; padding:0 0 60px;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 20px;}
+
+  @keyframes fadeInDown{ from{opacity:0; transform:translateY(-22px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes slideUp{ from{opacity:0; transform:translateY(28px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes slideDown{ from{opacity:0; transform:translateY(-14px); max-height:0;} to{opacity:1; transform:translateY(0); max-height:600px;} }
+  @keyframes pulse{ 0%{transform:scale(1); box-shadow:0 0 0 0 rgba(109,94,240,.5);} 70%{transform:scale(1.06); box-shadow:0 0 0 12px rgba(109,94,240,0);} 100%{transform:scale(1); box-shadow:0 0 0 0 rgba(109,94,240,0);} }
+  @keyframes slideArrow{ 0%{transform:translateX(0); opacity:.4;} 50%{opacity:1;} 100%{transform:translateX(14px); opacity:.4;} }
+
+  header.hero{
+    padding:56px 20px 40px; text-align:center;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#fff; animation:fadeInDown .7s ease both;
+  }
+  header.hero .tag{
+    display:inline-block; background:rgba(255,255,255,.18); padding:5px 14px;
+    border-radius:999px; font-size:.8rem; letter-spacing:.04em; margin-bottom:14px;
+  }
+  header.hero h1{font-size:2.1rem; margin:0 0 10px;}
+  header.hero p{opacity:.95; max-width:640px; margin:0 auto; font-size:1rem;}
+  .theme-toggle{
+    position:fixed; top:16px; right:16px; z-index:50;
+    background:var(--bg2); border:1px solid var(--border); color:var(--text);
+    border-radius:999px; padding:8px 14px; cursor:pointer; font-size:.85rem;
+    box-shadow:var(--shadow);
+  }
+
+  section{ margin:38px 0; animation:slideUp .6s ease both; }
+  section.delay1{animation-delay:.05s;} section.delay2{animation-delay:.1s;}
+
+  h2{font-size:1.35rem; margin-bottom:6px; display:flex; align-items:center; gap:10px;}
+  h2 .num{
+    background:var(--accent); color:#fff; width:30px; height:30px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0;
+  }
+  .sub{color:var(--muted); margin-bottom:18px; font-size:.95rem;}
+
+  .card{
+    background:var(--bg2); border:1px solid var(--border); border-radius:16px;
+    padding:20px 22px; box-shadow:var(--shadow); margin-bottom:16px;
+  }
+
+  .states-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;}
+  .state-card{
+    border-radius:14px; padding:16px; border:1px solid var(--border); background:var(--bg2);
+    transition:transform .35s ease, box-shadow .35s ease;
+  }
+  .state-card:hover{transform:translateY(-4px); box-shadow:var(--shadow);}
+  .state-card .badge{font-size:1.4rem;}
+  .state-card h3{margin:8px 0 4px; font-size:1.02rem;}
+  .state-card p{color:var(--muted); font-size:.88rem; margin:0;}
+
+  table{width:100%; border-collapse:collapse; font-size:.9rem;}
+  th,td{border:1px solid var(--border); padding:10px 12px; text-align:left; vertical-align:top;}
+  th{background:var(--bg); color:var(--muted); font-weight:600;}
+  .overflow-x{overflow-x:auto; border-radius:12px;}
+
+  code, pre{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+  pre{
+    background:var(--code-bg); color:var(--code-text); padding:16px 18px; border-radius:12px;
+    overflow-x:auto; font-size:.83rem; line-height:1.55;
+  }
+  .pill{display:inline-block; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:600;}
+  .pill.good{background:rgba(22,163,74,.15); color:var(--good);}
+  .pill.warn{background:rgba(240,165,0,.18); color:var(--warn);}
+  .pill.bad{background:rgba(239,68,68,.15); color:var(--bad);}
+
+  /* flow diagram */
+  .flow{
+    display:flex; align-items:center; gap:6px; overflow-x:auto; padding:22px 10px; justify-content:flex-start;
+  }
+  .flow .cell{
+    min-width:64px; height:64px; border-radius:12px; background:var(--bg);
+    border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:.85rem; flex-shrink:0; transition:all .3s ease;
+  }
+  .flow .cell.active{
+    border-color:var(--accent); background:var(--accent); color:#fff;
+    animation:pulse 1s ease;
+  }
+  .flow .arrow{width:22px; height:3px; background:var(--muted); position:relative; flex-shrink:0; opacity:.5;}
+  .flow .arrow.active{animation:slideArrow .8s ease infinite; background:var(--accent);}
+
+  .flags{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+  .flag{
+    padding:8px 14px; border-radius:10px; border:2px solid var(--border); font-size:.85rem;
+    background:var(--bg); color:var(--muted); transition:all .35s ease;
+  }
+  .flag.on{border-color:var(--accent2); background:rgba(0,184,148,.15); color:var(--accent2); font-weight:700; transform:scale(1.05);}
+
+  .btn{
+    background:var(--accent); color:#fff; border:none; padding:10px 20px; border-radius:10px;
+    font-size:.9rem; font-weight:600; cursor:pointer; transition:transform .2s ease, opacity .2s ease;
+  }
+  .btn:hover{transform:translateY(-2px); opacity:.92;}
+  .btn.secondary{background:transparent; color:var(--accent); border:2px solid var(--accent);}
+  input[type=text], select{
+    background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px;
+    padding:9px 12px; font-size:.9rem; width:100%;
+  }
+
+  .demo-out{
+    margin-top:14px; padding:14px 16px; border-radius:12px; background:var(--bg);
+    border:1px dashed var(--border); font-size:.92rem; min-height:24px;
+  }
+  .demo-out.show{animation:slideDown .4s ease both;}
+
+  /* memory bars */
+  .bars{display:flex; gap:24px; align-items:flex-end; height:150px; margin-top:16px;}
+  .bar-col{flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .bar-track{width:60%; height:120px; background:var(--bg); border:1px solid var(--border); border-radius:8px; display:flex; align-items:flex-end; overflow:hidden;}
+  .bar-fill{width:100%; border-radius:6px 6px 0 0; transition:height .4s ease, background .4s ease;}
+  .bar-label{font-size:.8rem; color:var(--muted); text-align:center;}
+  .bar-pct{font-weight:700; font-size:.95rem;}
+
+  .quiz-tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .quiz-tab{
+    padding:9px 16px; border-radius:10px; border:1px solid var(--border); background:var(--bg2);
+    cursor:pointer; font-size:.87rem; font-weight:600; color:var(--muted); transition:all .25s ease;
+  }
+  .quiz-tab.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .quiz-panel{display:none;}
+  .quiz-panel.active{display:block; animation:slideDown .4s ease both;}
+  .q-block{margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);}
+  .q-block:last-child{border-bottom:none;}
+  .opt{
+    display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px;
+    cursor:pointer; transition:background .2s ease;
+  }
+  .opt:hover{background:var(--bg);}
+  .feedback{margin-top:8px; font-size:.87rem; font-weight:600; display:none;}
+  .feedback.show{display:block; animation:slideDown .3s ease both;}
+  .feedback.correct{color:var(--good);}
+  .feedback.wrong{color:var(--bad);}
+  .fill-input{width:160px; display:inline-block;}
+  .match-row{display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:center; margin-bottom:10px;}
+  .match-row .term{font-weight:600; font-size:.88rem;}
+  .score-box{margin-top:10px; font-weight:700;}
+
+  details{background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin-top:8px;}
+  summary{cursor:pointer; font-weight:600; font-size:.88rem;}
+
+  .footer{text-align:center; color:var(--muted); font-size:.82rem; margin-top:50px;}
+
+  @media (max-width:640px){
+    header.hero h1{font-size:1.5rem;}
+    .match-row{grid-template-columns:1fr; gap:4px;}
+    .bars{gap:10px;}
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle">🌙 / ☀️</button>
+
+<header class="hero">
+  <span class="tag">AI-FOR-BEGINNERS · BÀI HỌC NGẪU NHIÊN #16-RNN</span>
+  <h1>RNN · LSTM · GRU<br>Bộ Nhớ Của Mạng Neural</h1>
+  <p>Làm sao để máy "nhớ" được thứ tự từ trong câu? Cùng khám phá 4 cách xử lý chuỗi văn bản — từ ngây thơ nhất đến thông minh nhất — qua ví dụ, diagram sống động và demo tự tay chạy thử.</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 0. QUICK START -->
+  <section>
+    <h2><span class="num">0</span>Khởi Động Nhanh</h2>
+    <p class="sub">Trước khi vào bài, thử sức với 3 kiểu bài tập nhỏ. Đừng lo nếu sai — đáp án và giải thích hiện ngay bên dưới.</p>
+    <div class="card">
+      <div class="quiz-tabs">
+        <div class="quiz-tab active" data-tab="mc">📝 Trắc nghiệm</div>
+        <div class="quiz-tab" data-tab="fill">✏️ Điền khuyết</div>
+        <div class="quiz-tab" data-tab="match">🔗 Đối chiếu bản mẫu</div>
+      </div>
+
+      <div class="quiz-panel active" id="panel-mc">
+        <div class="q-block">
+          <div><b>Câu 1.</b> RNN khác gì so với việc lấy trung bình embedding của cả câu (bag-of-words)?</div>
+          <div class="opts" data-q="1">
+            <label class="opt"><input type="radio" name="mc1" value="a">A. RNN chạy nhanh hơn nên luôn tốt hơn</label>
+            <label class="opt"><input type="radio" name="mc1" value="b">B. RNN xử lý từng từ tuần tự và giữ lại "trạng thái" mang thông tin về thứ tự từ</label>
+            <label class="opt"><input type="radio" name="mc1" value="c">C. RNN không cần embedding</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(1,'b')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc1"></div>
+        </div>
+        <div class="q-block">
+          <div><b>Câu 2.</b> Vấn đề lớn nhất của Vanilla RNN khi câu quá dài là gì?</div>
+          <div class="opts" data-q="2">
+            <label class="opt"><input type="radio" name="mc2" value="a">A. Tốn RAM vô hạn</label>
+            <label class="opt"><input type="radio" name="mc2" value="b">B. Vanishing gradient — quên mất thông tin ở đầu câu</label>
+            <label class="opt"><input type="radio" name="mc2" value="c">C. Không hỗ trợ tiếng Việt</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(2,'b')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc2"></div>
+        </div>
+        <div class="q-block">
+          <div><b>Câu 3.</b> LSTM giải quyết vấn đề trên bằng cách nào?</div>
+          <div class="opts" data-q="3">
+            <label class="opt"><input type="radio" name="mc3" value="a">A. Dùng 3 gate (forget/input/output) để quản lý state một cách tường minh</label>
+            <label class="opt"><input type="radio" name="mc3" value="b">B. Tăng số lớp lên gấp đôi</label>
+            <label class="opt"><input type="radio" name="mc3" value="c">C. Bỏ hẳn khái niệm state</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(3,'a')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc3"></div>
+        </div>
+      </div>
+
+      <div class="quiz-panel" id="panel-fill">
+        <div class="q-block">
+          LSTM có <input type="text" class="fill-input" id="fill1" placeholder="số gate"> gate chính (forget, input, output).
+          <button class="btn secondary" onclick="checkFill('fill1','fb-fill1',['3','ba','three'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill1"></div>
+        </div>
+        <div class="q-block">
+          Hiện tượng khiến Vanilla RNN "quên" thông tin ở đầu câu dài gọi là <input type="text" class="fill-input" id="fill2" placeholder="tên hiện tượng">.
+          <button class="btn secondary" onclick="checkFill('fill2','fb-fill2',['vanishing gradient','vanishing gradients'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill2"></div>
+        </div>
+        <div class="q-block">
+          GRU là phiên bản <input type="text" class="fill-input" id="fill3" placeholder="đơn giản/phức tạp"> hơn LSTM, chỉ dùng 2 gate thay vì 3.
+          <button class="btn secondary" onclick="checkFill('fill3','fb-fill3',['đơn giản','don gian','đơn giản hơn'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill3"></div>
+        </div>
+      </div>
+
+      <div class="quiz-panel" id="panel-match">
+        <p class="sub">Ghép mỗi khái niệm bên trái với đúng định nghĩa bên phải (dùng ô chọn).</p>
+        <div id="matchArea"></div>
+        <button class="btn secondary" onclick="checkMatch()">Kiểm tra tất cả</button>
+        <div class="score-box" id="matchScore"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. ĐỊNH NGHĨA -->
+  <section class="delay1">
+    <h2><span class="num">1</span>Vấn Đề: Máy Đọc Câu Nhưng Quên Mất Thứ Tự</h2>
+    <p class="sub">Mô hình embedding trung bình (mà bạn học ở bài Text Representation/Embeddings) cộng dồn nghĩa của từng từ — nhưng <b>"không thích phim này"</b> và <b>"thích phim này không"</b> lại cho ra cùng một vector! RNN sinh ra để giải quyết đúng vấn đề này: xử lý câu <b>tuần tự</b>, từng từ một, và mang theo một "trạng thái" (state) ghi nhớ ngữ cảnh trước đó.</p>
+  </section>
+
+  <!-- 2. 4 TRẠNG THÁI -->
+  <section class="delay2">
+    <h2><span class="num">2</span>4 Cách Xử Lý Chuỗi — Từ Ngây Thơ Đến Thông Minh</h2>
+    <div class="states-grid">
+      <div class="state-card">
+        <div class="badge">❌</div>
+        <h3>1. Bag-of-Words / Avg Embedding</h3>
+        <p>Cộng/trung bình vector từng từ. Không có khái niệm "trước–sau". Nhanh nhưng mù thứ tự.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">⚠️</div>
+        <h3>2. Vanilla RNN</h3>
+        <p>Đọc từng từ, cập nhật state S. Nhớ được thứ tự nhưng câu dài → vanishing gradient, quên từ đầu câu.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>3. LSTM</h3>
+        <p>Thêm 3 gate (forget/input/output) + cell state C riêng để quản lý trí nhớ dài hạn tường minh.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>4. GRU</h3>
+        <p>Gọn hơn LSTM (2 gate: reset/update), ít tham số hơn, train nhanh hơn, hiệu quả gần tương đương.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. BẢNG SO SÁNH -->
+  <section>
+    <h2><span class="num">3</span>Bảng So Sánh Chi Tiết</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Trạng Thái</th><th>Input</th><th>Xử Lý</th><th>Output</th><th>Đánh Giá</th></tr>
+      <tr>
+        <td>Bag-of-Words</td>
+        <td>Câu → tập từ</td>
+        <td>Trung bình embedding, không lặp</td>
+        <td>1 vector "túi từ"</td>
+        <td><span class="pill bad">❌ Mù thứ tự</span></td>
+      </tr>
+      <tr>
+        <td>Vanilla RNN</td>
+        <td>Chuỗi từ X₀…Xₙ</td>
+        <td>S<sub>i</sub> = σ(W·X<sub>i</sub> + H·S<sub>i-1</sub> + b), lặp qua từng bước</td>
+        <td>State cuối S<sub>n</sub> → classifier</td>
+        <td><span class="pill warn">⚠️ Tốt với câu ngắn, tệ với câu dài</span></td>
+      </tr>
+      <tr>
+        <td>LSTM</td>
+        <td>Chuỗi từ + state trước (C, H)</td>
+        <td>3 gate quyết định quên/thêm/xuất thông tin vào Cell State C</td>
+        <td>(C<sub>n</sub>, H<sub>n</sub>) → classifier</td>
+        <td><span class="pill good">✅ Nhớ tốt chuỗi dài</span></td>
+      </tr>
+      <tr>
+        <td>GRU</td>
+        <td>Chuỗi từ + state trước (H)</td>
+        <td>2 gate (reset, update) hợp nhất C và H thành 1 vector</td>
+        <td>H<sub>n</sub> → classifier</td>
+        <td><span class="pill good">✅ Nhẹ, nhanh, gần bằng LSTM</span></td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 4. DIAGRAM -->
+  <section>
+    <h2><span class="num">4</span>Trực Quan: RNN "Cuộn" Qua Từng Từ</h2>
+    <p class="sub">Bấm nút để xem state (ô màu) chạy qua từng bước thời gian — giống hệt cách RNN xử lý câu <i>"phim này không hay"</i>.</p>
+    <div class="card">
+      <div class="flow" id="flowDiagram">
+        <div class="cell" data-i="0">S₀</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="1">phim</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="2">này</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="3">không</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="4">hay</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="5">Sₙ</div>
+      </div>
+      <button class="btn" onclick="playFlow()">▶ Chạy Diagram</button>
+      <div class="demo-out" id="flowNote">Nhấn Play — quan sát ô đang "sáng" chính là bước network đang xử lý, mang state từ trái sang phải.</div>
+    </div>
+  </section>
+
+  <!-- 5. DEMO STATE GATES -->
+  <section>
+    <h2><span class="num">5</span>Demo: Xem State "Bật/Tắt Cờ" Như Gate Của LSTM</h2>
+    <p class="sub">Gõ một câu có chứa tên (Alice, Linh, Tom, Nam), từ "và", hoặc từ "không". LSTM sẽ dùng gate để bật/tắt các "cờ" ngữ pháp khi đọc từng từ — y hệt ví dụ trong bài gốc.</p>
+    <div class="card">
+      <input type="text" id="stateInput" value="Alice và Tom không đến">
+      <div style="margin-top:10px;">
+        <button class="btn" onclick="runStateDemo()">▶ Chạy qua RNN</button>
+      </div>
+      <div class="flags" id="flagsPanel">
+        <div class="flag" id="flag-female">👩 Danh từ Nữ</div>
+        <div class="flag" id="flag-plural">👥 Số Nhiều</div>
+        <div class="flag" id="flag-neg">🚫 Phủ Định</div>
+      </div>
+      <div class="demo-out" id="stateOut">Kết quả state sẽ hiện ở đây sau khi chạy.</div>
+    </div>
+  </section>
+
+  <!-- 6. MEMORY BARS -->
+  <section>
+    <h2><span class="num">6</span>Demo: Vanishing Gradient — Câu Càng Dài, RNN Càng "Quên"</h2>
+    <p class="sub">Kéo thanh trượt để thay đổi độ dài câu, quan sát khả năng nhớ thông tin ở <b>từ đầu câu</b> của Vanilla RNN so với LSTM/GRU.</p>
+    <div class="card">
+      <input type="range" min="1" max="20" value="5" id="lenSlider" style="width:100%;">
+      <div class="sub" style="margin:6px 0 0;">Độ dài câu: <b id="lenVal">5</b> từ</div>
+      <div class="bars">
+        <div class="bar-col">
+          <div class="bar-track"><div class="bar-fill" id="barRNN" style="height:80%; background:var(--bad);"></div></div>
+          <div class="bar-label">Vanilla RNN<br><span class="bar-pct" id="pctRNN">80%</span></div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-track"><div class="bar-fill" id="barLSTM" style="height:95%; background:var(--good);"></div></div>
+          <div class="bar-label">LSTM / GRU<br><span class="bar-pct" id="pctLSTM">95%</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. CODE -->
+  <section>
+    <h2><span class="num">7</span>Code Tối Thiểu Cho Mỗi Trạng Thái (PyTorch)</h2>
+    <div class="card">
+      <p><b>⚠️ Vanilla RNN</b></p>
+      <pre>self.rnn = torch.nn.RNN(emb_size, hidden_size, batch_first=True)
+_, h = self.rnn(embedded)     # h quên dần thông tin xa</pre>
+      <p><b>✅ LSTM</b></p>
+      <pre>self.rnn = torch.nn.LSTM(emb_size, hidden_size, batch_first=True)
+_, (h, c) = self.rnn(embedded)  # c = "băng chuyền" trí nhớ dài hạn</pre>
+      <p><b>✅ GRU</b></p>
+      <pre>self.rnn = torch.nn.GRU(emb_size, hidden_size, batch_first=True)
+_, h = self.rnn(embedded)     # nhẹ hơn LSTM, ít tham số hơn</pre>
+    </div>
+  </section>
+
+  <!-- 8. USE CASES -->
+  <section>
+    <h2><span class="num">8</span>Use Case Thực Tế</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Bài toán</th><th>Vì sao cần RNN/LSTM/GRU</th></tr>
+      <tr><td>Phân loại cảm xúc bình luận</td><td>Từ phủ định ("không hay") đảo ngược nghĩa câu — cần đọc tuần tự</td></tr>
+      <tr><td>Dịch máy (seq2seq)</td><td>Encoder LSTM nén câu nguồn, Decoder LSTM sinh câu đích từng từ</td></tr>
+      <tr><td>Sinh văn bản / chatbot</td><td>Character/word-level RNN dự đoán token tiếp theo dựa trên state</td></tr>
+      <tr><td>Dự báo chuỗi thời gian (giá cổ phiếu, thời tiết)</td><td>Giá trị hôm nay phụ thuộc chuỗi giá trị quá khứ, đúng bản chất RNN</td></tr>
+      <tr><td>Nhận diện giọng nói</td><td>Audio là chuỗi frame liên tục theo thời gian</td></tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 9. GOOD VS BAD DATA -->
+  <section>
+    <h2><span class="num">9</span>Dữ Liệu Nào Tốt — Dữ Liệu Nào Gây Lỗi/Sai Sót</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Loại dữ liệu</th><th>Ví dụ</th><th>Đánh giá</th><th>Vì sao</th></tr>
+      <tr>
+        <td>Câu ngắn–vừa, nhãn rõ ràng</td>
+        <td>"Phim này rất hay, diễn xuất tốt" → Tích cực</td>
+        <td><span class="pill good">✅ Tốt</span></td>
+        <td>RNN/LSTM học quan hệ gần-xa dễ dàng, gradient ổn định</td>
+      </tr>
+      <tr>
+        <td>Câu cực dài (&gt;200 từ), không cắt đoạn</td>
+        <td>Một đoạn review dài lê thê không chấm câu</td>
+        <td><span class="pill warn">⚠️ Trung bình</span></td>
+        <td>Vanilla RNN sẽ quên phần đầu; nên dùng LSTM/GRU hoặc cắt đoạn (truncate)</td>
+      </tr>
+      <tr>
+        <td>Trộn lẫn nhiều ngôn ngữ, gõ tắt, teencode</td>
+        <td>"phim nay ngonn qué, ko đáng xem" lẫn tiếng Anh</td>
+        <td><span class="pill bad">❌ Xấu</span></td>
+        <td>Embedding không nhận diện được từ → vector nhiễu, model học sai pattern</td>
+      </tr>
+      <tr>
+        <td>Nhãn sai hoặc mất cân bằng cực đoan (95%/5%)</td>
+        <td>950 câu "tích cực" chỉ 50 câu "tiêu cực"</td>
+        <td><span class="pill bad">❌ Xấu</span></td>
+        <td>Model học cách luôn đoán lớp đa số, độ chính xác ảo cao nhưng vô dụng</td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 10. BÀI TẬP -->
+  <section>
+    <h2><span class="num">10</span>Bài Tập Nhỏ</h2>
+    <div class="card">
+      <p><b>Bài 1.</b> Viết một dòng code PyTorch tạo lớp <code>nn.LSTM</code> với <code>input_size=64</code>, <code>hidden_size=128</code>, 2 lớp xếp chồng, hai chiều (bidirectional).</p>
+      <details>
+        <summary>Xem đáp án gợi ý</summary>
+        <pre>nn.LSTM(input_size=64, hidden_size=128, num_layers=2, bidirectional=True, batch_first=True)</pre>
+      </details>
+    </div>
+    <div class="card">
+      <p><b>Bài 2.</b> Cho 2 câu dữ liệu huấn luyện dưới đây, câu nào "xấu" cho một mô hình RNN phân loại cảm xúc, và vì sao?</p>
+      <p>(A) "Sản phẩm giao nhanh, đóng gói cẩn thận, rất hài lòng." </p>
+      <p>(B) "sp giao nhanhhh, đóng góii cẩn thận actually rất là ok luôn á 👍👍" </p>
+      <details>
+        <summary>Xem đáp án gợi ý</summary>
+        <p>Câu (B) là dữ liệu "xấu hơn": teencode, lặp ký tự, chèn tiếng Anh, emoji — embedding khó ánh xạ đúng nghĩa, dễ gây nhiễu khi huấn luyện. Nếu dữ liệu thực tế toàn dạng này, cần bước tiền xử lý (chuẩn hoá chính tả) trước khi đưa vào RNN.</p>
+      </details>
+    </div>
+    <div class="card">
+      <p><b>❓ Câu hỏi tự kiểm tra:</b> Vì sao Cell State (C) trong LSTM thường được ví như một "băng chuyền" (conveyor belt) xuyên suốt toàn bộ chuỗi?</p>
+      <details>
+        <summary>Gợi ý trả lời</summary>
+        <p>Vì thông tin trên C chỉ bị thay đổi bởi các phép nhân/cộng có kiểm soát qua gate (không đi qua hàm phi tuyến mạnh ở mỗi bước như trong Vanilla RNN), nên gradient có thể "trôi" xuyên suốt nhiều bước thời gian mà không bị suy biến — giải quyết vanishing gradient.</p>
+      </details>
+    </div>
+  </section>
+
+  <div class="footer">
+    Bài giảng tự động — AI-For-Beginners · Nguồn: <code>lessons/5-NLP/16-RNN</code><br>
+    Soạn bằng tiếng Việt cho người mới, kèm demo tương tác.
+  </div>
+</div>
+
+<script>
+// theme toggle
+const root = document.documentElement;
+document.getElementById('themeToggle').onclick = () => {
+  const cur = root.getAttribute('data-theme');
+  root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+};
+
+// quiz tabs
+document.querySelectorAll('.quiz-tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.quiz-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.quiz-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+  };
+});
+
+function checkMC(n, correct){
+  const sel = document.querySelector('input[name="mc'+n+'"]:checked');
+  const fb = document.getElementById('fb-mc'+n);
+  fb.classList.remove('correct','wrong');
+  if(!sel){ fb.textContent='Hãy chọn một đáp án trước đã!'; fb.classList.add('wrong','show'); return; }
+  if(sel.value === correct){
+    fb.textContent='✅ Chính xác!'; fb.classList.add('correct','show');
+  } else {
+    fb.textContent='❌ Chưa đúng, đáp án đúng là '+correct.toUpperCase()+'. Xem lại phần 2-3 ở trên nhé.'; fb.classList.add('wrong','show');
+  }
+}
+
+function checkFill(inputId, fbId, answers){
+  const val = document.getElementById(inputId).value.trim().toLowerCase();
+  const fb = document.getElementById(fbId);
+  fb.classList.remove('correct','wrong');
+  const ok = answers.some(a => a.toLowerCase() === val);
+  if(ok){ fb.textContent='✅ Đúng rồi!'; fb.classList.add('correct','show'); }
+  else { fb.textContent='❌ Chưa đúng. Gợi ý: đọc lại phần "Long Short Term Memory" ở trên.'; fb.classList.add('wrong','show'); }
+}
+
+// matching quiz
+const matchTerms = [
+  {term:'Forget gate', def:'Quyết định phần nào của state cần quên'},
+  {term:'Input gate', def:'Chèn thông tin mới từ input vào state'},
+  {term:'Output gate', def:'Chọn phần nào của state để xuất ra làm output'},
+  {term:'Cell State (C)', def:'Vector "băng chuyền" mang thông tin dài hạn xuyên suốt chuỗi'},
+];
+const defs = matchTerms.map(m=>m.def);
+function shuffle(a){ return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]); }
+const shuffledDefs = shuffle(defs);
+const matchArea = document.getElementById('matchArea');
+matchTerms.forEach((m,i)=>{
+  const row = document.createElement('div');
+  row.className='match-row';
+  row.innerHTML = `<div class="term">${m.term}</div>
+    <select data-correct="${m.def.replace(/"/g,'&quot;')}" id="match${i}">
+      <option value="">-- chọn định nghĩa --</option>
+      ${shuffledDefs.map(d=>`<option value="${d.replace(/"/g,'&quot;')}">${d}</option>`).join('')}
+    </select>`;
+  matchArea.appendChild(row);
+});
+function checkMatch(){
+  let score=0;
+  matchTerms.forEach((m,i)=>{
+    const sel = document.getElementById('match'+i);
+    if(sel.value === m.def){ sel.style.borderColor='var(--good)'; score++; }
+    else { sel.style.borderColor='var(--bad)'; }
+  });
+  const box = document.getElementById('matchScore');
+  box.textContent = `Điểm: ${score}/${matchTerms.length} ${score===matchTerms.length ? '🎉 Hoàn hảo!' : '— thử lại các ô đỏ nhé.'}`;
+  box.style.color = score===matchTerms.length ? 'var(--good)' : 'var(--text)';
+}
+
+// flow diagram animation
+function playFlow(){
+  const cells = document.querySelectorAll('#flowDiagram .cell');
+  const arrows = document.querySelectorAll('#flowDiagram .arrow');
+  cells.forEach(c=>c.classList.remove('active'));
+  arrows.forEach(a=>a.classList.remove('active'));
+  let i=0;
+  const note = document.getElementById('flowNote');
+  const interval = setInterval(()=>{
+    cells.forEach(c=>c.classList.remove('active'));
+    arrows.forEach(a=>a.classList.remove('active'));
+    if(i < cells.length){
+      cells[i].classList.add('active');
+      if(i>0) arrows[i-1].classList.add('active');
+      note.textContent = 'Bước '+(i+1)+'/'+cells.length+' — state đang mang thông tin từ "'+cells[i].textContent+'" sang bước kế tiếp.';
+    }
+    i++;
+    if(i > cells.length){ clearInterval(interval); note.textContent='Xong! State cuối Sₙ chứa "dấu vết" của toàn bộ câu, kể cả từ phủ định "không" ở giữa.'; }
+  }, 650);
+}
+
+// state gate demo
+function runStateDemo(){
+  const text = document.getElementById('stateInput').value.toLowerCase();
+  const words = text.split(/\s+/).filter(Boolean);
+  const femaleNames = ['alice','linh','mai','lan','hoa'];
+  const maleNames = ['tom','nam','minh','tuan','duc'];
+  let female=false, plural=false, neg=false;
+  const out = document.getElementById('stateOut');
+  out.classList.remove('show');
+  let i=0;
+  const flagFemale = document.getElementById('flag-female');
+  const flagPlural = document.getElementById('flag-plural');
+  const flagNeg = document.getElementById('flag-neg');
+  flagFemale.classList.remove('on'); flagPlural.classList.remove('on'); flagNeg.classList.remove('on');
+  const interval = setInterval(()=>{
+    if(i < words.length){
+      const w = words[i];
+      if(femaleNames.includes(w)){ female=true; flagFemale.classList.add('on'); }
+      if(w === 'và' || w==='va'){ plural=true; flagPlural.classList.add('on'); }
+      if(w === 'không' || w==='ko' || w==='khong'){ neg=true; flagNeg.classList.add('on'); }
+      out.textContent = 'Đang đọc từ: "'+w+'"  → state hiện tại: '+
+        '[Nữ:'+(female?'ON':'off')+', SốNhiều:'+(plural?'ON':'off')+', PhủĐịnh:'+(neg?'ON':'off')+']';
+      out.classList.add('show');
+    }
+    i++;
+    if(i > words.length){
+      clearInterval(interval);
+      out.textContent = '✅ Kết luận state cuối: '+
+        (female?'có danh từ Nữ. ':'')+(plural?'có Số Nhiều (và). ':'')+(neg?'câu mang tính Phủ Định. ':'')+
+        (!female&&!plural&&!neg?'không phát hiện cờ đặc biệt nào — thử thêm tên hoặc từ "và"/"không".':'');
+    }
+  }, 700);
+}
+
+// memory bars (vanishing gradient)
+const slider = document.getElementById('lenSlider');
+function updateBars(){
+  const len = parseInt(slider.value);
+  document.getElementById('lenVal').textContent = len;
+  const rnnPct = Math.max(5, 100 - len*6);
+  const lstmPct = Math.max(60, 98 - len*2);
+  const barRNN = document.getElementById('barRNN');
+  const barLSTM = document.getElementById('barLSTM');
+  barRNN.style.height = rnnPct+'%';
+  barLSTM.style.height = lstmPct+'%';
+  barRNN.style.background = rnnPct>60?'var(--good)':rnnPct>30?'var(--warn)':'var(--bad)';
+  barLSTM.style.background = lstmPct>60?'var(--good)':lstmPct>30?'var(--warn)':'var(--bad)';
+  document.getElementById('pctRNN').textContent = rnnPct+'%';
+  document.getElementById('pctLSTM').textContent = lstmPct+'%';
+}
+slider.addEventListener('input', updateBars);
+updateBars();
+</script>
+</body>
+</html>
