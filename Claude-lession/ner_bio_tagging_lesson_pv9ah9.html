@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Named Entity Recognition (NER)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f6f3ec; --bg-alt:#eee9dc; --panel:#ffffff; --ink:#211d17; --ink-soft:#5c564a;
+  --line:rgba(33,29,23,0.14);
+  --per:#2f6fed; --per-soft:#dde7fd;
+  --loc:#1f9d63; --loc-soft:#d3f0e0;
+  --date:#8b5cf6; --date-soft:#ece3fd;
+  --org:#d9740b; --org-soft:#fbe4c4;
+  --o:#8d8677; --o-soft:#eae6da;
+  --good:#1f9d63; --good-soft:#d3f0e0;
+  --warn:#c98a12; --warn-soft:#f7e6c2;
+  --bad:#d9483c; --bad-soft:#fadbd7;
+  --shadow:0 10px 30px -14px rgba(33,29,23,0.35);
+  --radius:14px;
+  --font-display:'Fraunces',Georgia,'Times New Roman',serif;
+  --font-body:'Karla',-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15130f; --bg-alt:#1b1812; --panel:#1f1c15; --ink:#f1ece0; --ink-soft:#b6ae9c;
+    --line:rgba(241,236,224,0.14);
+    --per:#7ea6ff; --per-soft:#1c2a4a;
+    --loc:#5fd39c; --loc-soft:#123324;
+    --date:#c4a8ff; --date-soft:#2c2245;
+    --org:#f0a94e; --org-soft:#3a2810;
+    --o:#a39a86; --o-soft:#2a271e;
+    --good:#5fd39c; --good-soft:#123324;
+    --warn:#f0c25e; --warn-soft:#3a2c10;
+    --bad:#f0897c; --bad-soft:#3a1a16;
+    --shadow:0 10px 34px -14px rgba(0,0,0,0.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15130f; --bg-alt:#1b1812; --panel:#1f1c15; --ink:#f1ece0; --ink-soft:#b6ae9c;
+  --line:rgba(241,236,224,0.14);
+  --per:#7ea6ff; --per-soft:#1c2a4a;
+  --loc:#5fd39c; --loc-soft:#123324;
+  --date:#c4a8ff; --date-soft:#2c2245;
+  --org:#f0a94e; --org-soft:#3a2810;
+  --o:#a39a86; --o-soft:#2a271e;
+  --good:#5fd39c; --good-soft:#123324;
+  --warn:#f0c25e; --warn-soft:#3a2c10;
+  --bad:#f0897c; --bad-soft:#3a1a16;
+  --shadow:0 10px 34px -14px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box;}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important;}
+}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-body); line-height:1.65; -webkit-font-smoothing:antialiased;}
+.wrap{max-width:960px; margin:0 auto; padding:0 20px 100px;}
+::selection{background:var(--org-soft); color:var(--ink);}
+a{color:var(--per);}
+
+.theme-toggle{position:fixed; top:14px; right:14px; z-index:60; background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); cursor:pointer; box-shadow:var(--shadow);}
+.theme-toggle:hover{color:var(--ink);}
+
+.hero{padding:74px 0 34px; text-align:center; opacity:0; animation:fadeInDown .8s ease-out forwards;}
+@keyframes fadeInDown{from{opacity:0; transform:translateY(-22px);} to{opacity:1; transform:translateY(0);}}
+.eyebrow{font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--org); display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:16px;}
+h1.title{font-family:var(--font-display); font-weight:600; font-size:clamp(2rem,6vw,3.2rem); margin:0 0 14px; text-wrap:balance; letter-spacing:-.01em;}
+h1.title em{font-style:italic; color:var(--org);}
+.subtitle{color:var(--ink-soft); font-size:1.02rem; max-width:560px; margin:0 auto;}
+
+section{margin-top:60px; opacity:0; animation:slideUp .7s ease-out forwards;}
+section:nth-of-type(1){animation-delay:.05s;}
+section:nth-of-type(2){animation-delay:.1s;}
+section:nth-of-type(3){animation-delay:.15s;}
+section:nth-of-type(4){animation-delay:.2s;}
+section:nth-of-type(5){animation-delay:.25s;}
+section:nth-of-type(6){animation-delay:.3s;}
+section:nth-of-type(7){animation-delay:.35s;}
+@keyframes slideUp{from{opacity:0; transform:translateY(26px);} to{opacity:1; transform:translateY(0);}}
+
+.section-num{font-family:var(--font-mono); font-size:12px; color:var(--org); letter-spacing:.08em;}
+h2{font-family:var(--font-display); font-size:clamp(1.4rem,3.6vw,1.9rem); margin:6px 0 18px;}
+h3{font-family:var(--font-display); font-size:1.2rem; margin:0 0 10px;}
+p{color:var(--ink-soft);}
+.lead{font-size:1.05rem;}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow);}
+.grid{display:grid; gap:16px;}
+.grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.grid.cols-2{grid-template-columns:repeat(2,1fr);}
+@media (max-width:760px){.grid.cols-3,.grid.cols-2{grid-template-columns:1fr;}}
+
+.usecase{opacity:0; animation:slideUp .6s ease-out forwards;}
+.usecase:nth-child(1){animation-delay:.05s;}
+.usecase:nth-child(2){animation-delay:.15s;}
+.usecase:nth-child(3){animation-delay:.25s;}
+.usecase:nth-child(4){animation-delay:.35s;}
+.usecase:nth-child(5){animation-delay:.45s;}
+
+.table-wrap{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+table{width:100%; min-width:560px; border-collapse:collapse; font-size:.92rem;}
+th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+th{font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft);}
+.tag{display:inline-block; padding:2px 9px; border-radius:999px; font-family:var(--font-mono); font-size:11.5px; font-weight:600;}
+.tag.good{background:var(--good-soft); color:var(--good);}
+.tag.warn{background:var(--warn-soft); color:var(--warn);}
+.tag.bad{background:var(--bad-soft); color:var(--bad);}
+
+pre{background:var(--bg-alt); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; font-family:var(--font-mono); font-size:12.5px; line-height:1.6;}
+code{font-family:var(--font-mono);}
+
+.flow{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:18px 8px;}
+.tok{display:flex; flex-direction:column; align-items:center; gap:6px; opacity:0; animation:tokIn .5s ease-out forwards;}
+@keyframes tokIn{from{opacity:0; transform:translateY(10px) scale(.9);} to{opacity:1; transform:translateY(0) scale(1);}}
+.tok .word{font-family:var(--font-mono); font-size:13px; padding:6px 10px; border-radius:8px; background:var(--bg-alt); border:1px solid var(--line);}
+.tok .lab{font-family:var(--font-mono); font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:6px; animation:pulse 1.8s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.75; transform:scale(1);} 50%{opacity:1; transform:scale(1.08);}}
+.lab.O{background:var(--o-soft); color:var(--o);}
+.lab.DIS{background:var(--bad-soft); color:var(--bad);}
+.lab.CHEM{background:var(--org-soft); color:var(--org);}
+.arrow{align-self:center; color:var(--ink-soft); font-size:14px; margin-top:20px;}
+
+.btn{font-family:var(--font-mono); font-size:12.5px; font-weight:600; padding:9px 18px; border-radius:9px; border:1px solid var(--line); background:var(--org); color:#1a1206; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease;}
+.btn:hover{transform:translateY(-1px); box-shadow:0 6px 16px -8px rgba(0,0,0,.4);}
+.btn.secondary{background:transparent; color:var(--ink); border-color:var(--line);}
+.btn:active{transform:translateY(0);}
+
+input[type=text], textarea{width:100%; font-family:var(--font-mono); font-size:13.5px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--bg-alt); color:var(--ink);}
+select{font-family:var(--font-mono); font-size:11.5px; padding:5px 6px; border-radius:6px; border:1px solid var(--line); background:var(--bg-alt); color:var(--ink);}
+
+.demo-out{margin-top:14px; padding:16px; border-radius:10px; background:var(--bg-alt); border:1px solid var(--line); min-height:44px; font-size:.98rem; line-height:2.1;}
+.chip{padding:1px 6px 1px 8px; border-radius:6px; font-weight:600; margin:0 1px;}
+.chip .l{font-family:var(--font-mono); font-size:9.5px; opacity:.75; margin-left:5px; vertical-align:1px;}
+.chip.PER{background:var(--per-soft); color:var(--per);}
+.chip.LOC{background:var(--loc-soft); color:var(--loc);}
+.chip.DATE{background:var(--date-soft); color:var(--date);}
+.chip.ORG{background:var(--org-soft); color:var(--org);}
+
+.result-box{opacity:0; max-height:0; overflow:hidden; transition:opacity .4s ease, max-height .4s ease; margin-top:14px;}
+.result-box.show{opacity:1; max-height:600px; animation:slideDown .4s ease-out;}
+@keyframes slideDown{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
+
+.quiz-q{margin-bottom:22px; padding-bottom:18px; border-bottom:1px solid var(--line);}
+.quiz-q:last-child{border-bottom:none;}
+.opt{display:flex; align-items:flex-start; gap:9px; padding:8px 10px; border-radius:8px; cursor:pointer; margin-bottom:4px;}
+.opt:hover{background:var(--bg-alt);}
+.opt input{margin-top:3px;}
+.feedback{margin-top:8px; padding:9px 12px; border-radius:8px; font-size:.9rem; display:none;}
+.feedback.correct{background:var(--good-soft); color:var(--good); display:block;}
+.feedback.wrong{background:var(--bad-soft); color:var(--bad); display:block;}
+.score-box{margin-top:16px; padding:14px 18px; border-radius:10px; background:var(--org-soft); color:var(--org); font-family:var(--font-mono); font-weight:700; text-align:center; display:none;}
+.score-box.show{display:block; animation:slideDown .4s ease-out;}
+
+.bio-row{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center; padding:12px 0;}
+.bio-item{display:flex; flex-direction:column; align-items:center; gap:5px;}
+.bio-item .w{font-family:var(--font-mono); font-size:12.5px;}
+.bio-item select.right{border-color:var(--good); box-shadow:0 0 0 2px var(--good-soft);}
+.bio-item select.wrong{border-color:var(--bad); box-shadow:0 0 0 2px var(--bad-soft);}
+
+.footer{margin-top:80px; text-align:center; color:var(--ink-soft); font-size:.85rem; padding-top:24px; border-top:1px solid var(--line);}
+.small{font-size:.85rem; color:var(--ink-soft);}
+ul{color:var(--ink-soft);}
+.mc-opt{display:block; width:100%; text-align:left; background:var(--bg-alt); border:1px solid var(--line); border-radius:9px; padding:10px 14px; margin-bottom:8px; cursor:pointer; font-size:.92rem; color:var(--ink); font-family:var(--font-body);}
+.mc-opt:hover{border-color:var(--org);}
+.mc-opt.pick-good{background:var(--good-soft); border-color:var(--good); color:var(--good);}
+.mc-opt.pick-bad{background:var(--bad-soft); border-color:var(--bad); color:var(--bad);}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌓 Đổi giao diện</button>
+
+<div class="wrap">
+
+<div class="hero">
+  <div class="eyebrow">🏷️ AI FOR BEGINNERS · BÀI 19 · NLP</div>
+  <h1 class="title">Named Entity Recognition<br><em>Nhận diện thực thể có tên</em></h1>
+  <p class="subtitle">Dạy máy đọc một câu và tự khoanh vùng: đâu là người, đâu là địa điểm, đâu là ngày tháng — giống như bạn cầm bút highlight trong sách giáo khoa.</p>
+</div>
+
+<!-- KHỞI ĐỘNG NHANH -->
+<section>
+  <div class="section-num">KHỞI ĐỘNG · 00</div>
+  <h2>Điền khuyết trước khi vào bài</h2>
+  <div class="card">
+    <p class="lead">Câu: <strong>"Marie Curie moved to Paris in 1891"</strong>. Hãy chọn nhãn <strong>BIO</strong> đúng cho từng từ (không cần biết lý thuyết trước — cứ đoán theo trực giác!).</p>
+    <div class="bio-row" id="warmupRow"></div>
+    <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+      <button class="btn" onclick="checkWarmup()">✅ Kiểm tra</button>
+      <button class="btn secondary" onclick="revealWarmup()">📋 Đối chiếu bản mẫu</button>
+    </div>
+    <div class="result-box" id="warmupResult"></div>
+  </div>
+</section>
+
+<!-- ĐỊNH NGHĨA -->
+<section>
+  <div class="section-num">KHÁI NIỆM · 01</div>
+  <h2>NER là gì?</h2>
+  <div class="card">
+    <p class="lead"><strong>Named Entity Recognition (NER)</strong> là bài toán <strong>gán nhãn từng từ (token)</strong> trong câu: từ đó có thuộc một thực thể (người, địa điểm, ngày, tổ chức, bệnh, hóa chất...) hay không, và nếu có thì thuộc loại nào.</p>
+    <p>Nói cách dân dã: NER giống việc bạn dùng 4 cây bút highlight màu khác nhau, đọc qua một đoạn văn và tô màu tên người, tên nơi chốn, ngày tháng — nhưng làm bằng máy, tự động, trên hàng triệu câu.</p>
+  </div>
+</section>
+
+<!-- 3 TRẠNG THÁI TIẾP CẬN -->
+<section>
+  <div class="section-num">3 CÁCH TIẾP CẬN · 02</div>
+  <h2>Ba trạng thái xử lý NER</h2>
+  <div class="card">
+    <div class="table-wrap">
+    <table>
+      <tr><th>Trạng Thái</th><th>Input</th><th>Xử Lý</th><th>Output</th><th>Đánh Giá</th></tr>
+      <tr>
+        <td><strong>1. Tra từ điển</strong><br><span class="small">(Rule-based / Gazetteer)</span></td>
+        <td>Câu văn + danh sách tên có sẵn</td>
+        <td>So khớp chuỗi con (substring match) với từ điển tên người/nơi chốn</td>
+        <td>Gắn nhãn nếu trùng khớp trong danh sách</td>
+        <td><span class="tag warn">⚠️ Trung bình</span></td>
+      </tr>
+      <tr>
+        <td><strong>2. RNN/LSTM + BIO</strong><br><span class="small">(Sequence labeling)</span></td>
+        <td>Câu văn đã token hóa</td>
+        <td>Mạng hồi quy đọc tuần tự từng từ, dự đoán nhãn dựa vào ngữ cảnh xung quanh</td>
+        <td>Chuỗi nhãn B-/I-/O tương ứng 1-1 với từng token</td>
+        <td><span class="tag good">✅ Tốt</span></td>
+      </tr>
+      <tr>
+        <td><strong>3. Transformer (BERT)</strong><br><span class="small">Fine-tuned NER</span></td>
+        <td>Câu văn + pretrained language model</td>
+        <td>Attention nhìn toàn câu cùng lúc, hiểu ngữ cảnh hai chiều rồi phân loại từng token</td>
+        <td>Chuỗi nhãn B-/I-/O, độ chính xác cao hơn, xử lý câu dài & mơ hồ tốt hơn</td>
+        <td><span class="tag good">✅ Tốt nhất</span></td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="grid cols-3" style="margin-top:16px;">
+    <div class="card">
+      <h3>1. Tra từ điển</h3>
+      <pre>DICT = {"Paris":"LOC", "Obama":"PER"}
+for tok in tokens:
+    tag = DICT.get(tok, "O")</pre>
+      <p class="small">Nhanh, dễ làm, không cần data huấn luyện. Nhưng <strong>cứng nhắc</strong>: gặp tên lạ (không có trong từ điển) là bó tay, và không phân biệt được ngữ cảnh ("Washington" là người hay là thành phố?).</p>
+    </div>
+    <div class="card">
+      <h3>2. LSTM + BIO tagging</h3>
+      <pre>model = LSTM(vocab_size, embed_dim)
+       .add(Dense(num_tags))
+tags = model.predict(token_ids)
+# ["B-DIS","I-DIS","O",...]</pre>
+      <p class="small">Học từ dữ liệu đã gán nhãn, nắm được ngữ cảnh câu trước/sau. Cần vài nghìn câu huấn luyện có nhãn chuẩn.</p>
+    </div>
+    <div class="card">
+      <h3>3. BERT fine-tuned</h3>
+      <pre>model = AutoModelForTokenClassification
+       .from_pretrained("bert-base")
+outputs = model(input_ids)
+tags = argmax(outputs.logits)</pre>
+      <p class="small">Tận dụng kiến thức ngôn ngữ đã học sẵn (pretrained), chỉ cần fine-tune với ít dữ liệu hơn LSTM mà vẫn chính xác hơn.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BIO TAGGING DIAGRAM -->
+<section>
+  <div class="section-num">SƠ ĐỒ · 03</div>
+  <h2>BIO Tagging từng bước (state trace)</h2>
+  <div class="card">
+    <p>Ví dụ kinh điển từ bài học gốc — tiêu đề một bài báo y khoa:</p>
+    <p class="lead"><strong>"Tricuspid valve regurgitation and lithium carbonate toxicity in a newborn infant."</strong></p>
+    <p class="small">Con trỏ <code>i</code> đi qua từng token; <code>B-</code> = từ đầu tiên của thực thể, <code>I-</code> = từ tiếp theo bên trong thực thể, <code>O</code> = không phải thực thể.</p>
+    <div class="flow" id="bioFlow"></div>
+    <p class="small" style="text-align:center;">Đây chính là kiểu <strong>many-to-many</strong> trong RNN: mỗi input-token ⟶ một output-nhãn, cùng độ dài với câu gốc.</p>
+  </div>
+</section>
+
+<!-- DEMO TƯƠNG TÁC -->
+<section>
+  <div class="section-num">DEMO TRỰC TIẾP · 04</div>
+  <h2>Tự tay thử NER (rule-based mini demo)</h2>
+  <div class="card">
+    <p class="small">Demo này dùng từ điển nhỏ có sẵn (không phải model AI thật) để minh họa nguyên lý gắn nhãn — gõ câu có tên người/nơi chốn/năm rồi bấm chạy.</p>
+    <input type="text" id="demoInput" value="Marie Curie was born in Warsaw in 1867 and later moved to Paris.">
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn" onclick="runDemo()">▶️ Chạy Demo</button>
+      <button class="btn secondary" onclick="document.getElementById('demoInput').value='Tesla was founded by Elon Musk in California in 2003.'; runDemo();">Ví dụ khác</button>
+    </div>
+    <div class="demo-out" id="demoOut">Kết quả sẽ hiện ở đây...</div>
+  </div>
+</section>
+
+<!-- DATA TỐT VS XẤU -->
+<section>
+  <div class="section-num">DỮ LIỆU · 05</div>
+  <h2>Data nào tốt, data nào làm hỏng model?</h2>
+  <div class="card">
+    <div class="table-wrap">
+    <table>
+      <tr><th>Loại Data</th><th>Ví dụ</th><th>Vì sao</th></tr>
+      <tr>
+        <td><span class="tag good">✅ Tốt</span></td>
+        <td><code>Barack | B-PER</code><br><code>Obama | I-PER</code><br><code>visited | O</code><br><code>Hanoi | B-LOC</code></td>
+        <td>Nhãn <strong>nhất quán</strong>: B- luôn đứng trước I- cùng loại, biên thực thể rõ ràng, đủ ví dụ cho mọi lớp.</td>
+      </tr>
+      <tr>
+        <td><span class="tag warn">⚠️ Trung bình</span></td>
+        <td><code>"Washington"</code> đứng một mình, không rõ là tổng thống hay thủ đô</td>
+        <td>Thiếu ngữ cảnh khiến nhãn mơ hồ — model dễ đoán sai với câu ngắn, cụt.</td>
+      </tr>
+      <tr>
+        <td><span class="tag bad">❌ Xấu</span></td>
+        <td><code>lithium | O</code><br><code>carbonate | I-CHEM</code> <em>(thiếu B-CHEM phía trước!)</em></td>
+        <td>Chuỗi BIO <strong>gãy</strong> — I- xuất hiện mà không có B- mở đầu. Model học sai quy luật cấu trúc nhãn.</td>
+      </tr>
+      <tr>
+        <td><span class="tag bad">❌ Xấu</span></td>
+        <td>99% token là <code>O</code>, chỉ 1% là thực thể thật</td>
+        <td>Mất cân bằng lớp cực đoan (class imbalance) — model "lười", chỉ đoán toàn <code>O</code> cho an toàn vẫn đạt accuracy cao giả tạo.</td>
+      </tr>
+      <tr>
+        <td><span class="tag bad">❌ Xấu</span></td>
+        <td>Hai người gán nhãn khác nhau cho cùng một câu ("New York" lúc là LOC, lúc là ORG)</td>
+        <td>Nhãn mâu thuẫn giữa các annotator làm nhiễu tín hiệu học, model học sai xu hướng.</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h3>Bài tập nhỏ: Tìm bộ data "xấu"</h3>
+    <p class="small">Bấm vào bộ data mà bạn nghĩ là <strong>xấu nhất</strong> để huấn luyện NER:</p>
+    <button class="mc-opt" onclick="pickData(this,false)">A. <code>Paris|B-LOC France|B-LOC capital|O</code> — mỗi thực thể độc lập, không nối tiếp, không I- nào cả</button>
+    <button class="mc-opt" onclick="pickData(this,false)">B. <code>New|B-ORG York|I-ORG Times|I-ORG reported|O</code> — chuỗi BIO liền mạch, đúng cấu trúc</button>
+    <button class="mc-opt" onclick="pickData(this,true)">C. <code>lithium|I-CHEM carbonate|I-CHEM toxicity|B-DIS</code> — I- đứng đầu câu, không có B- mở đầu thực thể</button>
+    <div id="dataPickFeedback" class="feedback"></div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section>
+  <div class="section-num">ỨNG DỤNG THỰC TẾ · 06</div>
+  <h2>NER được dùng ở đâu?</h2>
+  <div class="grid cols-2">
+    <div class="card usecase"><h3>🤖 Trợ lý ảo</h3><p class="small">Alexa/Google Assistant hiểu "đặt báo thức <strong>7 giờ sáng thứ Hai</strong>" nhờ NER trích ra tham số thời gian để lấp vào ô "slot".</p></div>
+    <div class="card usecase"><h3>🩺 Y văn</h3><p class="small">Quét hàng nghìn bài báo khoa học để tự động trích tên <strong>bệnh</strong> và <strong>hoạt chất hóa học</strong>, phục vụ nghiên cứu dược.</p></div>
+    <div class="card usecase"><h3>📄 Lọc hồ sơ ứng viên</h3><p class="small">Trích tự động tên ứng viên, công ty từng làm, kỹ năng từ CV để đưa vào hệ thống tuyển dụng.</p></div>
+    <div class="card usecase"><h3>💹 Tin tức tài chính</h3><p class="small">Nhận diện tên công ty, số tiền, ngày công bố báo cáo để tự động tóm tắt tin thị trường.</p></div>
+    <div class="card usecase"><h3>⚖️ Văn bản pháp lý</h3><p class="small">Trích tên các bên liên quan, ngày hiệu lực hợp đồng, điều khoản tham chiếu trong hợp đồng dài hàng chục trang.</p></div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section>
+  <div class="section-num">TỰ KIỂM TRA · 07</div>
+  <h2>Quiz nhanh</h2>
+  <div class="card">
+    <div id="quizArea"></div>
+    <button class="btn" onclick="gradeQuiz()">📝 Chấm điểm</button>
+    <div class="score-box" id="scoreBox"></div>
+  </div>
+</section>
+
+<!-- TÓM TẮT -->
+<section>
+  <div class="section-num">TÓM TẮT · 08</div>
+  <div class="card">
+    <h3>Ghi nhớ 3 điều</h3>
+    <ul>
+      <li>NER = <strong>gán nhãn từng token</strong>, không phải phân loại cả câu.</li>
+      <li>Sơ đồ nhãn phổ biến nhất là <strong>BIO</strong> (Begin / Inside / Outside).</li>
+      <li>Dữ liệu <strong>nhất quán, đủ ngữ cảnh, đúng cấu trúc BIO</strong> quan trọng hơn việc chọn model phức tạp.</li>
+    </ul>
+    <p class="small">Đọc thêm: <a href="https://github.com/microsoft/AI-For-Beginners/tree/main/lessons/5-NLP/19-NER" target="_blank" rel="noopener">lessons/5-NLP/19-NER</a> trong repo AI-For-Beginners, và bài blog <a href="http://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="_blank" rel="noopener">The Unreasonable Effectiveness of RNNs</a> của Andrej Karpathy.</p>
+  </div>
+  <div class="footer">Bài giảng tự động tạo bởi Claude · Nguồn: Microsoft AI-For-Beginners, Lesson 19 — Named Entity Recognition</div>
+</div>
+
+<script>
+/* ===== THEME ===== */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  try{ localStorage.setItem('ner-theme', t); }catch(e){}
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = cur ? cur==='dark' : sysDark;
+  applyTheme(isDark ? 'light' : 'dark');
+}
+(function(){
+  try{
+    const saved = localStorage.getItem('ner-theme');
+    if(saved) document.documentElement.setAttribute('data-theme', saved);
+  }catch(e){}
+})();
+
+/* ===== WARMUP BIO FILL-IN-THE-BLANK ===== */
+const warmupTokens = [
+  {w:"Marie", tag:"B-PER"}, {w:"Curie", tag:"I-PER"}, {w:"moved", tag:"O"},
+  {w:"to", tag:"O"}, {w:"Paris", tag:"B-LOC"}, {w:"in", tag:"O"}, {w:"1891", tag:"B-DATE"}
+];
+const bioOptions = ["O","B-PER","I-PER","B-LOC","I-LOC","B-DATE","I-DATE"];
+function buildWarmup(){
+  const row = document.getElementById('warmupRow');
+  row.innerHTML = warmupTokens.map((t,i)=>{
+    const opts = bioOptions.map(o=>`<option value="${o}">${o}</option>`).join('');
+    return `<div class="bio-item"><span class="w">${t.w}</span><select id="wu-${i}">${opts}</select></div>`;
+  }).join('');
+}
+buildWarmup();
+function checkWarmup(){
+  let correct=0;
+  warmupTokens.forEach((t,i)=>{
+    const sel = document.getElementById('wu-'+i);
+    sel.classList.remove('right','wrong');
+    if(sel.value === t.tag){ sel.classList.add('right'); correct++; }
+    else{ sel.classList.add('wrong'); }
+  });
+  const box = document.getElementById('warmupResult');
+  box.innerHTML = `<div class="card" style="padding:12px 16px;">Bạn đúng <strong>${correct}/${warmupTokens.length}</strong> nhãn. ${correct===warmupTokens.length ? '🎉 Chuẩn xác!' : 'Bấm "Đối chiếu bản mẫu" để xem đáp án đúng.'}</div>`;
+  box.classList.add('show');
+}
+function revealWarmup(){
+  warmupTokens.forEach((t,i)=>{
+    document.getElementById('wu-'+i).value = t.tag;
+  });
+  const box = document.getElementById('warmupResult');
+  box.innerHTML = `<div class="card" style="padding:12px 16px;">📋 Đây là bản mẫu chuẩn — chú ý <code>B-PER → I-PER</code> đi liền nhau vì "Marie Curie" là một thực thể, còn "1891" đứng một mình nên chỉ cần <code>B-DATE</code>.</div>`;
+  box.classList.add('show');
+}
+
+/* ===== BIO DIAGRAM ===== */
+const bioSeq = [
+  {w:"Tricuspid", t:"DIS"}, {w:"valve", t:"DIS"}, {w:"regurgitation", t:"DIS"},
+  {w:"and", t:"O"}, {w:"lithium", t:"CHEM"}, {w:"carbonate", t:"CHEM"},
+  {w:"toxicity", t:"DIS"}, {w:"in", t:"O"}, {w:"a", t:"O"}, {w:"newborn", t:"O"}, {w:"infant", t:"O"}
+];
+function bioLabel(seq, idx){
+  if(seq[idx].t === "O") return "O";
+  const isFirst = idx===0 || seq[idx-1].t !== seq[idx].t;
+  return (isFirst ? "B-" : "I-") + seq[idx].t;
+}
+function buildBioFlow(){
+  const el = document.getElementById('bioFlow');
+  el.innerHTML = bioSeq.map((tok,i)=>{
+    const lab = bioLabel(bioSeq, i);
+    const cls = tok.t === "O" ? "O" : tok.t;
+    return `<div class="tok" style="animation-delay:${i*0.12}s"><span class="word">${tok.w}</span><span class="lab ${cls}" style="animation-delay:${i*0.15}s">${lab}</span></div>`;
+  }).join('');
+}
+buildBioFlow();
+
+/* ===== LIVE DEMO (rule-based gazetteer) ===== */
+const GAZ_PER = ["marie curie","barack obama","elon musk","albert einstein"];
+const GAZ_LOC = ["paris","warsaw","hanoi","california","new york"];
+const GAZ_ORG = ["tesla","google","amazon","nasa"];
+function runDemo(){
+  const text = document.getElementById('demoInput').value;
+  let html = text;
+  const replacements = [];
+  function tryTag(list, cls){
+    list.forEach(name=>{
+      const re = new RegExp('\\b' + name + '\\b', 'ig');
+      html = html.replace(re, m => `§${replacements.push({m, cls})-1}§`);
+    });
+  }
+  tryTag(GAZ_PER,'PER'); tryTag(GAZ_LOC,'LOC'); tryTag(GAZ_ORG,'ORG');
+  html = html.replace(/\b(1[6-9]\d{2}|20\d{2})\b/g, m => `§${replacements.push({m, cls:'DATE'})-1}§`);
+  html = html.replace(/§(\d+)§/g, (_,i)=>{
+    const r = replacements[i];
+    return `<span class="chip ${r.cls}">${r.m}<span class="l">${r.cls}</span></span>`;
+  });
+  document.getElementById('demoOut').innerHTML = html || '(nhập một câu để thử)';
+}
+runDemo();
+
+/* ===== DATA PICK EXERCISE ===== */
+function pickData(btn, isCorrect){
+  document.querySelectorAll('.mc-opt').forEach(b=>{ b.classList.remove('pick-good','pick-bad'); b.disabled=true; });
+  const fb = document.getElementById('dataPickFeedback');
+  if(isCorrect){
+    btn.classList.add('pick-bad');
+    fb.className = 'feedback correct';
+    fb.textContent = '✅ Chính xác! Đáp án C có I-CHEM và B-DIS xuất hiện mà không có B- mở đầu đúng chuẩn phía trước — chuỗi BIO bị gãy.';
+  } else {
+    btn.classList.add('pick-good');
+    fb.className = 'feedback wrong';
+    fb.textContent = '❌ Chưa đúng. Hãy để ý đáp án C: "lithium|I-CHEM" đứng đầu nhưng lại mang nhãn I- (Inside) thay vì B- (Begin) — vi phạm cấu trúc BIO.';
+  }
+}
+
+/* ===== QUIZ ===== */
+const quiz = [
+  {
+    q: "NER về bản chất là loại bài toán gì?",
+    opts: ["Phân loại toàn bộ câu (sentence classification)", "Phân loại từng token trong câu (token classification)", "Dịch máy (translation)", "Sinh văn bản (text generation)"],
+    correct: 1,
+    exp: "NER gán nhãn cho từng token riêng lẻ, nên là bài toán token classification."
+  },
+  {
+    q: "Trong BIO tagging, nhãn 'I-LOC' có nghĩa là gì?",
+    opts: ["Từ đầu tiên của một thực thể LOC", "Từ không thuộc thực thể nào", "Từ tiếp theo bên trong một thực thể LOC đã bắt đầu", "Một loại thực thể mới"],
+    correct: 2,
+    exp: "'I-' (Inside) đánh dấu token nối tiếp bên trong một thực thể đã được 'B-' mở đầu trước đó."
+  },
+  {
+    q: "Vì sao chỉ tra từ điển (gazetteer) là cách 'yếu' nhất trong 3 cách đã học?",
+    opts: ["Vì nó chạy quá chậm", "Vì nó không nhận ra được tên chưa có trong danh sách và không hiểu ngữ cảnh", "Vì nó cần GPU mạnh", "Vì nó chỉ hoạt động với tiếng Anh"],
+    correct: 1,
+    exp: "Rule-based cứng nhắc: tên lạ không có trong từ điển thì bỏ sót, và không phân biệt được ngữ cảnh mơ hồ."
+  },
+  {
+    q: "Data huấn luyện NER nào được coi là 'xấu'?",
+    opts: ["B- luôn đứng trước I- cùng loại", "Đủ ví dụ cân bằng cho mọi lớp thực thể", "Xuất hiện I-CHEM mà không có B-CHEM đứng trước", "Biên thực thể được đánh dấu rõ ràng"],
+    correct: 2,
+    exp: "Chuỗi BIO gãy (I- không có B- mở đầu) là lỗi cấu trúc nhãn kinh điển khiến model học sai."
+  },
+  {
+    q: "Ứng dụng nào KHÔNG phải là use case điển hình của NER?",
+    opts: ["Trợ lý ảo trích tham số 'đặt báo thức 7 giờ'", "Quét bài báo y khoa tìm tên bệnh, hóa chất", "Nén ảnh để giảm dung lượng lưu trữ", "Trích tên công ty trong tin tức tài chính"],
+    correct: 2,
+    exp: "Nén ảnh là bài toán xử lý ảnh/tín hiệu, không liên quan đến việc gắn nhãn thực thể trong văn bản."
+  }
+];
+function buildQuiz(){
+  const el = document.getElementById('quizArea');
+  el.innerHTML = quiz.map((q,qi)=>`
+    <div class="quiz-q" data-qi="${qi}">
+      <p><strong>Câu ${qi+1}.</strong> ${q.q}</p>
+      ${q.opts.map((o,oi)=>`
+        <label class="opt"><input type="radio" name="q${qi}" value="${oi}"> <span>${o}</span></label>
+      `).join('')}
+      <div class="feedback" id="fb-${qi}"></div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+function gradeQuiz(){
+  let score = 0;
+  quiz.forEach((q,qi)=>{
+    const sel = document.querySelector(`input[name="q${qi}"]:checked`);
+    const fb = document.getElementById('fb-'+qi);
+    if(!sel){
+      fb.className = 'feedback wrong'; fb.style.display='block';
+      fb.textContent = '⚠️ Bạn chưa chọn đáp án cho câu này.';
+      return;
+    }
+    const val = parseInt(sel.value,10);
+    if(val === q.correct){
+      score++;
+      fb.className = 'feedback correct';
+      fb.textContent = '✅ Đúng! ' + q.exp;
+    } else {
+      fb.className = 'feedback wrong';
+      fb.textContent = '❌ Sai rồi. ' + q.exp;
+    }
+  });
+  const box = document.getElementById('scoreBox');
+  box.textContent = `Điểm của bạn: ${score}/${quiz.length}`;
+  box.classList.add('show');
+}
+</script>
+</body>
+</html>
