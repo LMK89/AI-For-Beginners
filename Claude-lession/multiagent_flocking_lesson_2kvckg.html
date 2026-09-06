@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Agent Systems — Khi Đàn Chim Thông Minh Hơn Từng Con Chim</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --bg2:#ffffff; --text:#1c2333; --muted:#5b6472;
+    --border:#e2e5ec; --accent:#0e7c86; --accent2:#e8590c;
+    --warn:#f0a500; --bad:#ef4444; --good:#16a34a;
+    --code-bg:#1e1f2b; --code-text:#e6e6f0;
+    --shadow: 0 8px 24px rgba(30,30,60,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#11151a; --bg2:#181f24; --text:#eef3f4; --muted:#a1adb2;
+      --border:#28333a; --accent:#4fd3c4; --accent2:#ff9166;
+      --code-bg:#0d1013; --code-text:#dcf3ee;
+      --shadow: 0 8px 28px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#11151a; --bg2:#181f24; --text:#eef3f4; --muted:#a1adb2;
+    --border:#28333a; --accent:#4fd3c4; --accent2:#ff9166;
+    --code-bg:#0d1013; --code-text:#dcf3ee;
+    --shadow: 0 8px 28px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.6; padding:0 0 60px;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 20px;}
+
+  @keyframes fadeInDown{ from{opacity:0; transform:translateY(-22px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes slideUp{ from{opacity:0; transform:translateY(28px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes slideDown{ from{opacity:0; transform:translateY(-14px); max-height:0;} to{opacity:1; transform:translateY(0); max-height:800px;} }
+  @keyframes pulse{ 0%{transform:scale(1); box-shadow:0 0 0 0 rgba(14,124,134,.5);} 70%{transform:scale(1.06); box-shadow:0 0 0 12px rgba(14,124,134,0);} 100%{transform:scale(1); box-shadow:0 0 0 0 rgba(14,124,134,0);} }
+  @keyframes slideArrow{ 0%{transform:translateX(0); opacity:.4;} 50%{opacity:1;} 100%{transform:translateX(14px); opacity:.4;} }
+
+  header.hero{
+    padding:56px 20px 40px; text-align:center;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#fff; animation:fadeInDown .7s ease both;
+  }
+  header.hero .tag{
+    display:inline-block; background:rgba(255,255,255,.18); padding:5px 14px;
+    border-radius:999px; font-size:.8rem; letter-spacing:.04em; margin-bottom:14px;
+  }
+  header.hero h1{font-size:2.1rem; margin:0 0 10px;}
+  header.hero p{opacity:.95; max-width:660px; margin:0 auto; font-size:1rem;}
+  .theme-toggle{
+    position:fixed; top:16px; right:16px; z-index:50;
+    background:var(--bg2); border:1px solid var(--border); color:var(--text);
+    border-radius:999px; padding:8px 14px; cursor:pointer; font-size:.85rem;
+    box-shadow:var(--shadow);
+  }
+
+  section{ margin:38px 0; animation:slideUp .6s ease both; }
+  section.delay1{animation-delay:.05s;} section.delay2{animation-delay:.1s;}
+
+  h2{font-size:1.35rem; margin-bottom:6px; display:flex; align-items:center; gap:10px;}
+  h2 .num{
+    background:var(--accent); color:#fff; width:30px; height:30px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0;
+  }
+  .sub{color:var(--muted); margin-bottom:18px; font-size:.95rem;}
+
+  .card{
+    background:var(--bg2); border:1px solid var(--border); border-radius:16px;
+    padding:20px 22px; box-shadow:var(--shadow); margin-bottom:16px;
+  }
+
+  .states-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;}
+  .state-card{
+    border-radius:14px; padding:16px; border:1px solid var(--border); background:var(--bg2);
+    transition:transform .35s ease, box-shadow .35s ease;
+  }
+  .state-card:hover{transform:translateY(-4px); box-shadow:var(--shadow);}
+  .state-card .badge{font-size:1.4rem;}
+  .state-card h3{margin:8px 0 4px; font-size:1.02rem;}
+  .state-card p{color:var(--muted); font-size:.88rem; margin:0;}
+
+  table{width:100%; border-collapse:collapse; font-size:.9rem;}
+  th,td{border:1px solid var(--border); padding:10px 12px; text-align:left; vertical-align:top;}
+  th{background:var(--bg); color:var(--muted); font-weight:600;}
+  .overflow-x{overflow-x:auto; border-radius:12px;}
+
+  code, pre{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+  pre{
+    background:var(--code-bg); color:var(--code-text); padding:16px 18px; border-radius:12px;
+    overflow-x:auto; font-size:.83rem; line-height:1.55;
+  }
+  .ascii{
+    background:var(--code-bg); color:var(--code-text); padding:16px 18px; border-radius:12px;
+    overflow-x:auto; font-size:.82rem; line-height:1.5; white-space:pre; font-family:"SFMono-Regular",Consolas,monospace;
+  }
+  .pill{display:inline-block; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:600;}
+  .pill.good{background:rgba(22,163,74,.15); color:var(--good);}
+  .pill.warn{background:rgba(240,165,0,.18); color:var(--warn);}
+  .pill.bad{background:rgba(239,68,68,.15); color:var(--bad);}
+
+  .flow{
+    display:flex; align-items:center; gap:6px; overflow-x:auto; padding:22px 10px; justify-content:flex-start;
+  }
+  .flow .cell{
+    min-width:64px; height:64px; border-radius:12px; background:var(--bg);
+    border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:.85rem; flex-shrink:0; transition:all .3s ease; text-align:center; padding:4px;
+  }
+  .flow .cell.active{
+    border-color:var(--accent); background:var(--accent); color:#fff;
+    animation:pulse 1s ease;
+  }
+  .flow .arrow{width:22px; height:3px; background:var(--muted); position:relative; flex-shrink:0; opacity:.5;}
+  .flow .arrow.active{animation:slideArrow .8s ease infinite; background:var(--accent);}
+
+  .btn{
+    background:var(--accent); color:#fff; border:none; padding:10px 20px; border-radius:10px;
+    font-size:.9rem; font-weight:600; cursor:pointer; transition:transform .2s ease, opacity .2s ease;
+  }
+  .btn:hover{transform:translateY(-2px); opacity:.92;}
+  .btn.secondary{background:transparent; color:var(--accent); border:2px solid var(--accent);}
+  input[type=text], select{
+    background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px;
+    padding:9px 12px; font-size:.9rem; width:100%;
+  }
+
+  .demo-out{
+    margin-top:14px; padding:14px 16px; border-radius:12px; background:var(--bg);
+    border:1px dashed var(--border); font-size:.92rem; min-height:24px;
+  }
+  .demo-out.show{animation:slideDown .4s ease both;}
+
+  .sim-controls{display:flex; gap:18px; flex-wrap:wrap; margin-bottom:14px; align-items:center;}
+  .toggle-chip{
+    display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:10px;
+    border:2px solid var(--border); background:var(--bg); cursor:pointer; font-size:.87rem; font-weight:600;
+    color:var(--muted); transition:all .3s ease; user-select:none;
+  }
+  .toggle-chip.on{border-color:var(--accent2); background:rgba(232,89,12,.12); color:var(--accent2); transform:scale(1.03);}
+  .range-chip{display:flex; align-items:center; gap:8px; font-size:.85rem; color:var(--muted);}
+  #boidsCanvas{
+    width:100%; height:280px; display:block; border-radius:12px; border:1px solid var(--border);
+    background:var(--bg);
+  }
+
+  .bdi-flow{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+  .bdi-box{
+    flex:1; min-width:150px; border-radius:12px; border:2px solid var(--border); padding:14px;
+    background:var(--bg); transition:all .4s ease; opacity:.4;
+  }
+  .bdi-box.on{opacity:1; border-color:var(--accent); background:rgba(14,124,134,.1); animation:pulse 1s ease;}
+  .bdi-box h4{margin:0 0 6px; font-size:.92rem;}
+  .bdi-box p{margin:0; font-size:.82rem; color:var(--muted);}
+
+  .quiz-tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .quiz-tab{
+    padding:9px 16px; border-radius:10px; border:1px solid var(--border); background:var(--bg2);
+    cursor:pointer; font-size:.87rem; font-weight:600; color:var(--muted); transition:all .25s ease;
+  }
+  .quiz-tab.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .quiz-panel{display:none;}
+  .quiz-panel.active{display:block; animation:slideDown .4s ease both;}
+  .q-block{margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);}
+  .q-block:last-child{border-bottom:none;}
+  .opt{
+    display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px;
+    cursor:pointer; transition:background .2s ease;
+  }
+  .opt:hover{background:var(--bg);}
+  .feedback{margin-top:8px; font-size:.87rem; font-weight:600; display:none;}
+  .feedback.show{display:block; animation:slideDown .3s ease both;}
+  .feedback.correct{color:var(--good);}
+  .feedback.wrong{color:var(--bad);}
+  .fill-input{width:180px; display:inline-block;}
+  .match-row{display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:center; margin-bottom:10px;}
+  .match-row .term{font-weight:600; font-size:.88rem;}
+  .score-box{margin-top:10px; font-weight:700;}
+
+  details{background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin-top:8px;}
+  summary{cursor:pointer; font-weight:600; font-size:.88rem;}
+
+  .footer{text-align:center; color:var(--muted); font-size:.82rem; margin-top:50px;}
+
+  @media (max-width:640px){
+    header.hero h1{font-size:1.5rem;}
+    .match-row{grid-template-columns:1fr; gap:4px;}
+    #boidsCanvas{height:220px;}
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle">🌙 / ☀️</button>
+
+<header class="hero">
+  <span class="tag">AI-FOR-BEGINNERS · BÀI HỌC NGẪU NHIÊN #23-MULTIAGENT SYSTEMS</span>
+  <h1>Multi-Agent Systems<br>Khi Đàn Chim Thông Minh Hơn Từng Con Chim</h1>
+  <p>Làm sao hàng trăm con chim bay thành đội hình đẹp mắt mà không có "con chỉ huy" nào cả? Cùng khám phá cách nhiều Agent đơn giản kết hợp lại tạo ra hành vi thông minh — qua mô phỏng Flocking chạy trực tiếp trên trình duyệt của bạn.</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 0. QUICK START -->
+  <section>
+    <h2><span class="num">0</span>Khởi Động Nhanh</h2>
+    <p class="sub">Trước khi vào bài, thử sức với 3 kiểu bài tập nhỏ. Đừng lo nếu sai — đáp án và giải thích hiện ngay bên dưới.</p>
+    <div class="card">
+      <div class="quiz-tabs">
+        <div class="quiz-tab active" data-tab="mc">📝 Trắc nghiệm</div>
+        <div class="quiz-tab" data-tab="fill">✏️ Điền khuyết</div>
+        <div class="quiz-tab" data-tab="match">🔗 Đối chiếu bản mẫu</div>
+      </div>
+
+      <div class="quiz-panel active" id="panel-mc">
+        <div class="q-block">
+          <div><b>Câu 1.</b> Multi-Agent System đạt được hành vi phức tạp (như đàn chim bay đẹp) nhờ đâu?</div>
+          <div class="opts" data-q="1">
+            <label class="opt"><input type="radio" name="mc1" value="a">A. Có một "con chim đầu đàn" ra lệnh cho tất cả</label>
+            <label class="opt"><input type="radio" name="mc1" value="b">B. Hiệu ứng cộng hưởng (synergy) — nhiều agent đơn giản cùng tuân theo vài luật cục bộ</label>
+            <label class="opt"><input type="radio" name="mc1" value="c">C. Mỗi agent được lập trình sẵn toàn bộ đội hình từ đầu</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(1,'b')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc1"></div>
+        </div>
+        <div class="q-block">
+          <div><b>Câu 2.</b> Agent "phản xạ" (reactive) khác gì agent "suy luận" (deliberative)?</div>
+          <div class="opts" data-q="2">
+            <label class="opt"><input type="radio" name="mc2" value="a">A. Reactive chỉ phản ứng theo luật tức thời, Deliberative có thể lập kế hoạch và suy luận dài hạn</label>
+            <label class="opt"><input type="radio" name="mc2" value="b">B. Reactive luôn thông minh hơn Deliberative</label>
+            <label class="opt"><input type="radio" name="mc2" value="c">C. Hai loại này giống hệt nhau, chỉ khác tên gọi</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(2,'a')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc2"></div>
+        </div>
+        <div class="q-block">
+          <div><b>Câu 3.</b> Trong mô hình Flocking, nếu ta giảm "tầm nhìn" (viewing range) của mỗi con chim về 0 thì điều gì xảy ra?</div>
+          <div class="opts" data-q="3">
+            <label class="opt"><input type="radio" name="mc3" value="a">A. Đàn chim bay đẹp hơn vì tập trung hơn</label>
+            <label class="opt"><input type="radio" name="mc3" value="b">B. Không thay đổi gì</label>
+            <label class="opt"><input type="radio" name="mc3" value="c">C. Chim "mù", không thấy láng giềng nữa → hành vi đàn (flocking) biến mất, mỗi con bay lung tung</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(3,'c')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc3"></div>
+        </div>
+      </div>
+
+      <div class="quiz-panel" id="panel-fill">
+        <div class="q-block">
+          Ba luật cơ bản của Flocking là Alignment (đồng hướng), Cohesion (kết dính), và <input type="text" class="fill-input" id="fill1" placeholder="luật thứ 3">.
+          <button class="btn secondary" onclick="checkFill('fill1','fb-fill1',['separation','tách rời','ly tán'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill1"></div>
+        </div>
+        <div class="q-block">
+          Kiến trúc phổ biến cho agent suy luận gồm Belief (niềm tin), Desire (mong muốn), và <input type="text" class="fill-input" id="fill2" placeholder="thành phần thứ 3">.
+          <button class="btn secondary" onclick="checkFill('fill2','fb-fill2',['intention','ý định','intentions'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill2"></div>
+        </div>
+        <div class="q-block">
+          Trong NetLogo, agent có thể di chuyển trên bản đồ được gọi là <input type="text" class="fill-input" id="fill3" placeholder="tên gọi tiếng Anh">.
+          <button class="btn secondary" onclick="checkFill('fill3','fb-fill3',['turtle','turtles','con rùa'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill3"></div>
+        </div>
+      </div>
+
+      <div class="quiz-panel" id="panel-match">
+        <p class="sub">Ghép mỗi khái niệm bên trái với đúng định nghĩa bên phải (dùng ô chọn).</p>
+        <div id="matchArea"></div>
+        <button class="btn secondary" onclick="checkMatch()">Kiểm tra tất cả</button>
+        <div class="score-box" id="matchScore"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. ĐỊNH NGHĨA -->
+  <section class="delay1">
+    <h2><span class="num">1</span>Vấn Đề: Trí Tuệ Không Nhất Thiết Phải Đến Từ 1 "Bộ Não" Lớn</h2>
+    <p class="sub">Thay vì xây <b>một</b> AI khổng lồ hiểu và điều khiển mọi thứ, cách tiếp cận <b>emergent (nổi sinh)</b> đặt cược vào việc kết hợp nhiều <b>Agent</b> — thực thể đơn giản sống trong một <b>môi trường</b>, có thể <i>cảm nhận</i> (perceive) và <i>hành động</i> (act) lên môi trường đó. Mỗi Agent riêng lẻ có thể rất "ngốc", nhưng khi hàng trăm agent tuân theo cùng vài luật cục bộ, hành vi <b>tổng thể</b> của hệ thống lại trở nên phức tạp và có vẻ "thông minh" — giống hệt cách một đàn chim bay theo hình dạng uyển chuyển mà không ai chỉ huy.</p>
+    <div class="ascii">┌─────────────┐   perceive (cảm nhận)   ┌──────────────┐
+│             │ ───────────────────────►│              │
+│    AGENT    │                          │  ENVIRONMENT │
+│  (đơn giản) │ ◄───────────────────────│  (môi trường)│
+└─────────────┘        act (hành động)   └──────────────┘
+
+  Nhiều Agent + vài luật cục bộ  ──►  Hành vi tổng thể phức tạp (emergent)</div>
+  </section>
+
+  <!-- 2. 4 TRẠNG THÁI -->
+  <section class="delay2">
+    <h2><span class="num">2</span>4 Cách Xây Hệ Thống Thông Minh — Từ Đơn Lẻ Đến Hợp Tác</h2>
+    <div class="states-grid">
+      <div class="state-card">
+        <div class="badge">❌</div>
+        <h3>1. Một AI Trung Tâm Duy Nhất</h3>
+        <p>Một bộ não khổng lồ điều khiển mọi thứ (VD: 1 thuật toán điều khiển toàn bộ giao thông thành phố). Dễ vỡ, khó mở rộng, 1 điểm lỗi làm sập cả hệ thống.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">⚠️</div>
+        <h3>2. Multi-Agent Phản Xạ (Reactive)</h3>
+        <p>Nhiều agent đơn giản, mỗi con chỉ phản ứng theo luật tức thời (VD: Flocking, Traffic Basic). Emergent behavior đẹp nhưng không biết "lập kế hoạch" hay đàm phán.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>3. Multi-Agent Suy Luận (Deliberative / BDI)</h3>
+        <p>Agent có Belief-Desire-Intention, biết lập kế hoạch, giao tiếp và đàm phán với agent khác (VD: trợ lý ảo đặt vé máy bay tự thương lượng giá).</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>4. Hybrid (Kết Hợp)</h3>
+        <p>Tầng thấp phản xạ nhanh (né vật cản), tầng cao suy luận chiến lược (chọn đường đi tối ưu). Dùng phổ biến trong robot thực & NPC game hiện đại.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. BẢNG SO SÁNH -->
+  <section>
+    <h2><span class="num">3</span>Bảng So Sánh Chi Tiết</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Trạng Thái</th><th>Input</th><th>Xử Lý</th><th>Output</th><th>Đánh Giá</th></tr>
+      <tr>
+        <td>AI Trung Tâm</td>
+        <td>Toàn bộ trạng thái hệ thống</td>
+        <td>1 thuật toán tính toán quyết định cho tất cả</td>
+        <td>Lệnh điều khiển toàn cục</td>
+        <td><span class="pill bad">❌ Điểm lỗi duy nhất, khó mở rộng</span></td>
+      </tr>
+      <tr>
+        <td>Reactive Multi-Agent</td>
+        <td>Vị trí/vận tốc các agent lân cận (trong tầm nhìn)</td>
+        <td>Alignment + Cohesion + Separation (hoặc luật tương tự)</td>
+        <td>Hướng/vận tốc mới của từng agent</td>
+        <td><span class="pill warn">⚠️ Đẹp & mô phỏng tốt, không đàm phán được</span></td>
+      </tr>
+      <tr>
+        <td>Deliberative (BDI)</td>
+        <td>Beliefs (dữ liệu môi trường) + Desires (mục tiêu)</td>
+        <td>Lập kế hoạch (planning), giao tiếp KQML/KIF, đàm phán</td>
+        <td>Intentions → hành động cụ thể</td>
+        <td><span class="pill good">✅ Linh hoạt, giải quyết bài toán phức tạp</span></td>
+      </tr>
+      <tr>
+        <td>Hybrid</td>
+        <td>Cảm biến tức thời + mục tiêu dài hạn</td>
+        <td>Lớp phản xạ xử lý khẩn cấp, lớp suy luận xử lý chiến lược</td>
+        <td>Hành động vừa an toàn vừa tối ưu</td>
+        <td><span class="pill good">✅ Cân bằng tốc độ & trí tuệ</span></td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 4. DEMO FLOCKING -->
+  <section>
+    <h2><span class="num">4</span>Trực Quan: Mô Phỏng Flocking — Bật/Tắt Từng Luật Để Xem Điều Gì Xảy Ra</h2>
+    <p class="sub">Đây chính là mô hình <b>Flocking</b> nổi tiếng trong NetLogo. Mỗi "con chim" (chấm màu) chỉ nhìn thấy láng giềng trong bán kính ngắn và áp dụng 3 luật đơn giản. Thử tắt từng luật để thấy đàn chim tan rã ra sao!</p>
+    <div class="card">
+      <div class="sim-controls">
+        <div class="toggle-chip on" id="chip-align" onclick="toggleRule('align')">🧭 Alignment (đồng hướng)</div>
+        <div class="toggle-chip on" id="chip-cohesion" onclick="toggleRule('cohesion')">🧲 Cohesion (kết dính)</div>
+        <div class="toggle-chip on" id="chip-separation" onclick="toggleRule('separation')">↔️ Separation (tách rời)</div>
+      </div>
+      <div class="range-chip">
+        Tầm nhìn mỗi chim: <input type="range" id="visionRange" min="0" max="120" value="60" style="width:160px;"><span id="visionVal">60</span>px
+      </div>
+      <canvas id="boidsCanvas" width="900" height="280"></canvas>
+      <div class="demo-out show" id="boidsNote">Cả 3 luật đang BẬT — quan sát đàn tự động tụ lại và bay cùng hướng, giống hệt chim thật. Thử kéo tầm nhìn về 0 để xem chúng "mù" và bay lung tung.</div>
+    </div>
+  </section>
+
+  <!-- 5. DEMO BDI -->
+  <section>
+    <h2><span class="num">5</span>Demo: Agent Suy Luận (BDI) — Trợ Lý Ảo Đặt Vé Du Lịch</h2>
+    <p class="sub">Khác với chim (chỉ phản xạ), agent kiểu BDI biết <b>suy luận</b>. Gõ một mục tiêu rồi bấm chạy để xem agent "nghĩ" qua 4 bước: Belief → Desire → Intention → Action.</p>
+    <div class="card">
+      <input type="text" id="bdiGoal" value="Đặt tour du lịch Đà Lạt giá rẻ cho 2 người">
+      <div style="margin-top:10px;">
+        <button class="btn" onclick="runBDI()">▶ Chạy Agent Suy Luận</button>
+      </div>
+      <div class="bdi-flow">
+        <div class="bdi-box" id="bdi-belief"><h4>1️⃣ Belief</h4><p>Những gì agent biết về môi trường (giá vé, khách sạn, ngày trống).</p></div>
+        <div class="bdi-box" id="bdi-desire"><h4>2️⃣ Desire</h4><p>Mục tiêu agent muốn đạt (mục tiêu bạn vừa nhập).</p></div>
+        <div class="bdi-box" id="bdi-intention"><h4>3️⃣ Intention</h4><p>Kế hoạch cụ thể: agent sẽ liên hệ agent khác để đàm phán giá.</p></div>
+        <div class="bdi-box" id="bdi-action"><h4>4️⃣ Action</h4><p>Hành động thật: đặt chỗ, xác nhận với chủ nhân.</p></div>
+      </div>
+      <div class="demo-out" id="bdiOut">Nhấn nút để xem agent suy luận qua từng bước.</div>
+    </div>
+  </section>
+
+  <!-- 6. CODE -->
+  <section>
+    <h2><span class="num">6</span>Code Tối Thiểu Cho Mỗi Trạng Thái</h2>
+    <div class="card">
+      <p><b>⚠️ NetLogo — Tạo và điều khiển nhiều Agent (turtles)</b></p>
+      <pre>create-turtles 10
+ask turtles [
+  forward 10        ; mọi turtle tiến 10 bước, chạy song song
+]</pre>
+      <p><b>✅ Luật Flocking (rút gọn ý tưởng, giả mã)</b></p>
+      <pre>to flock  ; mỗi turtle tự chạy đoạn này
+  let neighbors turtles in-radius vision-range
+  align-with neighbors      ; Alignment
+  move-toward-center neighbors  ; Cohesion
+  avoid-if-too-close neighbors  ; Separation
+end</pre>
+      <p><b>✅ JavaScript — 1 bước cập nhật boid (dùng trong demo phần 4)</b></p>
+      <pre>function step(boid, neighbors) {
+  boid.vx += align(boid, neighbors)   * W_ALIGN;
+  boid.vx += cohere(boid, neighbors)  * W_COHESION;
+  boid.vx += separate(boid, neighbors)* W_SEPARATION;
+  boid.x  += boid.vx;  // và tương tự cho trục y
+}</pre>
+    </div>
+  </section>
+
+  <!-- 7. USE CASE -->
+  <section>
+    <h2><span class="num">7</span>Use Case Thực Tế</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Bài toán</th><th>Vì sao cần Multi-Agent System</th></tr>
+      <tr><td>NPC trong game (đám đông, quái vật)</td><td>Mỗi NPC là 1 agent phản xạ đơn giản, tổng thể tạo cảm giác "thế giới sống động"</td></tr>
+      <tr><td>Dựng cảnh đám đông trong phim 3D</td><td>Mô phỏng hàng nghìn "người" di chuyển tự nhiên mà không cần animate tay từng người</td></tr>
+      <tr><td>Dự báo lây lan dịch bệnh (COVID-19)</td><td>Mỗi cá nhân là 1 agent với trạng thái (khỏe/nhiễm/khỏi), tương tác cục bộ tạo ra đường cong dịch tễ toàn cục</td></tr>
+      <tr><td>Mô phỏng giao thông đô thị</td><td>Mỗi xe là 1 agent phản xạ (tăng tốc/phanh theo xe trước) → dự đoán tắc đường khi đổi luật giao thông</td></tr>
+      <tr><td>Trợ lý ảo đặt vé/khách sạn tự động</td><td>Cần agent kiểu BDI để đàm phán giá, lên kế hoạch với nhiều agent khác trên mạng</td></tr>
+      <tr><td>Hệ thống IoT / lưới điện thông minh</td><td>Mỗi thiết bị là 1 agent độc lập, hệ thống bớt "nguyên khối", chịu lỗi tốt hơn</td></tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 8. GOOD VS BAD DATA -->
+  <section>
+    <h2><span class="num">8</span>Cấu Hình/Dữ Liệu Nào Tốt — Cái Nào Gây Lỗi/Sai Sót</h2>
+    <p class="sub">Trong Multi-Agent System, "dữ liệu đầu vào" thường là <b>tham số luật</b> và <b>dữ liệu cảm biến/môi trường</b> — không phải dataset gán nhãn như ML thông thường. Chất lượng của chúng vẫn quyết định hệ thống có hoạt động đúng hay không.</p>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Loại dữ liệu/cấu hình</th><th>Ví dụ</th><th>Đánh giá</th><th>Vì sao</th></tr>
+      <tr>
+        <td>Tầm nhìn & tham số luật hợp lý, cân bằng</td>
+        <td>Vision range = 40-80px, trọng số Alignment/Cohesion/Separation gần bằng nhau</td>
+        <td><span class="pill good">✅ Tốt</span></td>
+        <td>Đủ để mỗi agent thấy láng giềng và phản ứng mượt, tạo emergent behavior ổn định như đàn chim thật</td>
+      </tr>
+      <tr>
+        <td>Tầm nhìn = 0 hoặc quá nhỏ</td>
+        <td>Vision range = 0px, agent "mù" hoàn toàn</td>
+        <td><span class="pill bad">❌ Xấu</span></td>
+        <td>Không có neighbor nào được tìm thấy → 3 luật vô nghĩa → mỗi agent bay ngẫu nhiên, hệ thống mất hành vi tập thể</td>
+      </tr>
+      <tr>
+        <td>Separation quá mạnh so với Cohesion</td>
+        <td>Trọng số Separation gấp 10 lần Cohesion</td>
+        <td><span class="pill warn">⚠️ Trung bình</span></td>
+        <td>Đàn sẽ tách rời quá mức, không tụ lại thành nhóm — cần tinh chỉnh (tuning) lại tỉ lệ giữa các luật</td>
+      </tr>
+      <tr>
+        <td>Dữ liệu cảm biến bị nhiễu/trễ (real-world)</td>
+        <td>GPS của drone trong bầy có sai số ±5m, cập nhật trễ 500ms</td>
+        <td><span class="pill bad">❌ Xấu</span></td>
+        <td>Belief của agent về vị trí láng giềng bị sai lệch → tính toán Alignment/Cohesion sai → có thể va chạm trong đội hình drone thật</td>
+      </tr>
+      <tr>
+        <td>Mục tiêu (Desire) mâu thuẫn giữa các agent BDI</td>
+        <td>Agent A muốn giá thấp nhất, Agent B (nhà cung cấp) muốn lợi nhuận cao nhất, không có giao thức đàm phán rõ ràng</td>
+        <td><span class="pill warn">⚠️ Trung bình</span></td>
+        <td>Nếu thiếu ontology chung và protocol đàm phán, hai agent có thể "deadlock" không bao giờ thống nhất được kế hoạch</td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 9. BÀI TẬP -->
+  <section>
+    <h2><span class="num">9</span>Bài Tập Nhỏ</h2>
+    <div class="card">
+      <p><b>Bài 1.</b> Dùng mô phỏng ở Phần 4, hãy tắt riêng luật <b>Cohesion</b> (giữ Alignment và Separation bật). Dự đoán trước rồi chạy thử: đàn chim sẽ trông như thế nào?</p>
+      <details>
+        <summary>Xem đáp án gợi ý</summary>
+        <p>Không còn lực "kéo về trung tâm nhóm", các chim sẽ bay theo từng nhóm nhỏ rải rác cùng hướng (nhờ Alignment) nhưng không tụ thành 1 đàn lớn — vì thiếu lực hút dài hạn.</p>
+      </details>
+    </div>
+    <div class="card">
+      <p><b>Bài 2.</b> Cho 2 mô tả hệ thống dưới đây, hệ thống nào là <b>Reactive</b> và hệ thống nào là <b>Deliberative</b>? Vì sao?</p>
+      <p>(A) Robot hút bụi chỉ đổi hướng ngay khi cảm biến chạm phải tường.</p>
+      <p>(B) Trợ lý ảo nhận yêu cầu "đặt chuyến bay rẻ nhất tháng sau", tự lên lịch kiểm tra giá nhiều hãng trong 3 ngày rồi mới chốt vé.</p>
+      <details>
+        <summary>Xem đáp án gợi ý</summary>
+        <p>(A) là <b>Reactive</b> — phản ứng tức thời theo 1 luật đơn giản, không có kế hoạch. (B) là <b>Deliberative</b> — có mục tiêu (Desire), cần thu thập thông tin theo thời gian (Belief) và lập kế hoạch dài hạn (Intention) trước khi hành động.</p>
+      </details>
+    </div>
+    <div class="card">
+      <p><b>❓ Câu hỏi tự kiểm tra:</b> Tại sao việc giảm "viewing range" (tầm nhìn) của mỗi con chim trong mô hình Flocking về 0 lại khiến hành vi đàn biến mất, dù luật Alignment/Cohesion/Separation vẫn còn nguyên trong code?</p>
+      <details>
+        <summary>Gợi ý trả lời</summary>
+        <p>Vì cả 3 luật đều tính toán dựa trên <i>tập hợp láng giềng trong tầm nhìn</i>. Khi tầm nhìn = 0, tập hợp này luôn rỗng, nên cả 3 phép tính (hướng trung bình, vị trí trung bình, khoảng cách quá gần) đều không có dữ liệu để hoạt động — luật vẫn "tồn tại" trong code nhưng không có input nào để áp dụng, y hệt một hàm luôn nhận tham số rỗng.</p>
+      </details>
+    </div>
+  </section>
+
+  <div class="footer">
+    Bài giảng tự động — AI-For-Beginners · Nguồn: <code>lessons/6-Other/23-MultiagentSystems</code><br>
+    Soạn bằng tiếng Việt cho người mới, kèm mô phỏng Flocking tương tác chạy trực tiếp trên trình duyệt.
+  </div>
+</div>
+
+<script>
+// theme toggle
+const root = document.documentElement;
+document.getElementById('themeToggle').onclick = () => {
+  const cur = root.getAttribute('data-theme');
+  root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+};
+
+// quiz tabs
+document.querySelectorAll('.quiz-tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.quiz-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.quiz-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+  };
+});
+
+function checkMC(n, correct){
+  const sel = document.querySelector('input[name="mc'+n+'"]:checked');
+  const fb = document.getElementById('fb-mc'+n);
+  fb.classList.remove('correct','wrong');
+  if(!sel){ fb.textContent='Hãy chọn một đáp án trước đã!'; fb.classList.add('wrong','show'); return; }
+  if(sel.value === correct){
+    fb.textContent='✅ Chính xác!'; fb.classList.add('correct','show');
+  } else {
+    fb.textContent='❌ Chưa đúng, đáp án đúng là '+correct.toUpperCase()+'. Xem lại phần 1-2 ở trên nhé.'; fb.classList.add('wrong','show');
+  }
+}
+
+function checkFill(inputId, fbId, answers){
+  const val = document.getElementById(inputId).value.trim().toLowerCase();
+  const fb = document.getElementById(fbId);
+  fb.classList.remove('correct','wrong');
+  const ok = answers.some(a => a.toLowerCase() === val);
+  if(ok){ fb.textContent='✅ Đúng rồi!'; fb.classList.add('correct','show'); }
+  else { fb.textContent='❌ Chưa đúng. Gợi ý: đọc lại phần 2-3 ở trên.'; fb.classList.add('wrong','show'); }
+}
+
+// matching quiz
+const matchTerms = [
+  {term:'Alignment', def:'Hướng theo hướng trung bình của láng giềng xung quanh'},
+  {term:'Cohesion', def:'Tiến về vị trí trung bình của láng giềng (lực hút tầm xa)'},
+  {term:'Separation', def:'Tránh xa khi tiến quá gần láng giềng khác (lực đẩy tầm gần)'},
+  {term:'BDI', def:'Kiến trúc Belief-Desire-Intention cho agent biết suy luận và lập kế hoạch'},
+];
+const defs = matchTerms.map(m=>m.def);
+function shuffle(a){ return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]); }
+const shuffledDefs = shuffle(defs);
+const matchArea = document.getElementById('matchArea');
+matchTerms.forEach((m,i)=>{
+  const row = document.createElement('div');
+  row.className='match-row';
+  row.innerHTML = `<div class="term">${m.term}</div>
+    <select data-correct="${m.def.replace(/"/g,'&quot;')}" id="match${i}">
+      <option value="">-- chọn định nghĩa --</option>
+      ${shuffledDefs.map(d=>`<option value="${d.replace(/"/g,'&quot;')}">${d}</option>`).join('')}
+    </select>`;
+  matchArea.appendChild(row);
+});
+function checkMatch(){
+  let score=0;
+  matchTerms.forEach((m,i)=>{
+    const sel = document.getElementById('match'+i);
+    if(sel.value === m.def){ sel.style.borderColor='var(--good)'; score++; }
+    else { sel.style.borderColor='var(--bad)'; }
+  });
+  const box = document.getElementById('matchScore');
+  box.textContent = `Điểm: ${score}/${matchTerms.length} ${score===matchTerms.length ? '🎉 Hoàn hảo!' : '— thử lại các ô đỏ nhé.'}`;
+  box.style.color = score===matchTerms.length ? 'var(--good)' : 'var(--text)';
+}
+
+// ===== BOIDS FLOCKING SIMULATION =====
+const canvas = document.getElementById('boidsCanvas');
+const ctx = canvas.getContext('2d');
+let W = canvas.width, H = canvas.height;
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height || 280;
+  W = canvas.width; H = canvas.height;
+}
+window.addEventListener('resize', resizeCanvas);
+
+const rules = {align:true, cohesion:true, separation:true};
+function toggleRule(name){
+  rules[name] = !rules[name];
+  document.getElementById('chip-'+name).classList.toggle('on', rules[name]);
+  const activeCount = Object.values(rules).filter(Boolean).length;
+  const note = document.getElementById('boidsNote');
+  if(activeCount===3) note.textContent = 'Cả 3 luật đang BẬT — đàn tụ lại và bay cùng hướng như chim thật.';
+  else if(activeCount===0) note.textContent = 'Tắt cả 3 luật — mỗi con bay hoàn toàn ngẫu nhiên, không còn "đàn" nữa.';
+  else note.textContent = 'Đang thử nghiệm với '+activeCount+'/3 luật — quan sát đội hình thay đổi thế nào so với ban đầu.';
+}
+
+let visionRange = 60;
+const visionSlider = document.getElementById('visionRange');
+visionSlider.addEventListener('input', () => {
+  visionRange = parseInt(visionSlider.value);
+  document.getElementById('visionVal').textContent = visionRange;
+  if(visionRange === 0){
+    document.getElementById('boidsNote').textContent = '👀 Tầm nhìn = 0: mỗi con chim "mù" hoàn toàn, không thấy láng giềng nào → 3 luật vô nghĩa → bay lung tung dù luật vẫn bật.';
+  }
+});
+
+const NUM_BOIDS = 40;
+const boids = [];
+function initBoids(){
+  boids.length = 0;
+  for(let i=0;i<NUM_BOIDS;i++){
+    boids.push({
+      x: Math.random()*W, y: Math.random()*H,
+      vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3
+    });
+  }
+}
+
+function dist2(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return dx*dx+dy*dy; }
+
+function stepBoids(){
+  const vr2 = visionRange*visionRange;
+  const W_ALIGN = 0.06, W_COHESION = 0.0025, W_SEPARATION = 0.09;
+  const SEP_DIST2 = 20*20;
+  const MAX_SPEED = 3.2;
+
+  for(const b of boids){
+    let avgVx=0, avgVy=0, cx=0, cy=0, sepX=0, sepY=0, n=0;
+    for(const o of boids){
+      if(o===b) continue;
+      if(dist2(b,o) < vr2){
+        n++;
+        avgVx += o.vx; avgVy += o.vy;
+        cx += o.x; cy += o.y;
+        if(dist2(b,o) < SEP_DIST2){
+          sepX += (b.x-o.x); sepY += (b.y-o.y);
+        }
+      }
+    }
+    if(n>0){
+      if(rules.align){ b.vx += (avgVx/n - b.vx) * W_ALIGN; b.vy += (avgVy/n - b.vy) * W_ALIGN; }
+      if(rules.cohesion){ b.vx += (cx/n - b.x) * W_COHESION; b.vy += (cy/n - b.y) * W_COHESION; }
+      if(rules.separation){ b.vx += sepX * W_SEPARATION * 0.02; b.vy += sepY * W_SEPARATION * 0.02; }
+    }
+    // gentle random wander so it never looks totally frozen
+    b.vx += (Math.random()-0.5)*0.05;
+    b.vy += (Math.random()-0.5)*0.05;
+
+    const speed = Math.hypot(b.vx,b.vy);
+    if(speed > MAX_SPEED){ b.vx = b.vx/speed*MAX_SPEED; b.vy = b.vy/speed*MAX_SPEED; }
+    if(speed < 0.6 && speed>0){ b.vx = b.vx/speed*0.6; b.vy = b.vy/speed*0.6; }
+
+    b.x += b.vx; b.y += b.vy;
+    if(b.x < 0) b.x += W; if(b.x > W) b.x -= W;
+    if(b.y < 0) b.y += H; if(b.y > H) b.y -= H;
+  }
+}
+
+const accentColor = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0e7c86';
+
+function drawBoids(){
+  ctx.clearRect(0,0,W,H);
+  const color = accentColor();
+  for(const b of boids){
+    const angle = Math.atan2(b.vy,b.vx);
+    ctx.save();
+    ctx.translate(b.x,b.y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(7,0);
+    ctx.lineTo(-5,4);
+    ctx.lineTo(-5,-4);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function loop(){
+  stepBoids();
+  drawBoids();
+  requestAnimationFrame(loop);
+}
+
+resizeCanvas();
+initBoids();
+loop();
+
+// ===== BDI DEMO =====
+function runBDI(){
+  const goal = document.getElementById('bdiGoal').value.trim() || 'đặt dịch vụ mong muốn';
+  const out = document.getElementById('bdiOut');
+  const boxes = ['bdi-belief','bdi-desire','bdi-intention','bdi-action'].map(id=>document.getElementById(id));
+  boxes.forEach(b=>b.classList.remove('on'));
+  out.classList.remove('show');
+
+  const steps = [
+    'Belief: Agent thu thập dữ liệu — giá vé/khách sạn hiện có, ngày còn trống, đánh giá của các nhà cung cấp.',
+    'Desire: Mục tiêu được xác lập → "'+goal+'".',
+    'Intention: Agent lập kế hoạch cụ thể — liên hệ nhiều agent nhà cung cấp khác, so sánh và đàm phán giá theo mục tiêu trên.',
+    'Action: Agent thực hiện hành động thật — xác nhận đặt chỗ tốt nhất tìm được và báo lại cho người dùng.'
+  ];
+  let i=0;
+  const interval = setInterval(()=>{
+    if(i < boxes.length){
+      boxes[i].classList.add('on');
+      out.textContent = steps[i];
+      out.classList.add('show');
+    }
+    i++;
+    if(i > boxes.length){
+      clearInterval(interval);
+      out.textContent = '✅ Hoàn tất chuỗi suy luận BDI cho mục tiêu: "'+goal+'". Khác với chim (Reactive), agent này đã "nghĩ" qua 4 bước trước khi hành động.';
+    }
+  }, 900);
+}
+</script>
+</body>
+</html>
