@@ -1,0 +1,845 @@
+<title>Phân Vùng Ảnh Pixel</title>
+<meta name="description" content="Bài giảng tương tác tiếng Việt về Semantic/Instance Segmentation trong AI-For-Beginners, kèm demo phân vùng ảnh theo pixel và quiz tự kiểm tra.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600;7..72,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef2f4;
+    --surface:#ffffff;
+    --surface-2:#e3e9ec;
+    --border:#cdd8dd;
+    --text:#111a1f;
+    --text-dim:#4d5e66;
+    --fg-class:#c2255c;
+    --fg-soft:#f7dbe6;
+    --accent:#166e77;
+    --accent-soft:#d7ecec;
+    --tp:#1f9e6d;
+    --tp-soft:#d7f2e6;
+    --fp:#d9612a;
+    --fp-soft:#fbe4d5;
+    --fn:#6a4fd6;
+    --fn-soft:#e6e1fb;
+    --tn:#c7d3d8;
+    --shadow: 0 12px 28px -18px rgba(15,30,35,.35);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0a1013;
+      --surface:#121b1f;
+      --surface-2:#1a262b;
+      --border:#293940;
+      --text:#e9f1f3;
+      --text-dim:#93a7ae;
+      --fg-class:#ff6f9f;
+      --fg-soft:#3a1a28;
+      --accent:#4bc2cb;
+      --accent-soft:#123338;
+      --tp:#3ddb9a;
+      --tp-soft:#123829;
+      --fp:#ff9057;
+      --fp-soft:#3a2314;
+      --fn:#a692ff;
+      --fn-soft:#241c40;
+      --tn:#33454c;
+      --shadow: 0 12px 28px -16px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a1013;
+    --surface:#121b1f;
+    --surface-2:#1a262b;
+    --border:#293940;
+    --text:#e9f1f3;
+    --text-dim:#93a7ae;
+    --fg-class:#ff6f9f;
+    --fg-soft:#3a1a28;
+    --accent:#4bc2cb;
+    --accent-soft:#123338;
+    --tp:#3ddb9a;
+    --tp-soft:#123829;
+    --fp:#ff9057;
+    --fp-soft:#3a2314;
+    --fn:#a692ff;
+    --fn-soft:#241c40;
+    --tn:#33454c;
+    --shadow: 0 12px 28px -16px rgba(0,0,0,.55);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Literata', Georgia, serif;
+    font-size:16.5px;
+    line-height:1.65;
+  }
+  h1,h2,h3,h4,.display{
+    font-family:'Manrope', system-ui, sans-serif;
+    text-wrap:balance;
+    letter-spacing:-0.01em;
+  }
+  code, pre, .mono, .grid-label, .stat-num{ font-family:'JetBrains Mono','SFMono-Regular',Consolas,monospace; }
+
+  a{ color:var(--accent); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
+  }
+
+  @keyframes fadeInDown{ from{opacity:0; transform:translateY(-14px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes slideUp{ from{opacity:0; transform:translateY(18px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes pulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.06);} }
+  @keyframes dash{ to{ stroke-dashoffset:0; } }
+
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; gap:.75rem;
+    padding:.6rem 1rem;
+    background:color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border);
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .topbar a{
+    font-family:'Manrope',sans-serif; font-size:.82rem; font-weight:700;
+    color:var(--text-dim); text-decoration:none; padding:.3rem .6rem; border-radius:999px;
+  }
+  .topbar a:hover, .topbar a:focus-visible{ color:var(--text); background:var(--surface-2); }
+  .theme-btn{
+    margin-left:auto; flex:0 0 auto;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:.8rem;
+    padding:.4rem .7rem; border-radius:999px; cursor:pointer;
+  }
+  .theme-btn:hover{ border-color:var(--accent); }
+
+  main{ max-width:920px; margin:0 auto; padding:0 1.1rem 4rem; }
+
+  header.hero{
+    padding:2.6rem 0 1.6rem;
+    animation:fadeInDown .6s ease both;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:.5rem;
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:.72rem;
+    letter-spacing:.08em; text-transform:uppercase;
+    color:var(--accent); background:var(--accent-soft);
+    border:1px solid var(--border); padding:.3rem .7rem; border-radius:999px;
+  }
+  h1{ font-size:clamp(1.9rem,4.6vw,2.7rem); font-weight:800; margin:.7rem 0 .5rem; }
+  .lede{ color:var(--text-dim); font-size:1.08rem; max-width:60ch; }
+
+  .pixel-strip{ display:flex; gap:4px; margin:1.1rem 0 .3rem; }
+  .pixel-strip span{
+    width:16px; height:16px; border-radius:3px;
+    background:var(--surface-2); border:1px solid var(--border);
+    animation:slideUp .5s ease both;
+  }
+  .pixel-strip span.on{ background:var(--fg-class); border-color:var(--fg-class); animation:pulse 2.4s ease-in-out infinite; }
+
+  section{ margin-top:3rem; animation:slideUp .6s ease both; }
+  section > h2{
+    font-size:1.5rem; font-weight:800; margin-bottom:.2rem;
+    display:flex; align-items:baseline; gap:.55rem;
+  }
+  section > h2 .num{ color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:1rem; }
+  .section-sub{ color:var(--text-dim); margin-top:0; margin-bottom:1.1rem; max-width:62ch; }
+
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1.2rem 1.3rem; box-shadow:var(--shadow);
+  }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  @media (max-width:680px){ .grid-2{ grid-template-columns:1fr; } }
+
+  .table-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); }
+  table{ border-collapse:collapse; width:100%; min-width:640px; background:var(--surface); }
+  th,td{ text-align:left; padding:.65rem .8rem; border-bottom:1px solid var(--border); vertical-align:top; font-size:.94rem; }
+  thead th{
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:.76rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-dim); background:var(--surface-2); position:sticky; top:0;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:var(--surface-2); }
+  .tag{ display:inline-flex; align-items:center; gap:.35rem; font-family:'Manrope',sans-serif; font-weight:700; font-size:.82rem; white-space:nowrap; }
+  .tag.good{ color:var(--tp); } .tag.mid{ color:var(--fp); } .tag.bad{ color:var(--fn); }
+
+  pre.term{
+    background:#0c1417; color:#d9f2ef; border-radius:var(--radius);
+    padding:1rem 1.1rem; overflow-x:auto; font-size:.86rem; line-height:1.6;
+    border:1px solid #1c2b2e; box-shadow:var(--shadow);
+  }
+  pre.term .c{ color:#7fa8a0; } /* comment */
+  pre.term .k{ color:#4bc2cb; } /* keyword */
+  pre.term .s{ color:#ffb37a; } /* string/number */
+  pre.term .ok{ color:#3ddb9a; font-weight:700; }
+  pre.term .bad{ color:#ff6f9f; font-weight:700; }
+  pre.term .miss{ color:#a692ff; font-weight:700; }
+
+  .diagram{
+    display:flex; flex-wrap:wrap; align-items:center; gap:.4rem;
+    font-family:'JetBrains Mono',monospace; font-size:.84rem;
+    background:var(--surface-2); border:1px dashed var(--border); border-radius:var(--radius);
+    padding:1rem 1.1rem;
+  }
+  .diagram .box{ background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:.45rem .7rem; }
+  .diagram .arrow{ color:var(--accent); font-weight:700; }
+
+  .quiz-block{ margin-top:1.1rem; }
+  .qcard{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1.1rem 1.2rem; margin-bottom:1rem; box-shadow:var(--shadow);
+  }
+  .qcard p.qtext{ font-family:'Manrope',sans-serif; font-weight:700; margin:0 0 .7rem; }
+  .opt{
+    display:flex; align-items:flex-start; gap:.6rem; width:100%; text-align:left;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
+    padding:.6rem .8rem; margin-bottom:.5rem; cursor:pointer; font-family:'Literata',serif; font-size:.95rem; color:var(--text);
+  }
+  .opt:hover{ border-color:var(--accent); }
+  .opt.correct{ background:var(--tp-soft); border-color:var(--tp); }
+  .opt.wrong{ background:var(--fn-soft); border-color:var(--fn); }
+  .opt[disabled]{ cursor:default; }
+  .explain{ display:none; margin-top:.6rem; padding:.6rem .8rem; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:6px; font-size:.9rem; }
+  .explain.show{ display:block; animation:slideUp .35s ease both; }
+
+  .fill-row{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin-top:.6rem; }
+  input[type=text]{
+    font-family:'JetBrains Mono',monospace; font-size:.95rem;
+    padding:.5rem .7rem; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text);
+    min-width:120px;
+  }
+  button.btn{
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:.86rem;
+    border:1px solid var(--border); background:var(--accent); color:#fff;
+    padding:.55rem .95rem; border-radius:9px; cursor:pointer;
+  }
+  button.btn.ghost{ background:var(--surface-2); color:var(--text); }
+  button.btn:hover{ filter:brightness(1.06); }
+  button.btn:focus-visible, .opt:focus-visible, input:focus-visible, a:focus-visible, .theme-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .feedback{ font-family:'Manrope',sans-serif; font-weight:700; font-size:.88rem; margin-left:.2rem; }
+
+  .score-pill{
+    display:inline-flex; gap:.4rem; align-items:center; font-family:'Manrope',sans-serif; font-weight:800;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:.35rem .8rem; margin-bottom:.8rem;
+  }
+
+  /* demo */
+  .demo-controls{ display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem; }
+  .demo-controls button.preset{
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:.82rem;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+    padding:.5rem .8rem; border-radius:9px; cursor:pointer;
+  }
+  .demo-controls button.preset.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .canvas-row{ display:grid; grid-template-columns:1fr 1fr 1.35fr; gap:1rem; }
+  @media (max-width:760px){ .canvas-row{ grid-template-columns:1fr; } }
+  .canvas-card{ text-align:center; }
+  .canvas-card canvas{ width:100%; height:auto; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); display:block; }
+  .canvas-card .cap{ font-family:'Manrope',sans-serif; font-size:.78rem; font-weight:700; color:var(--text-dim); margin-top:.4rem; text-transform:uppercase; letter-spacing:.04em; }
+
+  .slider-row{ display:flex; align-items:center; gap:.8rem; margin:1.1rem 0; }
+  input[type=range]{ flex:1; accent-color:var(--accent); }
+  .legend{ display:flex; flex-wrap:wrap; gap:.9rem; margin:.9rem 0 0; font-family:'Manrope',sans-serif; font-size:.82rem; }
+  .legend span{ display:inline-flex; align-items:center; gap:.35rem; }
+  .legend i{ width:13px; height:13px; border-radius:3px; display:inline-block; }
+
+  .stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; margin-top:1rem; }
+  @media (max-width:560px){ .stat-grid{ grid-template-columns:repeat(2,1fr); } }
+  .stat{ background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:.6rem .7rem; }
+  .stat .stat-num{ font-size:1.25rem; font-weight:700; }
+  .stat .stat-lbl{ font-family:'Manrope',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); }
+  .iou-banner{
+    margin-top:1rem; padding:.7rem 1rem; border-radius:10px; font-family:'Manrope',sans-serif; font-weight:700;
+    background:var(--surface-2); border:1px solid var(--border);
+  }
+
+  footer{ margin-top:4rem; padding-top:1.5rem; border-top:1px solid var(--border); color:var(--text-dim); font-size:.86rem; }
+  footer a{ color:var(--accent); }
+
+  .callout{
+    background:var(--fg-soft); border:1px solid var(--fg-class); border-radius:10px;
+    padding:.8rem 1rem; font-size:.92rem;
+  }
+</style>
+
+<nav class="topbar">
+  <a href="#khaiquat">Khái niệm</a>
+  <a href="#kientruc">Kiến trúc</a>
+  <a href="#demo">Demo</a>
+  <a href="#usecase">Use case</a>
+  <a href="#data">Data tốt/xấu</a>
+  <a href="#baitap">Bài tập</a>
+  <a href="#quiz">Quiz</a>
+  <button class="theme-btn" id="themeBtn" type="button">🌓 Đổi giao diện</button>
+</nav>
+
+<main>
+  <header class="hero">
+    <span class="eyebrow">AI-For-Beginners · Lesson 4-ComputerVision / 12-Segmentation</span>
+    <h1>Segmentation: Phân Loại Từng Pixel Trong Ảnh</h1>
+    <p class="lede">Nếu Object Detection chỉ vẽ được một khung chữ nhật quanh con mèo, thì Segmentation đi xa hơn: tô đúng <strong>từng pixel</strong> thuộc về con mèo, chính xác đến từng sợi lông ở viền.</p>
+    <div class="pixel-strip" id="heroPixels" aria-hidden="true"></div>
+  </header>
+
+  <section id="warmup">
+    <h2><span class="num">00</span> Khởi động nhanh</h2>
+    <p class="section-sub">Trả lời nhanh 2 câu trước khi vào bài — không cần đúng hết, chỉ để "mở máy" tư duy.</p>
+    <div class="card">
+      <p class="qtext" style="font-family:'Manrope',sans-serif;font-weight:700;margin-top:0;">1) Trắc nghiệm nhanh — Theo bạn, Object Detection và Segmentation khác nhau ở điểm nào?</p>
+      <div id="warmQuiz"></div>
+      <p class="qtext" style="font-family:'Manrope',sans-serif;font-weight:700;">2) Điền khuyết — Segmentation dự đoán nhãn lớp cho từng ____ của ảnh.</p>
+      <div class="fill-row">
+        <input type="text" id="fillBlank" placeholder="nhập từ còn thiếu…">
+        <button class="btn" id="checkFill" type="button">Đối chiếu với bản mẫu</button>
+        <span class="feedback" id="fillFeedback"></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="khaiquat">
+    <h2><span class="num">01</span> Bốn cấp độ "nhìn hiểu ảnh"</h2>
+    <p class="section-sub">Segmentation không đứng một mình — nó là bước tiến hoá tiếp theo sau Classification và Object Detection. Cùng một bức ảnh "hai con chó", bốn cách tiếp cận cho ra bốn loại output rất khác nhau.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Trạng thái</th><th>Input</th><th>Xử lý</th><th>Output</th><th>Đánh giá</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>A. Classification</strong></td>
+            <td>Ảnh nguyên</td>
+            <td>CNN → 1 vector xác suất lớp</td>
+            <td><code>"dog": 0.94</code></td>
+            <td><span class="tag good">✅</span> biết ảnh có gì · <span class="tag bad">❌</span> không biết ở đâu</td>
+          </tr>
+          <tr>
+            <td><strong>B. Object Detection</strong></td>
+            <td>Ảnh nguyên</td>
+            <td>CNN → hộp toạ độ + nhãn</td>
+            <td><code>box(x,y,w,h,"dog")</code></td>
+            <td><span class="tag good">✅</span> biết vị trí gần đúng · <span class="tag mid">⚠️</span> khung chữ nhật lẫn cả nền</td>
+          </tr>
+          <tr>
+            <td><strong>C. Semantic Segmentation</strong></td>
+            <td>Ảnh nguyên</td>
+            <td>Encoder–Decoder → mask theo lớp</td>
+            <td>mặt nạ pixel: 0=nền, 1=chó</td>
+            <td><span class="tag good">✅</span> viền chính xác từng pixel · <span class="tag bad">❌</span> 2 con chó đứng sát nhau bị gộp làm một</td>
+          </tr>
+          <tr>
+            <td><strong>D. Instance Segmentation</strong></td>
+            <td>Ảnh nguyên</td>
+            <td>Encoder–Decoder + phân biệt thực thể</td>
+            <td>mask + <code>id</code>: chó #1, chó #2</td>
+            <td><span class="tag good">✅</span> tách riêng từng con vật · <span class="tag mid">⚠️</span> cần nhãn chi tiết hơn nhiều, khó huấn luyện hơn</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:1.1rem;">Bài này tập trung vào <strong>Semantic Segmentation</strong> — dạng đơn giản và phổ biến nhất, coi bài toán như <strong>phân loại pixel</strong>: mỗi ô pixel trả lời câu hỏi "ô này thuộc lớp nào?".</p>
+  </section>
+
+  <section id="kientruc">
+    <h2><span class="num">02</span> Kiến trúc Encoder–Decoder</h2>
+    <p class="section-sub">Giống hệt autoencoder bạn đã học, chỉ khác ở đích đến: thay vì dựng lại ảnh gốc, decoder dựng lại một <strong>mặt nạ (mask)</strong> cùng kích thước với ảnh input.</p>
+
+    <div class="diagram">
+      <div class="box">Ảnh vào<br><span style="color:var(--text-dim)">H×W×3</span></div>
+      <span class="arrow">──▶</span>
+      <div class="box">Encoder<br><span style="color:var(--text-dim)">nén đặc trưng</span></div>
+      <span class="arrow">──▶</span>
+      <div class="box">vector đặc trưng<br><span style="color:var(--text-dim)">nhỏ, "cô đọng"</span></div>
+      <span class="arrow">──▶</span>
+      <div class="box">Decoder<br><span style="color:var(--text-dim)">giải nén ngược</span></div>
+      <span class="arrow">──▶</span>
+      <div class="box" style="border-color:var(--fg-class);">Mask ra<br><span style="color:var(--text-dim)">H×W×số_lớp</span></div>
+    </div>
+
+    <p>Vì output là bài toán <em>phân loại cho từng pixel</em>, hàm loss không phải MSE (dùng cho ảnh liên tục) mà là <strong>cross-entropy</strong> tính trung bình trên toàn bộ pixel — nếu chỉ có 2 lớp (vd: nốt ruồi / da thường) thì dùng <strong>binary cross-entropy (BCE)</strong>.</p>
+
+    <pre class="term"><span class="c"># Bộ não của segmentation: encoder nén → decoder giải nén thành mask</span>
+<span class="k">import</span> torch.nn <span class="k">as</span> nn
+
+<span class="k">class</span> SegNet(nn.Module):
+    <span class="k">def</span> __init__(self, n_classes):
+        super().__init__()
+        self.encoder = nn.Sequential(          <span class="c"># thu nhỏ ảnh, học đặc trưng</span>
+            nn.Conv2d(3, 32, 3, stride=2, padding=1), nn.ReLU(),
+            nn.Conv2d(32, 64, 3, stride=2, padding=1), nn.ReLU(),
+        )
+        self.decoder = nn.Sequential(          <span class="c"># phóng to lại, dựng mask</span>
+            nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1), nn.ReLU(),
+            nn.ConvTranspose2d(32, n_classes, 4, stride=2, padding=1),
+        )
+
+    <span class="k">def</span> forward(self, x):
+        <span class="k">return</span> self.decoder(self.encoder(x))   <span class="c"># trả về H×W×n_classes</span>
+
+loss_fn = nn.BCEWithLogitsLoss()   <span class="c"># cho bài toán nhị phân: nốt ruồi vs da thường</span></pre>
+  </section>
+
+  <section id="demo">
+    <h2><span class="num">03</span> Demo tương tác: tự tay "phân vùng" một ảnh 16×16</h2>
+    <p class="section-sub">Vì huấn luyện mạng thật cần dữ liệu và GPU, demo này dùng một thuật toán phân vùng "cổ điển" cực đơn giản để bạn thấy trực quan: <strong>lấy ngưỡng độ sáng</strong> (pixel sáng hơn ngưỡng → thuộc "nốt ruồi"). Kéo thanh trượt, đổi bộ dữ liệu, xem điều gì quyết định một mask tốt hay tệ.</p>
+
+    <div class="card">
+      <div class="demo-controls" id="presetButtons">
+        <button class="preset active" data-kind="good" type="button">🩺 Ảnh sạch, viền rõ</button>
+        <button class="preset" data-kind="noisy" type="button">📡 Ảnh nhiễu, viền mờ</button>
+        <button class="preset" data-kind="badlabel" type="button">🏷️ Nhãn (mask thật) bị vẽ lệch</button>
+        <button class="btn ghost" id="regenBtn" type="button">🎲 Random lại ảnh</button>
+      </div>
+
+      <div class="canvas-row">
+        <div class="canvas-card">
+          <canvas id="cvRaw" width="320" height="320"></canvas>
+          <div class="cap">1 · Ảnh gốc (độ sáng)</div>
+        </div>
+        <div class="canvas-card">
+          <canvas id="cvMask" width="320" height="320"></canvas>
+          <div class="cap">2 · Nhãn thật (ground truth)</div>
+        </div>
+        <div class="canvas-card">
+          <canvas id="cvCompare" width="320" height="320"></canvas>
+          <div class="cap">3 · Dự đoán vs. nhãn thật</div>
+        </div>
+      </div>
+
+      <div class="slider-row">
+        <label for="threshold" style="font-family:'Manrope',sans-serif;font-weight:700;font-size:.85rem;">Ngưỡng phân loại</label>
+        <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.5">
+        <span class="mono" id="threshVal">0.50</span>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:var(--tp)"></i> ✓ True Positive — đoán đúng là nốt ruồi</span>
+        <span><i style="background:var(--tn)"></i> nền — đoán đúng là da thường</span>
+        <span><i style="background:var(--fp)"></i> ✗ False Positive — đoán nhầm da thành nốt ruồi</span>
+        <span><i style="background:var(--fn)"></i> ∅ False Negative — bỏ sót, đoán nhầm nốt ruồi thành nền</span>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-num" id="statTP">0</div><div class="stat-lbl">True Positive</div></div>
+        <div class="stat"><div class="stat-num" id="statFP">0</div><div class="stat-lbl">False Positive</div></div>
+        <div class="stat"><div class="stat-num" id="statFN">0</div><div class="stat-lbl">False Negative</div></div>
+        <div class="stat"><div class="stat-num" id="statIOU">0%</div><div class="stat-lbl">IoU (điểm số phân vùng)</div></div>
+      </div>
+      <div class="iou-banner" id="iouBanner">Đang tính…</div>
+    </div>
+
+    <p style="margin-top:1rem;font-size:.92rem;color:var(--text-dim);">
+      💡 Thử bấm <strong>"Ảnh nhiễu"</strong> rồi kéo thanh trượt hết cỡ sang hai đầu — bạn sẽ thấy IoU không bao giờ lên cao được, vì bản thân dữ liệu đã lẫn lộn. Rồi thử <strong>"Nhãn bị vẽ lệch"</strong>: dù bạn chỉnh ngưỡng "hoàn hảo" theo đúng vật thể thật, IoU vẫn thấp — vì cái sai nằm ở <em>nhãn</em>, không nằm ở thuật toán.
+    </p>
+  </section>
+
+  <section id="usecase">
+    <h2><span class="num">04</span> Use case thực tế</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Lĩnh vực</th><th>Input</th><th>Segmentation làm gì</th><th>Vì sao cần đến pixel-level</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Y tế</strong></td>
+            <td>Ảnh da liễu (dermoscopy)</td>
+            <td>Khoanh chính xác vùng nốt ruồi / khối u trên bộ dữ liệu PH²</td>
+            <td>Bác sĩ cần biết đúng <em>kích thước và viền</em> tổn thương, không chỉ "có hay không"</td>
+          </tr>
+          <tr>
+            <td><strong>Xe tự lái</strong></td>
+            <td>Camera trước xe</td>
+            <td>Tô riêng làn đường, người đi bộ, vỉa hè, biển báo</td>
+            <td>Xe cần biết chính xác đâu là <em>mặt đường lái được</em>, sai 1 pixel viền có thể là tai nạn</td>
+          </tr>
+          <tr>
+            <td><strong>Ảnh vệ tinh</strong></td>
+            <td>Ảnh chụp từ trên cao</td>
+            <td>Phân vùng rừng / đất nông nghiệp / mặt nước / đô thị</td>
+            <td>Diện tích từng vùng được tính bằng cách <em>đếm pixel</em> mỗi lớp</td>
+          </tr>
+          <tr>
+            <td><strong>Ứng dụng chụp ảnh</strong></td>
+            <td>Ảnh chân dung điện thoại</td>
+            <td>Tách người khỏi nền (chế độ chân dung, xoá phông)</td>
+            <td>Chỉ có mask pixel-level mới giữ được từng sợi tóc ở viền</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="data">
+    <h2><span class="num">05</span> Dữ liệu tốt vs. trung bình vs. xấu vs. sai</h2>
+    <p class="section-sub">Với segmentation, "dữ liệu xấu" không chỉ là ảnh mờ — mà còn là <strong>mask (nhãn) vẽ sai</strong>, một lỗi rất riêng của bài toán này.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Loại dữ liệu</th><th>Đặc điểm</th><th>Model học được gì</th><th>Đánh giá</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Tốt</strong></td>
+            <td>Ảnh nét, mask vẽ tay sát viền vật thể, đa dạng ánh sáng/góc chụp</td>
+            <td>Học đúng ranh giới vật thể, tổng quát hoá tốt sang ảnh mới</td>
+            <td><span class="tag good">✅ IoU cao, ổn định</span></td>
+          </tr>
+          <tr>
+            <td><strong>Trung bình</strong></td>
+            <td>Ảnh hơi mờ/thiếu sáng, mask hơi thô ở viền (răng cưa)</td>
+            <td>Viền dự đoán không mượt, sai lệch vài pixel ở cạnh</td>
+            <td><span class="tag mid">⚠️ IoU giảm nhẹ, chấp nhận được</span></td>
+          </tr>
+          <tr>
+            <td><strong>Xấu (mất cân bằng lớp)</strong></td>
+            <td>Vùng bệnh chỉ chiếm ~2% tổng số pixel, còn lại là nền</td>
+            <td>Model "lười" — cứ đoán toàn bộ là nền vẫn đạt accuracy 98%, nhưng vô dụng</td>
+            <td><span class="tag bad">❌ Accuracy ảo — phải dùng IoU/Dice, không dùng accuracy thường</span></td>
+          </tr>
+          <tr>
+            <td><strong>Sai (label lỗi)</strong></td>
+            <td>Người gán nhãn vẽ mask lệch khỏi vật thể thật, hoặc bỏ sót cả object</td>
+            <td>Model bị "dạy sai" — học một ranh giới lệch có hệ thống</td>
+            <td><span class="tag bad">❌ Dù thuật toán đúng, kết quả vẫn sai vì gốc rễ là nhãn</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="baitap">
+    <h2><span class="num">06</span> Bài tập nhỏ: tự tính IoU</h2>
+    <p class="section-sub">Cho một lưới 4×4 pixel. <code>■</code> = mask thật (nốt ruồi), <code>▤</code> = model dự đoán là nốt ruồi, <code>·</code> = nền (cả hai đều đồng ý).</p>
+    <pre class="term" style="width:fit-content;">
+Nhãn thật:      Dự đoán model:
+· · · ·         · · · ·
+· <span class="ok">■ ■</span> ·         · <span class="ok">▤</span> · ·
+· <span class="ok">■ ■</span> ·         · <span class="ok">▤ ▤</span> <span class="bad">▤</span>
+· · · ·         · · · ·</pre>
+    <p>Hãy tự đếm: bao nhiêu ô là <strong>True Positive</strong> (cả hai đều đánh dấu nốt ruồi), bao nhiêu ô <strong>False Negative</strong> (nhãn có nhưng model bỏ sót), bao nhiêu ô <strong>False Positive</strong> (model đoán thừa)? Rồi tính IoU = TP ÷ (TP + FP + FN).</p>
+    <div class="fill-row">
+      <input type="text" id="iouAnswer" placeholder="nhập IoU, vd: 0.5">
+      <button class="btn" id="checkIou" type="button">Đối chiếu với bản mẫu</button>
+      <span class="feedback" id="iouFeedback"></span>
+    </div>
+    <div class="explain" id="iouExplain">
+      <strong>Bản mẫu:</strong> TP = 3 ô (2 ô hàng giữa + 1 ô hàng dưới trùng nhau) · FN = 1 ô (nhãn có, model bỏ sót) · FP = 1 ô (model đoán thừa ra ngoài).<br>
+      IoU = 3 ÷ (3 + 1 + 1) = 3⁄5 = <strong>0.6</strong>.
+    </div>
+  </section>
+
+  <section id="quiz">
+    <h2><span class="num">07</span> Quiz tự kiểm tra</h2>
+    <div class="score-pill">Điểm của bạn: <span id="scoreVal">0</span> / <span id="scoreMax">4</span></div>
+    <div class="quiz-block" id="mainQuiz"></div>
+  </section>
+
+  <footer>
+    <p>Nguồn tham khảo: <a href="https://github.com/microsoft/AI-For-Beginners/tree/main/lessons/4-ComputerVision/12-Segmentation" target="_blank" rel="noopener">AI-For-Beginners — Lesson 12: Segmentation</a>. Trang bài giảng này được tạo tự động bằng tiếng Việt cho mục đích học tập, không thay thế tài liệu gốc.</p>
+  </footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Theme toggle ---------- */
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('themeBtn');
+  try{
+    var saved = localStorage.getItem('seg-theme');
+    if(saved) root.setAttribute('data-theme', saved);
+  }catch(e){}
+  themeBtn.addEventListener('click', function(){
+    var current = root.getAttribute('data-theme');
+    var effectiveDark = current ? current === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = effectiveDark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try{ localStorage.setItem('seg-theme', next); }catch(e){}
+    drawAll();
+  });
+
+  /* ---------- Hero pixel strip animation ---------- */
+  var strip = document.getElementById('heroPixels');
+  var pattern = [0,0,1,1,1,0,0,1,1,0,0,1,1,1,0,0,0,1,1,0];
+  pattern.forEach(function(on, i){
+    var s = document.createElement('span');
+    if(on) s.className = 'on';
+    s.style.animationDelay = (i*0.04)+'s';
+    strip.appendChild(s);
+  });
+
+  function cssVar(name){ return getComputedStyle(root).getPropertyValue(name).trim(); }
+
+  /* ---------- Warm-up multiple choice ---------- */
+  var warmQ = {
+    options: [
+      "Detection vẽ khung chữ nhật quanh vật thể; Segmentation tô đúng từng pixel thuộc vật thể",
+      "Cả hai hoàn toàn giống nhau, chỉ khác tên gọi",
+      "Segmentation chỉ dùng được cho ảnh trắng đen",
+      "Detection chính xác hơn Segmentation ở mọi trường hợp"
+    ],
+    correct: 0,
+    explain: "Chính xác: Object Detection dừng ở mức khung bao (bounding box), còn Segmentation phân loại tận từng pixel — chi tiết hơn hẳn."
+  };
+  (function(){
+    var wrap = document.getElementById('warmQuiz');
+    warmQ.options.forEach(function(opt, idx){
+      var b = document.createElement('button');
+      b.className = 'opt'; b.type = 'button'; b.textContent = opt;
+      b.addEventListener('click', function(){
+        var buttons = wrap.querySelectorAll('.opt');
+        buttons.forEach(function(x){ x.disabled = true; });
+        if(idx === warmQ.correct){ b.classList.add('correct'); }
+        else{ b.classList.add('wrong'); buttons[warmQ.correct].classList.add('correct'); }
+        var ex = document.createElement('div');
+        ex.className = 'explain show'; ex.textContent = warmQ.explain;
+        wrap.appendChild(ex);
+      });
+      wrap.appendChild(b);
+    });
+  })();
+
+  document.getElementById('checkFill').addEventListener('click', function(){
+    var val = (document.getElementById('fillBlank').value || '').trim().toLowerCase();
+    var fb = document.getElementById('fillFeedback');
+    var ok = val === 'pixel' || val === 'điểm ảnh' || val === 'diem anh';
+    fb.textContent = ok ? '✅ Đúng — bản mẫu: "pixel" (điểm ảnh)' : '⚠️ Bản mẫu: "pixel" (điểm ảnh) — thử so sánh với câu trả lời của bạn';
+    fb.style.color = ok ? cssVar('--tp') : cssVar('--fp');
+  });
+
+  /* ---------- Exercise IoU check ---------- */
+  document.getElementById('checkIou').addEventListener('click', function(){
+    var val = parseFloat((document.getElementById('iouAnswer').value || '').replace(',', '.'));
+    var fb = document.getElementById('iouFeedback');
+    var ex = document.getElementById('iouExplain');
+    ex.classList.add('show');
+    if(!isNaN(val) && Math.abs(val - 0.6) < 0.03){
+      fb.textContent = '✅ Chính xác, IoU = 0.6';
+      fb.style.color = cssVar('--tp');
+    }else{
+      fb.textContent = '👉 Xem bản mẫu bên dưới để đối chiếu';
+      fb.style.color = cssVar('--fp');
+    }
+  });
+
+  /* ---------- Segmentation canvas demo ---------- */
+  var GRID = 16;
+  var state = { cells: [], gtMask: [], kind: 'good' };
+
+  function gaussianNoise(std){
+    var u = Math.random() || 1e-9, v = Math.random();
+    return std * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+
+  function generate(kind){
+    state.kind = kind;
+    var cx = 7.5 + (Math.random()*1.4 - 0.7);
+    var cy = 7.5 + (Math.random()*1.4 - 0.7);
+    var radius = 4.3 + (Math.random()*0.6 - 0.3);
+    var noiseStd = kind === 'noisy' ? 0.17 : 0.035;
+    var labelShiftX = kind === 'badlabel' ? 3.4 : 0;
+    var labelShiftY = kind === 'badlabel' ? 2.2 : 0;
+
+    var cells = [], gtMask = [];
+    for(var y = 0; y < GRID; y++){
+      cells[y] = []; gtMask[y] = [];
+      for(var x = 0; x < GRID; x++){
+        var d = Math.hypot(x - cx, y - cy);
+        var isMoleReal = d <= radius;
+        var base = isMoleReal ? 0.74 : 0.27;
+        cells[y][x] = clamp01(base + gaussianNoise(noiseStd));
+
+        var dLabel = Math.hypot(x - (cx + labelShiftX), y - (cy + labelShiftY));
+        gtMask[y][x] = dLabel <= radius ? 1 : 0;
+      }
+    }
+    state.cells = cells; state.gtMask = gtMask;
+    drawAll();
+  }
+
+  function drawGrid(ctx, size){
+    var cell = size / GRID;
+    ctx.strokeStyle = cssVar('--border');
+    ctx.lineWidth = 1;
+    for(var i = 0; i <= GRID; i++){
+      ctx.beginPath(); ctx.moveTo(i*cell, 0); ctx.lineTo(i*cell, size); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i*cell); ctx.lineTo(size, i*cell); ctx.stroke();
+    }
+  }
+
+  function drawAll(){
+    if(!state.cells.length) return;
+    var size = 320, cell = size / GRID;
+
+    var cvRaw = document.getElementById('cvRaw'), ctxRaw = cvRaw.getContext('2d');
+    ctxRaw.clearRect(0,0,size,size);
+    for(var y=0;y<GRID;y++) for(var x=0;x<GRID;x++){
+      var v = Math.round(state.cells[y][x]*255);
+      ctxRaw.fillStyle = 'rgb('+v+','+v+','+v+')';
+      ctxRaw.fillRect(x*cell, y*cell, cell, cell);
+    }
+    drawGrid(ctxRaw, size);
+
+    var cvMask = document.getElementById('cvMask'), ctxMask = cvMask.getContext('2d');
+    ctxMask.fillStyle = cssVar('--surface-2'); ctxMask.fillRect(0,0,size,size);
+    for(y=0;y<GRID;y++) for(x=0;x<GRID;x++){
+      if(state.gtMask[y][x]){
+        ctxMask.fillStyle = cssVar('--fg-class');
+        ctxMask.fillRect(x*cell, y*cell, cell, cell);
+      }
+    }
+    drawGrid(ctxMask, size);
+
+    drawCompare();
+  }
+
+  function drawCompare(){
+    var size = 320, cell = size / GRID;
+    var threshold = parseFloat(document.getElementById('threshold').value);
+    var cv = document.getElementById('cvCompare'), ctx = cv.getContext('2d');
+    ctx.clearRect(0,0,size,size);
+
+    var tp=0, fp=0, fn=0, tn=0;
+    var fontSize = Math.max(9, cell*0.55);
+    ctx.font = fontSize+'px JetBrains Mono, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+    for(var y=0;y<GRID;y++){
+      for(var x=0;x<GRID;x++){
+        var pred = state.cells[y][x] >= threshold ? 1 : 0;
+        var gt = state.gtMask[y][x];
+        var fill, glyph = '', glyphColor = '#fff';
+        if(pred===1 && gt===1){ fill = cssVar('--tp'); glyph='✓'; tp++; }
+        else if(pred===1 && gt===0){ fill = cssVar('--fp'); glyph='✗'; fp++; }
+        else if(pred===0 && gt===1){ fill = cssVar('--fn'); glyph='∅'; fn++; }
+        else { fill = cssVar('--tn'); tn++; }
+        ctx.fillStyle = fill;
+        ctx.fillRect(x*cell, y*cell, cell, cell);
+        if(glyph){
+          ctx.fillStyle = glyphColor;
+          ctx.fillText(glyph, x*cell + cell/2, y*cell + cell/2 + 1);
+        }
+      }
+    }
+    drawGrid(ctx, size);
+
+    var iou = (tp+fp+fn) > 0 ? tp/(tp+fp+fn) : 1;
+    document.getElementById('statTP').textContent = tp;
+    document.getElementById('statFP').textContent = fp;
+    document.getElementById('statFN').textContent = fn;
+    document.getElementById('statIOU').textContent = Math.round(iou*100)+'%';
+
+    var banner = document.getElementById('iouBanner');
+    var verdict, color;
+    if(iou >= 0.7){ verdict = '✅ IoU tốt — mask dự đoán khớp sát với nhãn thật.'; color = cssVar('--tp'); }
+    else if(iou >= 0.4){ verdict = '⚠️ IoU trung bình — mask lệch đáng kể, cần cải thiện.'; color = cssVar('--fp'); }
+    else{ verdict = '❌ IoU kém — hai mask gần như không trùng nhau.'; color = cssVar('--fn'); }
+    banner.textContent = 'IoU = '+(iou*100).toFixed(1)+'% · '+verdict;
+    banner.style.borderColor = color; banner.style.color = color;
+  }
+
+  document.getElementById('threshold').addEventListener('input', function(){
+    document.getElementById('threshVal').textContent = parseFloat(this.value).toFixed(2);
+    drawCompare();
+  });
+  document.getElementById('regenBtn').addEventListener('click', function(){ generate(state.kind); });
+  document.querySelectorAll('#presetButtons .preset').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#presetButtons .preset').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      generate(btn.getAttribute('data-kind'));
+    });
+  });
+
+  generate('good');
+
+  /* ---------- Final quiz ---------- */
+  var QUIZ = [
+    {
+      q: "Semantic Segmentation khác Instance Segmentation ở điểm nào?",
+      options: [
+        "Semantic không phân biệt các thực thể cùng lớp; Instance thì có",
+        "Semantic chỉ dùng cho ảnh xám, Instance dùng cho ảnh màu",
+        "Semantic nhanh hơn nhưng kém chính xác về màu sắc",
+        "Không có khác biệt, chỉ là hai tên gọi khác nhau"
+      ],
+      correct: 0,
+      explain: "Semantic Segmentation gộp mọi con vật cùng loại vào một lớp; Instance Segmentation tách ra thành từng cá thể riêng (chó #1, chó #2…)."
+    },
+    {
+      q: "Vì sao segmentation thường dùng cross-entropy/BCE thay vì MSE để tính loss?",
+      options: [
+        "Vì MSE chạy chậm hơn trên GPU",
+        "Vì mỗi pixel là một bài toán phân loại lớp, không phải hồi quy giá trị liên tục",
+        "Vì cross-entropy luôn cho loss thấp hơn",
+        "Vì MSE không tồn tại trong PyTorch"
+      ],
+      correct: 1,
+      explain: "Mỗi pixel trong mask đại diện cho một nhãn lớp (one-hot), nên đây là bài toán phân loại — cross-entropy/BCE là lựa chọn đúng."
+    },
+    {
+      q: "Một tập ảnh y tế có 98% pixel là da thường, chỉ 2% là vùng bệnh. Vì sao KHÔNG nên dùng accuracy để đánh giá model?",
+      options: [
+        "Vì accuracy tính toán quá chậm",
+        "Vì model có thể đoán toàn bộ là 'da thường' và vẫn đạt accuracy ~98% dù vô dụng",
+        "Vì accuracy chỉ áp dụng được cho object detection",
+        "Vì accuracy yêu cầu ảnh phải là ảnh màu"
+      ],
+      correct: 1,
+      explain: "Đây là 'accuracy nghịch lý' do mất cân bằng lớp (class imbalance) — nên dùng IoU hoặc Dice score, phản ánh đúng chất lượng vùng dự đoán."
+    },
+    {
+      q: "Trong demo ở mục 03, khi chọn bộ dữ liệu 'Nhãn bị vẽ lệch', vì sao IoU vẫn thấp dù ta chỉnh ngưỡng cho khớp đúng vật thể thật?",
+      options: [
+        "Vì ngưỡng luôn cần bằng 0.5",
+        "Vì lỗi nằm ở nhãn (ground truth) bị lệch vị trí, không nằm ở thuật toán dự đoán",
+        "Vì canvas bị lỗi hiển thị",
+        "Vì ảnh nhiễu quá nhiều"
+      ],
+      correct: 1,
+      explain: "Đây là minh hoạ cho 'garbage label, garbage IoU' — thuật toán có thể đúng, nhưng nếu nhãn huấn luyện sai vị trí thì mọi phép đo so với nhãn đó đều sai theo."
+    }
+  ];
+
+  var score = 0;
+  document.getElementById('scoreMax').textContent = QUIZ.length;
+  var quizWrap = document.getElementById('mainQuiz');
+  QUIZ.forEach(function(item, qi){
+    var card = document.createElement('div');
+    card.className = 'qcard';
+    var p = document.createElement('p');
+    p.className = 'qtext';
+    p.textContent = (qi+1)+'. '+item.q;
+    card.appendChild(p);
+
+    item.options.forEach(function(opt, oi){
+      var b = document.createElement('button');
+      b.className = 'opt'; b.type = 'button'; b.textContent = opt;
+      b.addEventListener('click', function(){
+        var buttons = card.querySelectorAll('.opt');
+        buttons.forEach(function(x){ x.disabled = true; });
+        if(oi === item.correct){
+          b.classList.add('correct');
+          score++; document.getElementById('scoreVal').textContent = score;
+        }else{
+          b.classList.add('wrong');
+          buttons[item.correct].classList.add('correct');
+        }
+        var ex = document.createElement('div');
+        ex.className = 'explain show';
+        ex.textContent = item.explain;
+        card.appendChild(ex);
+      });
+      card.appendChild(b);
+    });
+    quizWrap.appendChild(card);
+  });
+
+})();
+</script>
