@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reinforcement Learning — Học Bằng Cách Thử Sai</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --bg2:#ffffff; --text:#1c2333; --muted:#5b6472;
+    --border:#e2e5ec; --accent:#ff7a45; --accent2:#22c55e;
+    --warn:#f0a500; --bad:#ef4444; --good:#16a34a;
+    --code-bg:#1e1f2b; --code-text:#e6e6f0;
+    --shadow: 0 8px 24px rgba(30,30,60,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12131c; --bg2:#1a1c29; --text:#eef0f8; --muted:#a2a8ba;
+      --border:#2b2e42; --accent:#ff9466; --accent2:#34e08a;
+      --code-bg:#0d0e16; --code-text:#d8dcff;
+      --shadow: 0 8px 28px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12131c; --bg2:#1a1c29; --text:#eef0f8; --muted:#a2a8ba;
+    --border:#2b2e42; --accent:#ff9466; --accent2:#34e08a;
+    --code-bg:#0d0e16; --code-text:#d8dcff;
+    --shadow: 0 8px 28px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.6; padding:0 0 60px;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 20px;}
+
+  @keyframes fadeInDown{ from{opacity:0; transform:translateY(-22px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes slideUp{ from{opacity:0; transform:translateY(28px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes slideDown{ from{opacity:0; transform:translateY(-14px); max-height:0;} to{opacity:1; transform:translateY(0); max-height:700px;} }
+  @keyframes pulse{ 0%{transform:scale(1); box-shadow:0 0 0 0 rgba(255,122,69,.5);} 70%{transform:scale(1.06); box-shadow:0 0 0 12px rgba(255,122,69,0);} 100%{transform:scale(1); box-shadow:0 0 0 0 rgba(255,122,69,0);} }
+  @keyframes slideArrow{ 0%{transform:translateX(0); opacity:.4;} 50%{opacity:1;} 100%{transform:translateX(14px); opacity:.4;} }
+  @keyframes fallOver{ from{transform:rotate(0deg);} to{transform:rotate(var(--fall-deg,25deg));} }
+
+  header.hero{
+    padding:56px 20px 40px; text-align:center;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#fff; animation:fadeInDown .7s ease both;
+  }
+  header.hero .tag{
+    display:inline-block; background:rgba(255,255,255,.18); padding:5px 14px;
+    border-radius:999px; font-size:.8rem; letter-spacing:.04em; margin-bottom:14px;
+  }
+  header.hero h1{font-size:2.1rem; margin:0 0 10px;}
+  header.hero p{opacity:.95; max-width:640px; margin:0 auto; font-size:1rem;}
+  .theme-toggle{
+    position:fixed; top:16px; right:16px; z-index:50;
+    background:var(--bg2); border:1px solid var(--border); color:var(--text);
+    border-radius:999px; padding:8px 14px; cursor:pointer; font-size:.85rem;
+    box-shadow:var(--shadow);
+  }
+
+  section{ margin:38px 0; animation:slideUp .6s ease both; }
+  section.delay1{animation-delay:.05s;} section.delay2{animation-delay:.1s;}
+
+  h2{font-size:1.35rem; margin-bottom:6px; display:flex; align-items:center; gap:10px;}
+  h2 .num{
+    background:var(--accent); color:#fff; width:30px; height:30px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0;
+  }
+  .sub{color:var(--muted); margin-bottom:18px; font-size:.95rem;}
+
+  .card{
+    background:var(--bg2); border:1px solid var(--border); border-radius:16px;
+    padding:20px 22px; box-shadow:var(--shadow); margin-bottom:16px;
+  }
+
+  .ascii{
+    background:var(--code-bg); color:var(--code-text); border-radius:12px; padding:18px 20px;
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace; font-size:.85rem;
+    overflow-x:auto; line-height:1.5; white-space:pre;
+  }
+
+  .states-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;}
+  .state-card{
+    border-radius:14px; padding:16px; border:1px solid var(--border); background:var(--bg2);
+    transition:transform .35s ease, box-shadow .35s ease;
+  }
+  .state-card:hover{transform:translateY(-4px); box-shadow:var(--shadow);}
+  .state-card .badge{font-size:1.4rem;}
+  .state-card h3{margin:8px 0 4px; font-size:1.02rem;}
+  .state-card p{color:var(--muted); font-size:.88rem; margin:0;}
+
+  table{width:100%; border-collapse:collapse; font-size:.9rem;}
+  th,td{border:1px solid var(--border); padding:10px 12px; text-align:left; vertical-align:top;}
+  th{background:var(--bg); color:var(--muted); font-weight:600;}
+  .overflow-x{overflow-x:auto; border-radius:12px;}
+
+  code, pre{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+  pre{
+    background:var(--code-bg); color:var(--code-text); padding:16px 18px; border-radius:12px;
+    overflow-x:auto; font-size:.83rem; line-height:1.55;
+  }
+  .pill{display:inline-block; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:600;}
+  .pill.good{background:rgba(22,163,74,.15); color:var(--good);}
+  .pill.warn{background:rgba(240,165,0,.18); color:var(--warn);}
+  .pill.bad{background:rgba(239,68,68,.15); color:var(--bad);}
+
+  /* flow diagram */
+  .flow{
+    display:flex; align-items:center; gap:6px; overflow-x:auto; padding:22px 10px; justify-content:flex-start;
+  }
+  .flow .cell{
+    min-width:78px; height:78px; border-radius:12px; background:var(--bg);
+    border:2px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-weight:700; font-size:.78rem; flex-shrink:0; transition:all .3s ease; text-align:center; padding:4px;
+  }
+  .flow .cell.active{
+    border-color:var(--accent); background:var(--accent); color:#fff;
+    animation:pulse 1s ease;
+  }
+  .flow .cell.dead{border-color:var(--bad); background:rgba(239,68,68,.15); color:var(--bad);}
+  .flow .arrow{width:22px; height:3px; background:var(--muted); position:relative; flex-shrink:0; opacity:.5;}
+  .flow .arrow.active{animation:slideArrow .8s ease infinite; background:var(--accent);}
+
+  .btn{
+    background:var(--accent); color:#fff; border:none; padding:10px 20px; border-radius:10px;
+    font-size:.9rem; font-weight:600; cursor:pointer; transition:transform .2s ease, opacity .2s ease;
+  }
+  .btn:hover{transform:translateY(-2px); opacity:.92;}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+  .btn.secondary{background:transparent; color:var(--accent); border:2px solid var(--accent);}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
+  input[type=text], select{
+    background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px;
+    padding:9px 12px; font-size:.9rem; width:100%;
+  }
+  input[type=range]{width:100%;}
+
+  .demo-out{
+    margin-top:14px; padding:14px 16px; border-radius:12px; background:var(--bg);
+    border:1px dashed var(--border); font-size:.92rem; min-height:24px;
+  }
+  .demo-out.show{animation:slideDown .4s ease both;}
+
+  /* cartpole */
+  .pole-stage{
+    display:flex; flex-direction:column; align-items:center; gap:10px; margin:10px 0;
+    height:180px; justify-content:flex-end; position:relative;
+  }
+  .pole-track{width:80%; max-width:340px; height:3px; background:var(--border); border-radius:3px;}
+  .pole-cart{width:60px; height:26px; background:var(--accent); border-radius:6px; margin-top:-2px; position:relative;}
+  .pole-stick{
+    position:absolute; bottom:24px; left:50%; width:6px; height:100px; background:var(--accent2);
+    transform-origin:bottom center; transform:rotate(0deg); border-radius:4px; transition:transform .25s ease;
+    margin-left:-3px;
+  }
+  .pole-stats{display:flex; gap:18px; flex-wrap:wrap; justify-content:center; margin-top:6px; font-size:.85rem;}
+  .pole-stats b{font-size:1rem;}
+
+  /* bars */
+  .bars{display:flex; gap:24px; align-items:flex-end; height:150px; margin-top:16px;}
+  .bar-col{flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .bar-track{width:60%; height:120px; background:var(--bg); border:1px solid var(--border); border-radius:8px; display:flex; align-items:flex-end; overflow:hidden;}
+  .bar-fill{width:100%; border-radius:6px 6px 0 0; transition:height .4s ease, background .4s ease;}
+  .bar-label{font-size:.8rem; color:var(--muted); text-align:center;}
+  .bar-pct{font-weight:700; font-size:.95rem;}
+
+  .quiz-tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .quiz-tab{
+    padding:9px 16px; border-radius:10px; border:1px solid var(--border); background:var(--bg2);
+    cursor:pointer; font-size:.87rem; font-weight:600; color:var(--muted); transition:all .25s ease;
+  }
+  .quiz-tab.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .quiz-panel{display:none;}
+  .quiz-panel.active{display:block; animation:slideDown .4s ease both;}
+  .q-block{margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);}
+  .q-block:last-child{border-bottom:none;}
+  .opt{
+    display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px;
+    cursor:pointer; transition:background .2s ease;
+  }
+  .opt:hover{background:var(--bg);}
+  .feedback{margin-top:8px; font-size:.87rem; font-weight:600; display:none;}
+  .feedback.show{display:block; animation:slideDown .3s ease both;}
+  .feedback.correct{color:var(--good);}
+  .feedback.wrong{color:var(--bad);}
+  .fill-input{width:160px; display:inline-block;}
+  .match-row{display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:center; margin-bottom:10px;}
+  .match-row .term{font-weight:600; font-size:.88rem;}
+  .score-box{margin-top:10px; font-weight:700;}
+
+  details{background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin-top:8px;}
+  summary{cursor:pointer; font-weight:600; font-size:.88rem;}
+
+  .footer{text-align:center; color:var(--muted); font-size:.82rem; margin-top:50px;}
+
+  @media (max-width:640px){
+    header.hero h1{font-size:1.5rem;}
+    .match-row{grid-template-columns:1fr; gap:4px;}
+    .bars{gap:10px;}
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle">🌙 / ☀️</button>
+
+<header class="hero">
+  <span class="tag">AI-FOR-BEGINNERS · BÀI HỌC NGẪU NHIÊN #22-DEEPRL</span>
+  <h1>Reinforcement Learning<br>Học Bằng Cách Thử Sai</h1>
+  <p>Không có nhãn, không có "đáp án đúng" cho từng bước — chỉ có phần thưởng (reward) ở cuối. Cùng khám phá cách máy học chơi game, giữ thăng bằng cây gậy, qua 4 chiến lược từ ngây thơ đến thông minh, có demo CartPole tự tay chạy thử.</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 0. QUICK START -->
+  <section>
+    <h2><span class="num">0</span>Khởi Động Nhanh</h2>
+    <p class="sub">Trước khi vào bài, thử sức với 3 kiểu bài tập nhỏ. Sai cũng không sao — đáp án và giải thích hiện ngay bên dưới.</p>
+    <div class="card">
+      <div class="quiz-tabs">
+        <div class="quiz-tab active" data-tab="mc">📝 Trắc nghiệm</div>
+        <div class="quiz-tab" data-tab="fill">✏️ Điền khuyết</div>
+        <div class="quiz-tab" data-tab="match">🔗 Đối chiếu bản mẫu</div>
+      </div>
+
+      <div class="quiz-panel active" id="panel-mc">
+        <div class="q-block">
+          <div><b>Câu 1.</b> Để thực hiện Reinforcement Learning, ta bắt buộc phải có 2 thứ nào?</div>
+          <div class="opts" data-q="1">
+            <label class="opt"><input type="radio" name="mc1" value="a">A. Dataset có nhãn sẵn và optimizer</label>
+            <label class="opt"><input type="radio" name="mc1" value="b">B. Environment (môi trường mô phỏng) và Reward function (hàm phần thưởng)</label>
+            <label class="opt"><input type="radio" name="mc1" value="c">C. GPU thật mạnh và thật nhiều RAM</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(1,'b')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc1"></div>
+        </div>
+        <div class="q-block">
+          <div><b>Câu 2.</b> "Exploration vs Exploitation" trong RL nghĩa là gì?</div>
+          <div class="opts" data-q="2">
+            <label class="opt"><input type="radio" name="mc2" value="a">A. Cân bằng giữa thử hành động mới (khám phá) và dùng chiến lược tốt nhất đã biết (khai thác)</label>
+            <label class="opt"><input type="radio" name="mc2" value="b">B. Chọn train trên GPU hay CPU</label>
+            <label class="opt"><input type="radio" name="mc2" value="c">C. Cân bằng giữa tốc độ và bộ nhớ</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(2,'a')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc2"></div>
+        </div>
+        <div class="q-block">
+          <div><b>Câu 3.</b> Actor-Critic khác Policy Gradient thuần túy (REINFORCE) ở điểm nào?</div>
+          <div class="opts" data-q="3">
+            <label class="opt"><input type="radio" name="mc3" value="a">A. Actor-Critic không cần mạng policy nào cả</label>
+            <label class="opt"><input type="radio" name="mc3" value="b">B. Actor-Critic thêm một mạng "Critic" ước lượng giá trị trạng thái để giảm phương sai khi cập nhật</label>
+            <label class="opt"><input type="radio" name="mc3" value="c">C. Actor-Critic chỉ chạy được với cờ vua</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(3,'b')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc3"></div>
+        </div>
+      </div>
+
+      <div class="quiz-panel" id="panel-fill">
+        <div class="q-block">
+          Trong Gym, hàm <code>env.________(action)</code> nhận vào một action và trả về (observation, reward, done, info).
+          <input type="text" class="fill-input" id="fill1" placeholder="tên hàm">
+          <button class="btn secondary" onclick="checkFill('fill1','fb-fill1',['step'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill1"></div>
+        </div>
+        <div class="q-block">
+          Chiến lược chọn hành động ngẫu nhiên một phần thời gian, còn lại chọn hành động tốt nhất đã biết, gọi là epsilon-<input type="text" class="fill-input" id="fill2" placeholder="tên chiến lược">.
+          <button class="btn secondary" onclick="checkFill('fill2','fb-fill2',['greedy'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill2"></div>
+        </div>
+        <div class="q-block">
+          Thư viện mô phỏng môi trường RL nổi tiếng của OpenAI có tên là OpenAI <input type="text" class="fill-input" id="fill3" placeholder="tên thư viện">.
+          <button class="btn secondary" onclick="checkFill('fill3','fb-fill3',['gym'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill3"></div>
+        </div>
+      </div>
+
+      <div class="quiz-panel" id="panel-match">
+        <p class="sub">Ghép mỗi khái niệm bên trái với đúng định nghĩa bên phải (dùng ô chọn).</p>
+        <div id="matchArea"></div>
+        <button class="btn secondary" onclick="checkMatch()">Kiểm tra tất cả</button>
+        <div class="score-box" id="matchScore"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. ĐỊNH NGHĨA -->
+  <section class="delay1">
+    <h2><span class="num">1</span>Vấn Đề: Học Mà Không Có "Đáp Án Đúng" Cho Từng Bước</h2>
+    <p class="sub">Ở Supervised Learning, mỗi input đều có nhãn đúng đi kèm. Nhưng khi chơi một ván game, bạn <b>không biết nước đi thứ 5 có đúng hay không</b> cho tới khi ván game kết thúc và biết thắng/thua. Đó chính là bản chất của Reinforcement Learning (RL): một <b>Agent</b> (tác nhân) tương tác với <b>Environment</b> (môi trường), thực hiện <b>Action</b> (hành động), nhận về <b>State</b> mới và một <b>Reward</b> (phần thưởng) — rồi tự điều chỉnh <b>Policy</b> (chiến lược) để tối đa hoá tổng phần thưởng về lâu dài.</p>
+    <div class="ascii">┌──────────────┐        action a_t        ┌───────────────┐
+│              │ ────────────────────────▶ │                │
+│    AGENT     │        (Policy π)         │  ENVIRONMENT   │
+│  "não" ra    │                            │  (CartPole,    │
+│  quyết định  │ ◀──────────────────────── │   Atari, ...)  │
+└──────────────┘   state s_t+1, reward r_t  └───────────────┘
+
+Vòng lặp này lặp lại hàng ngàn lần mỗi episode → Agent dần học được
+Policy π(a|s) tối ưu, dù không hề biết "đáp án đúng" ngay từng bước.</div>
+  </section>
+
+  <!-- 2. 4 TRẠNG THÁI -->
+  <section class="delay2">
+    <h2><span class="num">2</span>4 Chiến Lược — Từ Ngây Thơ Đến Thông Minh</h2>
+    <div class="states-grid">
+      <div class="state-card">
+        <div class="badge">❌</div>
+        <h3>1. Random Policy</h3>
+        <p>Chọn hành động hoàn toàn ngẫu nhiên. Không học gì cả — chỉ dùng để làm baseline so sánh.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">⚠️</div>
+        <h3>2. Q-Learning (bảng)</h3>
+        <p>Lưu điểm Q(s,a) cho từng cặp state-action trong 1 bảng. Chỉ hoạt động tốt khi state rời rạc, không gian nhỏ.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>3. Policy Gradient</h3>
+        <p>Neural Network học trực tiếp π(a|s), dùng được với state liên tục (vị trí, vận tốc...). Variance cao, học hơi chậm.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>4. Actor-Critic</h3>
+        <p>Thêm mạng Critic ước lượng V(s) để "chấm điểm" Actor ngay lập tức, giảm variance, hội tụ nhanh và ổn định hơn.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. BẢNG SO SÁNH -->
+  <section>
+    <h2><span class="num">3</span>Bảng So Sánh Chi Tiết</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Trạng Thái</th><th>Input</th><th>Xử Lý</th><th>Output</th><th>Đánh Giá</th></tr>
+      <tr>
+        <td>Random Policy</td>
+        <td>State s (bỏ qua)</td>
+        <td>action = env.action_space.sample()</td>
+        <td>Hành động ngẫu nhiên, reward thấp</td>
+        <td><span class="pill bad">❌ Baseline, không học</span></td>
+      </tr>
+      <tr>
+        <td>Q-Learning (tabular)</td>
+        <td>State rời rạc (đã discretize)</td>
+        <td>Q(s,a) += α·[r + γ·maxQ(s′,a′) − Q(s,a)]</td>
+        <td>Chọn action có Q(s,a) cao nhất</td>
+        <td><span class="pill warn">⚠️ Chỉ hợp state space nhỏ</span></td>
+      </tr>
+      <tr>
+        <td>Policy Gradient</td>
+        <td>State vector liên tục (vị trí, vận tốc, góc...)</td>
+        <td>NN → π(a|s); cập nhật theo tổng reward chiết khấu (REINFORCE)</td>
+        <td>Xác suất từng action, sample ra 1 action</td>
+        <td><span class="pill good">✅ Hợp continuous, nhưng variance cao</span></td>
+      </tr>
+      <tr>
+        <td>Actor-Critic</td>
+        <td>State vector liên tục</td>
+        <td>Actor đề xuất action, Critic ước lượng V(s) để "chấm điểm" ngay</td>
+        <td>Action + ước lượng giá trị trạng thái</td>
+        <td><span class="pill good">✅ Hội tụ nhanh, ổn định hơn</span></td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 4. DIAGRAM: TRACE 1 EPISODE -->
+  <section>
+    <h2><span class="num">4</span>Trực Quan: Trace 1 Episode CartPole</h2>
+    <p class="sub">Bấm nút để xem episode chạy qua từng bước — quan sát reward cộng dồn, và ô cuối cùng "✗ đỏ" khi cây gậy ngã (done=True).</p>
+    <div class="card">
+      <div class="flow" id="flowDiagram">
+        <div class="cell" data-i="0">s₀<br>góc:0°</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="1">a:trái<br>r=+1</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="2">a:phải<br>r=+1</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="3">a:phải<br>r=+1</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="4">a:trái<br>r=+1</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="5">💥 done<br>✗ ngã</div>
+      </div>
+      <button class="btn" onclick="playFlow()">▶ Chạy Episode</button>
+      <div class="demo-out" id="flowNote">Nhấn Play — mỗi ô là 1 bước thời gian. Reward chỉ được cộng dồn suốt episode, ta không biết bước nào "sai" cho tới khi cây gậy ngã.</div>
+    </div>
+  </section>
+
+  <!-- 5. DEMO CARTPOLE -->
+  <section>
+    <h2><span class="num">5</span>Demo: Tự Tay Giữ Thăng Bằng CartPole</h2>
+    <p class="sub">Bấm "◀ Đẩy Trái" / "▶ Đẩy Phải" để cố giữ cây gậy thẳng đứng, hoặc bấm "🎲 Random Policy" để xem baseline ngây thơ ngã nhanh cỡ nào.</p>
+    <div class="card">
+      <div class="pole-stage">
+        <div class="pole-stick" id="poleStick"></div>
+        <div class="pole-cart"></div>
+        <div class="pole-track"></div>
+      </div>
+      <div class="pole-stats">
+        <div>Góc nghiêng: <b id="poleAngle">0°</b></div>
+        <div>Reward cộng dồn: <b id="poleReward">0</b></div>
+        <div>Trạng thái: <b id="poleStatus">🟢 Đang cân bằng</b></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btnLeft" onclick="poleStep(-1)">◀ Đẩy Trái</button>
+        <button class="btn" id="btnRight" onclick="poleStep(1)">▶ Đẩy Phải</button>
+        <button class="btn secondary" id="btnRandom" onclick="poleAuto()">🎲 Random Policy (tự chạy)</button>
+        <button class="btn secondary" onclick="poleReset()">↺ Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. DEMO EXPLORE/EXPLOIT -->
+  <section>
+    <h2><span class="num">6</span>Demo: Cân Bằng Exploration vs Exploitation (ε-greedy)</h2>
+    <p class="sub">Kéo thanh trượt ε (epsilon). Ban đầu training nên để ε cao để agent "dám" thử nhiều hành động lạ; càng học nhiều, ε nên giảm dần để agent khai thác chiến lược tốt đã tìm được.</p>
+    <div class="card">
+      <input type="range" min="0" max="100" value="70" id="epsSlider">
+      <div class="sub" style="margin:6px 0 0;">ε = <b id="epsVal">70</b>% khả năng chọn hành động ngẫu nhiên (khám phá)</div>
+      <div class="bars">
+        <div class="bar-col">
+          <div class="bar-track"><div class="bar-fill" id="barExplore" style="height:70%; background:var(--warn);"></div></div>
+          <div class="bar-label">🔍 Exploration<br><span class="bar-pct" id="pctExplore">70%</span></div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-track"><div class="bar-fill" id="barExploit" style="height:30%; background:var(--good);"></div></div>
+          <div class="bar-label">🎯 Exploitation<br><span class="bar-pct" id="pctExploit">30%</span></div>
+        </div>
+      </div>
+      <div class="demo-out" id="epsNote">ε=70% → agent thử hành động ngẫu nhiên rất thường xuyên, hợp giai đoạn đầu training khi chưa biết gì nhiều.</div>
+    </div>
+  </section>
+
+  <!-- 7. CODE -->
+  <section>
+    <h2><span class="num">7</span>Code Tối Thiểu Cho Mỗi Chiến Lược</h2>
+    <div class="card">
+      <p><b>❌ Random Policy</b></p>
+      <pre>action = env.action_space.sample()   # hoàn toàn ngẫu nhiên
+obs, reward, done, info = env.step(action)</pre>
+      <p><b>⚠️ Q-Learning (bảng, state rời rạc)</b></p>
+      <pre>Q[s][a] += alpha * (reward + gamma * max(Q[s_next]) - Q[s][a])
+action = argmax(Q[s])   # chọn action có Q cao nhất (khai thác)</pre>
+      <p><b>✅ Policy Gradient (REINFORCE, PyTorch)</b></p>
+      <pre>probs = policy_net(state)                # softmax over actions
+action = torch.multinomial(probs, 1)
+loss = -torch.log(probs[action]) * discounted_reward
+loss.backward()</pre>
+      <p><b>✅ Actor-Critic</b></p>
+      <pre>action_probs, value = actor_critic_net(state)
+advantage = discounted_reward - value       # Critic "chấm điểm"
+actor_loss  = -torch.log(action_probs[action]) * advantage.detach()
+critic_loss = advantage.pow(2)
+(actor_loss + critic_loss).backward()</pre>
+    </div>
+  </section>
+
+  <!-- 8. USE CASES -->
+  <section>
+    <h2><span class="num">8</span>Use Case Thực Tế</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Bài toán</th><th>Vì sao cần RL</th></tr>
+      <tr><td>Chơi game Atari, cờ vây (AlphaGo/AlphaZero)</td><td>Không có "nước đi đúng" sẵn — chỉ biết thắng/thua ở cuối ván, phải tự khám phá chiến lược</td></tr>
+      <tr><td>Robot học đi, cánh tay robot gắp đồ</td><td>Vật lý phức tạp khó lập trình luật cứng, để robot tự thử-sai trong simulator an toàn hơn</td></tr>
+      <tr><td>Hệ thống điều khiển công nghiệp (Azure Bonsai)</td><td>Tối ưu vận hành máy móc theo thời gian thực dựa trên phản hồi (reward) liên tục</td></tr>
+      <tr><td>Gợi ý quảng cáo / đấu giá real-time bidding</td><td>Mỗi lượt hiển thị là 1 action, doanh thu/click là reward, môi trường thay đổi liên tục</td></tr>
+      <tr><td>Xe tự lái (trong simulator)</td><td>State (camera, cảm biến) → action (ga/phanh/lái) → reward (an toàn, đúng làn)</td></tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 9. GOOD VS BAD DATA/REWARD -->
+  <section>
+    <h2><span class="num">9</span>Reward Nào Tốt — Reward Nào Gây Lỗi/Sai Sót</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Loại reward / state</th><th>Ví dụ</th><th>Đánh giá</th><th>Vì sao</th></tr>
+      <tr>
+        <td>Reward dày, phản ánh tiến bộ từng bước</td>
+        <td>+1 mỗi bước cây gậy còn cân bằng (CartPole)</td>
+        <td><span class="pill good">✅ Tốt</span></td>
+        <td>Agent nhận phản hồi liên tục, biết ngay hành động vừa rồi có giúp ích hay không</td>
+      </tr>
+      <tr>
+        <td>Reward thưa, chỉ có ở cuối episode</td>
+        <td>Chỉ +1/-1 khi thắng/thua ván cờ, còn lại luôn = 0</td>
+        <td><span class="pill warn">⚠️ Trung bình</span></td>
+        <td>Agent học rất chậm vì không biết nước đi nào giữa ván là tốt — cần nhiều episode hơn hoặc kỹ thuật reward shaping</td>
+      </tr>
+      <tr>
+        <td>Reward bị "hack" — thiết kế sai mục tiêu</td>
+        <td>Game đua thuyền: agent học cách quay vòng nhặt điểm thưởng thay vì về đích</td>
+        <td><span class="pill bad">❌ Xấu</span></td>
+        <td>Reward function tưởng chừng hợp lý nhưng agent tìm ra "lỗ hổng" tối đa hoá điểm số theo cách không mong muốn (reward hacking)</td>
+      </tr>
+      <tr>
+        <td>State bị nhiễu / cảm biến hỏng</td>
+        <td>Camera bị mờ, giá trị góc nghiêng đọc sai lệch ngẫu nhiên</td>
+        <td><span class="pill bad">❌ Xấu</span></td>
+        <td>Agent học policy dựa trên state sai → hành động sai trong môi trường thật, dù trong lúc train vẫn có vẻ "học tốt"</td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 10. BÀI TẬP -->
+  <section>
+    <h2><span class="num">10</span>Bài Tập Nhỏ</h2>
+    <div class="card">
+      <p><b>Bài 1.</b> Viết công thức cập nhật Bellman cho Q-Learning khi agent ở state <code>s</code>, thực hiện action <code>a</code>, nhận reward <code>r</code>, chuyển sang state <code>s'</code>. Dùng α = learning rate, γ = discount factor.</p>
+      <details>
+        <summary>Xem đáp án gợi ý</summary>
+        <pre>Q(s,a) ← Q(s,a) + α · [ r + γ · max_a' Q(s',a') − Q(s,a) ]</pre>
+      </details>
+    </div>
+    <div class="card">
+      <p><b>Bài 2.</b> Hai thiết kế reward dưới đây cho bài toán "robot dọn rác". Cái nào tốt hơn, vì sao?</p>
+      <p>(A) +1 mỗi khi robot nhặt được 1 mẩu rác, +10 khi dọn sạch cả phòng.</p>
+      <p>(B) Chỉ +100 khi phòng sạch hoàn toàn, mọi bước khác reward = 0, kể cả khi robot đâm vào tường liên tục.</p>
+      <details>
+        <summary>Xem đáp án gợi ý</summary>
+        <p>Thiết kế (A) tốt hơn vì reward dày, cho phản hồi từng bước nhỏ giúp agent học nhanh hơn nhiều. Thiết kế (B) là reward cực thưa — agent gần như không có tín hiệu học nào cho tới khi (nếu) tình cờ dọn sạch cả phòng, rất khó hội tụ trong thời gian hợp lý, đặc biệt với môi trường lớn.</p>
+      </details>
+    </div>
+    <div class="card">
+      <p><b>❓ Câu hỏi tự kiểm tra:</b> Vì sao Actor-Critic thường hội tụ nhanh và ổn định hơn Policy Gradient thuần tuý (REINFORCE)?</p>
+      <details>
+        <summary>Gợi ý trả lời</summary>
+        <p>Vì REINFORCE chỉ dùng tổng reward thực tế của cả episode để cập nhật, dẫn tới variance (phương sai) rất cao — một episode may/rủi có thể làm gradient dao động mạnh. Actor-Critic thêm mạng Critic ước lượng V(s) làm "đường baseline", chỉ cập nhật theo phần advantage (chênh lệch giữa reward thực và ước lượng), giúp gradient ổn định và hội tụ nhanh hơn.</p>
+      </details>
+    </div>
+  </section>
+
+  <div class="footer">
+    Bài giảng tự động — AI-For-Beginners · Nguồn: <code>lessons/6-Other/22-DeepRL</code><br>
+    Soạn bằng tiếng Việt cho người mới, kèm demo tương tác.
+  </div>
+</div>
+
+<script>
+// theme toggle
+const root = document.documentElement;
+document.getElementById('themeToggle').onclick = () => {
+  const cur = root.getAttribute('data-theme');
+  root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+};
+
+// quiz tabs
+document.querySelectorAll('.quiz-tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.quiz-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.quiz-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+  };
+});
+
+function checkMC(n, correct){
+  const sel = document.querySelector('input[name="mc'+n+'"]:checked');
+  const fb = document.getElementById('fb-mc'+n);
+  fb.classList.remove('correct','wrong');
+  if(!sel){ fb.textContent='Hãy chọn một đáp án trước đã!'; fb.classList.add('wrong','show'); return; }
+  if(sel.value === correct){
+    fb.textContent='✅ Chính xác!'; fb.classList.add('correct','show');
+  } else {
+    fb.textContent='❌ Chưa đúng, đáp án đúng là '+correct.toUpperCase()+'. Xem lại phần 2-3 ở trên nhé.'; fb.classList.add('wrong','show');
+  }
+}
+
+function checkFill(inputId, fbId, answers){
+  const val = document.getElementById(inputId).value.trim().toLowerCase();
+  const fb = document.getElementById(fbId);
+  fb.classList.remove('correct','wrong');
+  const ok = answers.some(a => a.toLowerCase() === val);
+  if(ok){ fb.textContent='✅ Đúng rồi!'; fb.classList.add('correct','show'); }
+  else { fb.textContent='❌ Chưa đúng. Gợi ý: đọc lại phần định nghĩa và code ở trên.'; fb.classList.add('wrong','show'); }
+}
+
+// matching quiz
+const matchTerms = [
+  {term:'Agent', def:'Bộ não ra quyết định, chọn hành động dựa trên state hiện tại'},
+  {term:'Environment', def:'Nơi mô phỏng luật chơi, nhận action và trả về state/reward mới'},
+  {term:'Policy (π)', def:'Chiến lược ánh xạ từ state sang action (hoặc xác suất action)'},
+  {term:'Reward', def:'Tín hiệu phản hồi cho biết hành động vừa rồi tốt hay xấu'},
+];
+const defs = matchTerms.map(m=>m.def);
+function shuffle(a){ return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]); }
+const shuffledDefs = shuffle(defs);
+const matchArea = document.getElementById('matchArea');
+matchTerms.forEach((m,i)=>{
+  const row = document.createElement('div');
+  row.className='match-row';
+  row.innerHTML = `<div class="term">${m.term}</div>
+    <select data-correct="${m.def.replace(/"/g,'&quot;')}" id="match${i}">
+      <option value="">-- chọn định nghĩa --</option>
+      ${shuffledDefs.map(d=>`<option value="${d.replace(/"/g,'&quot;')}">${d}</option>`).join('')}
+    </select>`;
+  matchArea.appendChild(row);
+});
+function checkMatch(){
+  let score=0;
+  matchTerms.forEach((m,i)=>{
+    const sel = document.getElementById('match'+i);
+    if(sel.value === m.def){ sel.style.borderColor='var(--good)'; score++; }
+    else { sel.style.borderColor='var(--bad)'; }
+  });
+  const box = document.getElementById('matchScore');
+  box.textContent = `Điểm: ${score}/${matchTerms.length} ${score===matchTerms.length ? '🎉 Hoàn hảo!' : '— thử lại các ô đỏ nhé.'}`;
+  box.style.color = score===matchTerms.length ? 'var(--good)' : 'var(--text)';
+}
+
+// episode trace flow diagram
+function playFlow(){
+  const cells = document.querySelectorAll('#flowDiagram .cell');
+  const arrows = document.querySelectorAll('#flowDiagram .arrow');
+  cells.forEach(c=>{c.classList.remove('active'); c.classList.remove('dead');});
+  arrows.forEach(a=>a.classList.remove('active'));
+  let i=0;
+  let cumReward = 0;
+  const note = document.getElementById('flowNote');
+  const interval = setInterval(()=>{
+    cells.forEach(c=>c.classList.remove('active'));
+    arrows.forEach(a=>a.classList.remove('active'));
+    if(i < cells.length){
+      cells[i].classList.add(i===cells.length-1 ? 'dead' : 'active');
+      if(i>0) arrows[i-1].classList.add('active');
+      if(i>0 && i<cells.length-1) cumReward++;
+      if(i===cells.length-1){
+        note.textContent = 'Bước '+(i+1)+'/'+cells.length+' — done=True, cây gậy ngã. Tổng reward episode này: '+cumReward+'.';
+      } else {
+        note.textContent = 'Bước '+(i+1)+'/'+cells.length+' — reward cộng dồn hiện tại: '+cumReward+'.';
+      }
+    }
+    i++;
+    if(i > cells.length){ clearInterval(interval); }
+  }, 700);
+}
+
+// CartPole demo
+let poleAngle = 0, poleVel = 0, poleReward = 0, poleDone = false, poleAutoTimer = null;
+const poleStick = document.getElementById('poleStick');
+const poleAngleEl = document.getElementById('poleAngle');
+const poleRewardEl = document.getElementById('poleReward');
+const poleStatusEl = document.getElementById('poleStatus');
+
+function poleRender(){
+  poleStick.style.transform = 'rotate(' + poleAngle.toFixed(1) + 'deg)';
+  poleAngleEl.textContent = poleAngle.toFixed(1) + '°';
+  poleRewardEl.textContent = poleReward;
+  if(poleDone){
+    poleStatusEl.textContent = '💥 Ngã! Episode kết thúc';
+    poleStatusEl.style.color = 'var(--bad)';
+  } else {
+    poleStatusEl.textContent = '🟢 Đang cân bằng';
+    poleStatusEl.style.color = 'var(--good)';
+  }
+}
+
+function poleStep(action){
+  if(poleDone) return;
+  poleVel += (Math.random()-0.5)*1.4 - action*0.7;
+  poleAngle += poleVel;
+  poleReward += 1;
+  if(Math.abs(poleAngle) > 26){
+    poleAngle = poleAngle > 0 ? 26 : -26;
+    poleDone = true;
+    clearInterval(poleAutoTimer);
+    poleAutoTimer = null;
+    document.getElementById('btnLeft').disabled = true;
+    document.getElementById('btnRight').disabled = true;
+  }
+  poleRender();
+}
+
+function poleAuto(){
+  if(poleAutoTimer){ clearInterval(poleAutoTimer); poleAutoTimer = null; return; }
+  poleReset();
+  poleAutoTimer = setInterval(()=>{
+    if(poleDone){ clearInterval(poleAutoTimer); poleAutoTimer = null; return; }
+    const randomAction = Math.random() < 0.5 ? -1 : 1;
+    poleStep(randomAction);
+  }, 350);
+}
+
+function poleReset(){
+  clearInterval(poleAutoTimer);
+  poleAutoTimer = null;
+  poleAngle = (Math.random()-0.5)*4;
+  poleVel = (Math.random()-0.5)*1.5;
+  poleReward = 0;
+  poleDone = false;
+  document.getElementById('btnLeft').disabled = false;
+  document.getElementById('btnRight').disabled = false;
+  poleRender();
+}
+poleRender();
+
+// exploration vs exploitation
+const epsSlider = document.getElementById('epsSlider');
+function updateEps(){
+  const eps = parseInt(epsSlider.value);
+  document.getElementById('epsVal').textContent = eps;
+  document.getElementById('barExplore').style.height = eps + '%';
+  document.getElementById('barExploit').style.height = (100-eps) + '%';
+  document.getElementById('pctExplore').textContent = eps + '%';
+  document.getElementById('pctExploit').textContent = (100-eps) + '%';
+  const note = document.getElementById('epsNote');
+  if(eps >= 60){
+    note.textContent = 'ε='+eps+'% → agent thử hành động ngẫu nhiên rất thường xuyên, hợp giai đoạn đầu training khi chưa biết gì nhiều.';
+  } else if(eps >= 25){
+    note.textContent = 'ε='+eps+'% → agent đã bắt đầu tin tưởng vào chiến lược học được, nhưng vẫn dành thời gian khám phá thêm.';
+  } else {
+    note.textContent = 'ε='+eps+'% → agent chủ yếu khai thác chiến lược tốt nhất đã biết, hợp giai đoạn cuối training hoặc khi triển khai thực tế.';
+  }
+}
+epsSlider.addEventListener('input', updateEps);
+updateEps();
+</script>
+</body>
+</html>
