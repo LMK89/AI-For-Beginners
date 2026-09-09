@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nhập Môn Computer Vision — Máy Nhìn Thấy Gì?</title>
+<style>
+  :root{
+    --bg:#f5f8fb; --bg2:#ffffff; --text:#1c2333; --muted:#5b6472;
+    --border:#e2e5ec; --accent:#2f80ed; --accent2:#06b6d4;
+    --warn:#f0a500; --bad:#ef4444; --good:#16a34a;
+    --code-bg:#1e1f2b; --code-text:#e6e6f0;
+    --shadow: 0 8px 24px rgba(30,30,60,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1420; --bg2:#161c2b; --text:#eef0f8; --muted:#a2a8ba;
+      --border:#28304a; --accent:#5b9dff; --accent2:#34d3e0;
+      --code-bg:#0d0e16; --code-text:#d8dcff;
+      --shadow: 0 8px 28px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1420; --bg2:#161c2b; --text:#eef0f8; --muted:#a2a8ba;
+    --border:#28304a; --accent:#5b9dff; --accent2:#34d3e0;
+    --code-bg:#0d0e16; --code-text:#d8dcff;
+    --shadow: 0 8px 28px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.6; padding:0 0 60px;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 20px;}
+
+  @keyframes fadeInDown{ from{opacity:0; transform:translateY(-22px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes slideUp{ from{opacity:0; transform:translateY(28px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes slideDown{ from{opacity:0; transform:translateY(-14px); max-height:0;} to{opacity:1; transform:translateY(0); max-height:900px;} }
+  @keyframes pulse{ 0%{transform:scale(1); box-shadow:0 0 0 0 rgba(47,128,237,.5);} 70%{transform:scale(1.06); box-shadow:0 0 0 12px rgba(47,128,237,0);} 100%{transform:scale(1); box-shadow:0 0 0 0 rgba(47,128,237,0);} }
+  @keyframes slideArrow{ 0%{transform:translateX(0); opacity:.4;} 50%{opacity:1;} 100%{transform:translateX(14px); opacity:.4;} }
+
+  header.hero{
+    padding:56px 20px 40px; text-align:center;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#fff; animation:fadeInDown .7s ease both;
+  }
+  header.hero .tag{
+    display:inline-block; background:rgba(255,255,255,.18); padding:5px 14px;
+    border-radius:999px; font-size:.8rem; letter-spacing:.04em; margin-bottom:14px;
+  }
+  header.hero h1{font-size:2.1rem; margin:0 0 10px;}
+  header.hero p{opacity:.95; max-width:660px; margin:0 auto; font-size:1rem;}
+  .theme-toggle{
+    position:fixed; top:16px; right:16px; z-index:50;
+    background:var(--bg2); border:1px solid var(--border); color:var(--text);
+    border-radius:999px; padding:8px 14px; cursor:pointer; font-size:.85rem;
+    box-shadow:var(--shadow);
+  }
+
+  section{ margin:38px 0; animation:slideUp .6s ease both; }
+  section.delay1{animation-delay:.05s;} section.delay2{animation-delay:.1s;}
+
+  h2{font-size:1.35rem; margin-bottom:6px; display:flex; align-items:center; gap:10px;}
+  h2 .num{
+    background:var(--accent); color:#fff; width:30px; height:30px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0;
+  }
+  .sub{color:var(--muted); margin-bottom:18px; font-size:.95rem;}
+
+  .card{
+    background:var(--bg2); border:1px solid var(--border); border-radius:16px;
+    padding:20px 22px; box-shadow:var(--shadow); margin-bottom:16px;
+  }
+
+  .ascii{
+    background:var(--code-bg); color:var(--code-text); border-radius:12px; padding:18px 20px;
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace; font-size:.82rem;
+    overflow-x:auto; line-height:1.5; white-space:pre;
+  }
+
+  .states-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;}
+  .state-card{
+    border-radius:14px; padding:16px; border:1px solid var(--border); background:var(--bg2);
+    transition:transform .35s ease, box-shadow .35s ease;
+  }
+  .state-card:hover{transform:translateY(-4px); box-shadow:var(--shadow);}
+  .state-card .badge{font-size:1.4rem;}
+  .state-card h3{margin:8px 0 4px; font-size:1.02rem;}
+  .state-card p{color:var(--muted); font-size:.88rem; margin:0;}
+
+  table{width:100%; border-collapse:collapse; font-size:.9rem;}
+  th,td{border:1px solid var(--border); padding:10px 12px; text-align:left; vertical-align:top;}
+  th{background:var(--bg); color:var(--muted); font-weight:600;}
+  .overflow-x{overflow-x:auto; border-radius:12px;}
+
+  code, pre{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+  pre{
+    background:var(--code-bg); color:var(--code-text); padding:16px 18px; border-radius:12px;
+    overflow-x:auto; font-size:.83rem; line-height:1.55;
+  }
+  .pill{display:inline-block; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:600;}
+  .pill.good{background:rgba(22,163,74,.15); color:var(--good);}
+  .pill.warn{background:rgba(240,165,0,.18); color:var(--warn);}
+  .pill.bad{background:rgba(239,68,68,.15); color:var(--bad);}
+
+  .flow{display:flex; align-items:center; gap:6px; overflow-x:auto; padding:22px 10px; justify-content:flex-start;}
+  .flow .cell{
+    min-width:96px; height:86px; border-radius:12px; background:var(--bg);
+    border:2px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-weight:700; font-size:.76rem; flex-shrink:0; transition:all .3s ease; text-align:center; padding:4px;
+  }
+  .flow .cell.active{ border-color:var(--accent); background:var(--accent); color:#fff; animation:pulse 1s ease; }
+  .flow .arrow{width:22px; height:3px; background:var(--muted); position:relative; flex-shrink:0; opacity:.5;}
+  .flow .arrow.active{animation:slideArrow .8s ease infinite; background:var(--accent);}
+
+  .btn{
+    background:var(--accent); color:#fff; border:none; padding:10px 20px; border-radius:10px;
+    font-size:.9rem; font-weight:600; cursor:pointer; transition:transform .2s ease, opacity .2s ease;
+  }
+  .btn:hover{transform:translateY(-2px); opacity:.92;}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+  .btn.secondary{background:transparent; color:var(--accent); border:2px solid var(--accent);}
+  .btn.small{padding:7px 14px; font-size:.82rem;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
+  input[type=text], select{
+    background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px;
+    padding:9px 12px; font-size:.9rem; width:100%;
+  }
+  input[type=range]{width:100%;}
+
+  .demo-out{
+    margin-top:14px; padding:14px 16px; border-radius:12px; background:var(--bg);
+    border:1px dashed var(--border); font-size:.92rem; min-height:24px;
+  }
+  .demo-out.show{animation:slideDown .4s ease both;}
+
+  /* pixel grid demo */
+  .pxgrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:4px; max-width:340px; margin:14px 0; }
+  .pxcell{
+    aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-size:.68rem; font-weight:700; color:#111; transition:all .35s ease; border:2px solid transparent;
+    font-family:"SFMono-Regular",Consolas,monospace;
+  }
+  .pxcell.motion{ border-color:var(--bad); color:#fff; animation:pulse 1s ease; }
+  .pxcell.still{ border-color:var(--border); }
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:.82rem; color:var(--muted); margin-top:8px;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .swatch{width:14px; height:14px; border-radius:4px; display:inline-block;}
+
+  /* BGR/RGB swap demo */
+  .swap-row{display:flex; gap:20px; flex-wrap:wrap; align-items:center; margin-top:10px;}
+  .swap-box{width:120px; height:120px; border-radius:14px; border:1px solid var(--border); transition:background .4s ease;}
+  .swap-label{font-size:.85rem; color:var(--muted); text-align:center; margin-top:6px;}
+
+  .quiz-tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .quiz-tab{
+    padding:9px 16px; border-radius:10px; border:1px solid var(--border); background:var(--bg2);
+    cursor:pointer; font-size:.87rem; font-weight:600; color:var(--muted); transition:all .25s ease;
+  }
+  .quiz-tab.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .quiz-panel{display:none;}
+  .quiz-panel.active{display:block; animation:slideDown .4s ease both;}
+  .q-block{margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);}
+  .q-block:last-child{border-bottom:none;}
+  .opt{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; cursor:pointer; transition:background .2s ease;}
+  .opt:hover{background:var(--bg);}
+  .feedback{margin-top:8px; font-size:.87rem; font-weight:600; display:none;}
+  .feedback.show{display:block; animation:slideDown .3s ease both;}
+  .feedback.correct{color:var(--good);}
+  .feedback.wrong{color:var(--bad);}
+  .fill-input{width:160px; display:inline-block;}
+  .match-row{display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:center; margin-bottom:10px;}
+  .match-row .term{font-weight:600; font-size:.88rem;}
+  .score-box{margin-top:10px; font-weight:700;}
+
+  details{background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin-top:8px;}
+  summary{cursor:pointer; font-weight:600; font-size:.88rem;}
+
+  .footer{text-align:center; color:var(--muted); font-size:.82rem; margin-top:50px;}
+
+  @media (max-width:640px){
+    header.hero h1{font-size:1.5rem;}
+    .match-row{grid-template-columns:1fr; gap:4px;}
+    .pxgrid{max-width:280px;}
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle">🌙 / ☀️</button>
+
+<header class="hero">
+  <span class="tag">AI-FOR-BEGINNERS · BÀI HỌC NGẪU NHIÊN #06-INTROCV</span>
+  <h1>Nhập Môn Computer Vision<br>Máy "Nhìn" Ảnh Như Thế Nào?</h1>
+  <p>Trước khi đưa ảnh vào neural network, máy chỉ thấy một đống số. Cùng khám phá cách OpenCV biểu diễn ảnh, tiền xử lý ảnh, và phát hiện chuyển động — qua các trạng thái từ đơn giản đến thông minh, có demo tự tay bấm thử.</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 0. QUICK START -->
+  <section>
+    <h2><span class="num">0</span>Khởi Động Nhanh</h2>
+    <p class="sub">Trước khi vào bài, thử sức với 3 kiểu bài tập nhỏ. Sai cũng không sao — đáp án và giải thích hiện ngay bên dưới.</p>
+    <div class="card">
+      <div class="quiz-tabs">
+        <div class="quiz-tab active" data-tab="mc">📝 Trắc nghiệm</div>
+        <div class="quiz-tab" data-tab="fill">✏️ Điền khuyết</div>
+        <div class="quiz-tab" data-tab="match">🔗 Đối chiếu bản mẫu</div>
+      </div>
+
+      <div class="quiz-panel active" id="panel-mc">
+        <div class="q-block">
+          <div><b>Câu 1.</b> Một ảnh màu (RGB) kích thước 320×200 pixel được NumPy biểu diễn với shape nào?</div>
+          <div class="opts" data-q="1">
+            <label class="opt"><input type="radio" name="mc1" value="a">A. (320, 200)</label>
+            <label class="opt"><input type="radio" name="mc1" value="b">B. (200, 320, 3)</label>
+            <label class="opt"><input type="radio" name="mc1" value="c">C. (3, 320, 200, 1)</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(1,'b')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc1"></div>
+        </div>
+        <div class="q-block">
+          <div><b>Câu 2.</b> OpenCV (hàm <code>cv2.imread</code>) mặc định đọc ảnh theo thứ tự kênh màu nào?</div>
+          <div class="opts" data-q="2">
+            <label class="opt"><input type="radio" name="mc2" value="a">A. RGB (Red-Green-Blue)</label>
+            <label class="opt"><input type="radio" name="mc2" value="b">B. BGR (Blue-Green-Red)</label>
+            <label class="opt"><input type="radio" name="mc2" value="c">C. HSV</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(2,'b')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc2"></div>
+        </div>
+        <div class="q-block">
+          <div><b>Câu 3.</b> Khi tách các chấm nổi Braille khỏi nền giấy chụp dưới ánh sáng không đều (một góc sáng, một góc tối), kỹ thuật nào phù hợp nhất?</div>
+          <div class="opts" data-q="3">
+            <label class="opt"><input type="radio" name="mc3" value="a">A. Chỉ resize ảnh về kích thước nhỏ hơn</label>
+            <label class="opt"><input type="radio" name="mc3" value="b">B. Adaptive Thresholding (ngưỡng thích nghi theo từng vùng)</label>
+            <label class="opt"><input type="radio" name="mc3" value="c">C. Xoay ảnh 90 độ</label>
+          </div>
+          <button class="btn secondary" onclick="checkMC(3,'b')">Kiểm tra</button>
+          <div class="feedback" id="fb-mc3"></div>
+        </div>
+      </div>
+
+      <div class="quiz-panel" id="panel-fill">
+        <div class="q-block">
+          Hàm OpenCV dùng để chuyển ảnh từ BGR sang RGB là <code>cv2.____Color(im, cv2.COLOR_BGR2RGB)</code>.
+          <input type="text" class="fill-input" id="fill1" placeholder="tên hàm rút gọn">
+          <button class="btn secondary" onclick="checkFill('fill1','fb-fill1',['cvt'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill1"></div>
+        </div>
+        <div class="q-block">
+          Kỹ thuật ước lượng vector chuyển động cho <b>toàn bộ</b> pixel trong ảnh (không chỉ vài điểm) gọi là ________ Optical Flow.
+          <input type="text" class="fill-input" id="fill2" placeholder="Dense hay Sparse?">
+          <button class="btn secondary" onclick="checkFill('fill2','fb-fill2',['dense'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill2"></div>
+        </div>
+        <div class="q-block">
+          Phép biến đổi hình học giữ các đường thẳng song song vẫn song song sau khi xoay/co giãn/nghiêng ảnh gọi là phép biến đổi ________.
+          <input type="text" class="fill-input" id="fill3" placeholder="tên phép biến đổi">
+          <button class="btn secondary" onclick="checkFill('fill3','fb-fill3',['affine'])">Kiểm tra</button>
+          <div class="feedback" id="fb-fill3"></div>
+        </div>
+      </div>
+
+      <div class="quiz-panel" id="panel-match">
+        <p class="sub">Ghép mỗi khái niệm bên trái với đúng định nghĩa bên phải (dùng ô chọn).</p>
+        <div id="matchArea"></div>
+        <button class="btn secondary" onclick="checkMatch()">Kiểm tra tất cả</button>
+        <div class="score-box" id="matchScore"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. ẢNH LÀ MA TRẬN SỐ -->
+  <section class="delay1">
+    <h2><span class="num">1</span>Vấn Đề: Với Máy Tính, Ảnh Chỉ Là Một Đống Số</h2>
+    <p class="sub">Con người nhìn ảnh thấy "con mèo", "trang sách"... nhưng máy tính chỉ thấy một <b>mảng số (array)</b>. Muốn máy hiểu ảnh, trước tiên phải hiểu ảnh được lưu trữ dưới dạng số như thế nào — đó là nền tảng của mọi thuật toán Computer Vision, kể cả trước khi đưa vào <a href="../07-ConvNets/README.md" style="color:var(--accent);">Convolutional Neural Network</a>.</p>
+    <div class="ascii">Ảnh xám (grayscale) 4×6 pixel — mỗi ô là 1 số độ sáng (0=đen, 255=trắng):
+
+┌─────┬─────┬─────┬─────┬─────┬─────┐
+│  10 │  12 │ 200 │ 205 │ 198 │  15 │
+│  11 │   9 │ 210 │ 220 │ 202 │  12 │
+│ 240 │ 235 │  30 │  28 │  25 │ 230 │
+│ 238 │ 242 │  32 │  20 │  31 │ 225 │
+└─────┴─────┴─────┴─────┴─────┴─────┘
+        NumPy shape: (4, 6)  ──▶  chỉ 1 kênh màu
+
+Ảnh MÀU (RGB) cùng kích thước  →  shape: (4, 6, 3)
+Mỗi ô KHÔNG còn là 1 số, mà là 1 bộ ba (R, G, B):
+
+┌───────────────┬───────────────┬───────────────┬── ...
+│  (10, 10, 12)  │  (12, 11, 15)  │ (200,180,120)  │
+│  (11, 10, 13)  │   (9,  9, 11)  │ (210,190,130)  │
+└───────────────┴───────────────┴───────────────┴── ...</div>
+  </section>
+
+  <!-- 2. 3 TRẠNG THÁI BIỂU DIỄN ẢNH -->
+  <section class="delay2">
+    <h2><span class="num">2</span>3 Cách "Đọc" Ảnh — Chọn Sai Là Ra Kết Quả Sai Ngay</h2>
+    <div class="states-grid">
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>1. Grayscale (ảnh xám)</h3>
+        <p>1 kênh màu, mỗi pixel 1 số 0–255. Nhẹ, nhanh, đủ dùng cho OCR, phát hiện cạnh, thresholding.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>2. RGB (chuẩn phổ biến)</h3>
+        <p>3 kênh Red-Green-Blue. Chuẩn mà matplotlib, PyTorch, TensorFlow đều mong đợi.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">❌</div>
+        <h3>3. BGR quên convert</h3>
+        <p>OpenCV đọc ảnh mặc định là BGR. Quên <code>cvtColor</code> trước khi hiển thị/huấn luyện → màu bị đảo hoàn toàn.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. BẢNG SO SÁNH BIỂU DIỄN -->
+  <section>
+    <h2><span class="num">3</span>Bảng So Sánh Chi Tiết</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Trạng Thái</th><th>Input</th><th>Xử Lý</th><th>Output</th><th>Đánh Giá</th></tr>
+      <tr>
+        <td>Grayscale</td>
+        <td><code>cv2.imread(f, cv2.IMREAD_GRAYSCALE)</code></td>
+        <td>Chỉ giữ độ sáng, bỏ thông tin màu</td>
+        <td>Array shape (H, W)</td>
+        <td><span class="pill good">✅ Nhẹ, hợp OCR/thresholding</span></td>
+      </tr>
+      <tr>
+        <td>RGB (đã convert đúng)</td>
+        <td><code>cv2.imread(f)</code> rồi <code>cvtColor(BGR2RGB)</code></td>
+        <td>Đổi đúng thứ tự kênh trước khi dùng</td>
+        <td>Array shape (H, W, 3), màu hiển thị đúng</td>
+        <td><span class="pill good">✅ Chuẩn cho hiển thị & train model</span></td>
+      </tr>
+      <tr>
+        <td>BGR không convert</td>
+        <td><code>cv2.imread(f)</code> rồi dùng thẳng</td>
+        <td>Không đổi kênh màu</td>
+        <td>Array shape (H, W, 3) nhưng kênh R↔B bị hoán đổi</td>
+        <td><span class="pill bad">❌ Ảnh hiển thị/train sai màu</span></td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 4. DEMO: BGR vs RGB -->
+  <section>
+    <h2><span class="num">4</span>Demo: Quên <code>cvtColor</code> Nguy Hiểm Cỡ Nào?</h2>
+    <p class="sub">Một pixel thực tế có màu <b>(R=210, G=60, B=40)</b> — màu cam đỏ. Bấm nút để xem nếu quên convert BGR→RGB, máy sẽ hiểu nhầm giá trị này thành màu gì.</p>
+    <div class="card">
+      <div class="swap-row">
+        <div>
+          <div class="swap-box" id="boxCorrect" style="background:rgb(210,60,40);"></div>
+          <div class="swap-label">✅ Đúng: đã <code>cvtColor</code><br>hiển thị (210,60,40) → cam đỏ</div>
+        </div>
+        <div>
+          <div class="swap-box" id="boxWrong" style="background:rgb(40,60,210);"></div>
+          <div class="swap-label">❌ Sai: quên convert<br>máy đọc thành (40,60,210) → xanh dương</div>
+        </div>
+      </div>
+      <div class="demo-out show">Cùng một pixel, cùng một tấm ảnh — chỉ vì thứ tự kênh bị đảo mà mọi vật thể "đỏ" trong ảnh (máu, cà chua, biển báo) bị model nhìn thành "xanh dương". Đây là lỗi cực kỳ phổ biến với người mới học OpenCV.</div>
+    </div>
+  </section>
+
+  <!-- 5. PIPELINE TIỀN XỬ LÝ -->
+  <section>
+    <h2><span class="num">5</span>Pipeline Tiền Xử Lý Ảnh — Ví Dụ Sách Chữ Nổi Braille</h2>
+    <p class="sub">Trước khi đưa ảnh vào CNN phân loại, ta thường lọc qua vài bước để ảnh "sạch" và dễ nhận dạng hơn — bấm Play để xem từng bước biến đổi.</p>
+    <div class="card">
+      <div class="flow" id="flowDiagram">
+        <div class="cell" data-i="0">📷 Raw<br>ảnh chụp<br>nghiêng, tối</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="1">↔️ Resize<br>chuẩn hoá<br>kích thước</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="2">🌫️ Blur<br>khử nhiễu<br>hạt ảnh</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="3">⚫⚪ Threshold<br>nhị phân hoá<br>đen/trắng</div>
+        <div class="arrow"></div>
+        <div class="cell" data-i="4">🧠 CNN<br>phân loại<br>từng ký tự</div>
+      </div>
+      <button class="btn" onclick="playFlow()">▶ Chạy Pipeline</button>
+      <div class="demo-out" id="flowNote">Nhấn Play — mỗi bước xử lý một vấn đề riêng: Resize chuẩn hoá kích thước đầu vào, Blur giảm nhiễu hạt giấy, Threshold tách chấm nổi khỏi nền, rồi mới đưa vào CNN.</div>
+    </div>
+  </section>
+
+  <!-- 6. 3 TRẠNG THÁI PHÁT HIỆN CHUYỂN ĐỘNG -->
+  <section>
+    <h2><span class="num">6</span>3 Cách Phát Hiện Chuyển Động Trong Video</h2>
+    <div class="states-grid">
+      <div class="state-card">
+        <div class="badge">⚠️</div>
+        <h3>1. Frame Differencing</h3>
+        <p>Trừ trực tiếp 2 khung hình liên tiếp. Cực nhanh, nhưng chỉ hợp camera cố định (tripod), không hợp camera rung/di chuyển.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>2. Dense Optical Flow</h3>
+        <p>Tính vector chuyển động cho <b>từng pixel</b> trong toàn ảnh. Chi tiết đầy đủ nhưng tốn nhiều tính toán.</p>
+      </div>
+      <div class="state-card">
+        <div class="badge">✅</div>
+        <h3>3. Sparse Optical Flow</h3>
+        <p>Chỉ theo dõi vài điểm đặc trưng (góc, cạnh nổi bật). Nhanh hơn Dense nhiều, phù hợp real-time.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. BẢNG SO SÁNH MOTION -->
+  <section>
+    <h2><span class="num">7</span>Bảng So Sánh Phát Hiện Chuyển Động</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Trạng Thái</th><th>Input</th><th>Xử Lý</th><th>Output</th><th>Đánh Giá</th></tr>
+      <tr>
+        <td>Frame Differencing</td>
+        <td>2 khung hình liên tiếp (t, t+1)</td>
+        <td><code>diff = |frame2 − frame1|</code>, threshold</td>
+        <td>Mặt nạ nhị phân vùng "có thay đổi"</td>
+        <td><span class="pill warn">⚠️ Nhanh nhưng cần camera đứng yên</span></td>
+      </tr>
+      <tr>
+        <td>Dense Optical Flow</td>
+        <td>2 khung hình grayscale liên tiếp</td>
+        <td><code>cv2.calcOpticalFlowFarneback(...)</code></td>
+        <td>Vector chuyển động cho mỗi pixel</td>
+        <td><span class="pill good">✅ Chi tiết nhất, chậm nhất</span></td>
+      </tr>
+      <tr>
+        <td>Sparse Optical Flow</td>
+        <td>Vài điểm đặc trưng (góc/cạnh) + 2 khung hình</td>
+        <td><code>cv2.calcOpticalFlowPyrLK(...)</code></td>
+        <td>Vector chuyển động chỉ tại các điểm đó</td>
+        <td><span class="pill good">✅ Nhanh, hợp real-time</span></td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 8. DEMO FRAME DIFFERENCE GRID -->
+  <section>
+    <h2><span class="num">8</span>Demo: Tự Tay Tính Frame Difference</h2>
+    <p class="sub">Bên dưới là 2 khung hình 5×5 (giá trị = độ sáng pixel). Có một "vật thể sáng" di chuyển từ Frame 1 sang Frame 2. Chọn chế độ xem, kéo thanh ngưỡng (threshold), rồi bấm "Tính Diff" để xem ô nào bị đánh dấu là <b>có chuyển động ✓</b>.</p>
+    <div class="card">
+      <div class="btn-row">
+        <button class="btn small secondary" onclick="renderGrid('f1')">🖼️ Xem Frame 1 (t)</button>
+        <button class="btn small secondary" onclick="renderGrid('f2')">🖼️ Xem Frame 2 (t+1)</button>
+        <button class="btn small" onclick="renderGrid('diff')">➖ Tính |Diff| + Threshold</button>
+      </div>
+      <div style="margin-top:12px;">
+        Ngưỡng threshold: <b id="threshVal">30</b>
+        <input type="range" min="0" max="200" value="30" id="threshSlider">
+      </div>
+      <div class="pxgrid" id="pxGrid"></div>
+      <div class="legend">
+        <span><span class="swatch" style="background:#999;"></span> Giá trị càng sáng = độ sáng pixel càng cao</span>
+        <span><span class="swatch" style="background:var(--bad); border:2px solid var(--bad);"></span> ✓ Diff &gt; threshold → phát hiện chuyển động</span>
+      </div>
+      <div class="demo-out" id="gridNote">Bấm một trong 3 nút phía trên để bắt đầu.</div>
+    </div>
+  </section>
+
+  <!-- 9. CODE -->
+  <section>
+    <h2><span class="num">9</span>Code Tối Thiểu Cho Mỗi Trạng Thái</h2>
+    <div class="card">
+      <p><b>✅ Đọc ảnh & convert đúng màu (RGB)</b></p>
+      <pre>import cv2, matplotlib.pyplot as plt
+im = cv2.imread('photo.jpg')                 # OpenCV đọc theo BGR!
+im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)     # bắt buộc convert trước khi imshow/train
+plt.imshow(im)</pre>
+      <p><b>✅ Pipeline tiền xử lý (resize → blur → threshold)</b></p>
+      <pre>im = cv2.resize(im, (320, 200), interpolation=cv2.INTER_LANCZOS4)
+im = cv2.medianBlur(im, 3)
+_, im_bin = cv2.threshold(im, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)</pre>
+      <p><b>⚠️ Frame Differencing (camera cố định)</b></p>
+      <pre>diff = cv2.absdiff(frame1_gray, frame2_gray)
+_, motion_mask = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)</pre>
+      <p><b>✅ Dense Optical Flow</b></p>
+      <pre>flow = cv2.calcOpticalFlowFarneback(
+    prev_gray, next_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)</pre>
+      <p><b>✅ Sparse Optical Flow (Lucas-Kanade)</b></p>
+      <pre>next_pts, status, err = cv2.calcOpticalFlowPyrLK(
+    prev_gray, next_gray, prev_pts, None)</pre>
+    </div>
+  </section>
+
+  <!-- 10. USE CASES -->
+  <section>
+    <h2><span class="num">10</span>Use Case Thực Tế</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Bài toán</th><th>Kỹ thuật CV áp dụng</th></tr>
+      <tr><td>Số hoá sách chữ nổi Braille</td><td>Adaptive Thresholding + Perspective Transform để tách từng chấm nổi trước khi đưa vào CNN phân loại</td></tr>
+      <tr><td>Camera an ninh phát hiện đột nhập</td><td>Frame Differencing — chi phí tính toán thấp, hợp camera cố định giám sát 24/7</td></tr>
+      <tr><td>App quét tài liệu bằng điện thoại</td><td>Perspective Transformation "duỗi thẳng" trang giấy chụp nghiêng thành hình chữ nhật</td></tr>
+      <tr><td>Phân tích chuyển động vận động viên</td><td>Sparse Optical Flow theo dõi khớp tay/chân — ít điểm nhưng chính xác, nhanh</td></tr>
+      <tr><td>Xe tự lái ước lượng chuyển động vật thể</td><td>Dense Optical Flow trên toàn khung hình camera để biết vật nào đang tới gần</td></tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 11. GOOD VS BAD DATA -->
+  <section>
+    <h2><span class="num">11</span>Dữ Liệu Ảnh Nào Tốt — Dữ Liệu Nào Gây Lỗi/Sai Sót</h2>
+    <div class="overflow-x">
+    <table>
+      <tr><th>Loại dữ liệu ảnh</th><th>Ví dụ</th><th>Đánh giá</th><th>Vì sao</th></tr>
+      <tr>
+        <td>Ảnh rõ nét, đủ sáng, đúng color space</td>
+        <td>Ảnh chụp ban ngày, đã <code>cvtColor</code> sang RGB trước khi train</td>
+        <td><span class="pill good">✅ Tốt</span></td>
+        <td>Model học đúng đặc trưng màu sắc & hình dạng, ít nhiễu gây nhầm lẫn</td>
+      </tr>
+      <tr>
+        <td>Ảnh hơi lệch sáng, đã qua adaptive threshold</td>
+        <td>Ảnh scan tài liệu dưới đèn bàn, ánh sáng không hoàn toàn đều</td>
+        <td><span class="pill warn">⚠️ Trung bình</span></td>
+        <td>Vẫn dùng được nếu xử lý đúng kỹ thuật, nhưng nên thêm augmentation khi train</td>
+      </tr>
+      <tr>
+        <td>Quên <code>cvtColor</code> BGR→RGB</td>
+        <td>Đưa thẳng output của <code>cv2.imread()</code> vào model/hiển thị</td>
+        <td><span class="pill bad">❌ Xấu</span></td>
+        <td>Toàn bộ kênh màu bị hoán đổi (đỏ↔xanh dương) → model học sai mối liên hệ màu sắc thật</td>
+      </tr>
+      <tr>
+        <td>Camera rung/di chuyển khi dùng Frame Differencing</td>
+        <td>Camera cầm tay quay video an ninh thay vì gắn tripod cố định</td>
+        <td><span class="pill bad">❌ Xấu</span></td>
+        <td>Cả nền cũng "thay đổi" theo mỗi khung hình → false positive: tưởng nhầm cả khung hình đang chuyển động</td>
+      </tr>
+      <tr>
+        <td>Threshold cố định trên ảnh sáng không đều</td>
+        <td>Dùng <code>cv2.threshold</code> với 1 ngưỡng cứng cho ảnh có góc sáng góc tối</td>
+        <td><span class="pill bad">❌ Xấu</span></td>
+        <td>Mất chi tiết ở vùng tối hoặc "cháy sáng" vùng sáng — nên dùng <code>cv2.adaptiveThreshold</code> thay vì ngưỡng cố định</td>
+      </tr>
+    </table>
+    </div>
+  </section>
+
+  <!-- 12. BÀI TẬP -->
+  <section>
+    <h2><span class="num">12</span>Bài Tập Nhỏ</h2>
+    <div class="card">
+      <p><b>Bài 1.</b> Viết đoạn code Python đọc ảnh <code>photo.jpg</code> bằng OpenCV và hiển thị đúng màu bằng matplotlib (nhớ xử lý vấn đề BGR/RGB).</p>
+      <details>
+        <summary>Xem đáp án gợi ý</summary>
+        <pre>import cv2, matplotlib.pyplot as plt
+im = cv2.imread('photo.jpg')
+im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+plt.imshow(im)
+plt.show()</pre>
+      </details>
+    </div>
+    <div class="card">
+      <p><b>Bài 2.</b> Cho 2 pixel ở cùng 1 vị trí tại 2 khung hình liên tiếp: Frame 1 = 42, Frame 2 = 205. Nếu threshold = 30, pixel này có được đánh dấu là "có chuyển động" không? Vì sao?</p>
+      <details>
+        <summary>Xem đáp án gợi ý</summary>
+        <p><code>diff = |205 − 42| = 163</code>. Vì 163 &gt; 30 (threshold) nên pixel này <b>được đánh dấu là có chuyển động (✓)</b>. Đây chính là cách <code>cv2.absdiff</code> + <code>cv2.threshold</code> hoạt động ở demo phần 8.</p>
+      </details>
+    </div>
+    <div class="card">
+      <p><b>❓ Câu hỏi tự kiểm tra:</b> Vì sao Dense Optical Flow chậm hơn Sparse Optical Flow, nhưng lại cho thông tin đầy đủ hơn?</p>
+      <details>
+        <summary>Gợi ý trả lời</summary>
+        <p>Dense Optical Flow phải tính vector chuyển động cho <b>từng pixel</b> trong toàn bộ ảnh, nên khối lượng tính toán tỉ lệ với tổng số pixel (H×W). Sparse Optical Flow chỉ theo dõi một tập nhỏ các điểm đặc trưng (góc, cạnh nổi bật) đã chọn trước, nên nhanh hơn rất nhiều — nhưng đổi lại, ta chỉ biết chuyển động tại đúng những điểm đó, không có thông tin cho toàn bộ khung hình.</p>
+      </details>
+    </div>
+  </section>
+
+  <div class="footer">
+    Bài giảng tự động — AI-For-Beginners · Nguồn: <code>lessons/4-ComputerVision/06-IntroCV</code><br>
+    Soạn bằng tiếng Việt cho người mới, kèm demo tương tác.
+  </div>
+</div>
+
+<script>
+// theme toggle
+const root = document.documentElement;
+document.getElementById('themeToggle').onclick = () => {
+  const cur = root.getAttribute('data-theme');
+  root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+};
+
+// quiz tabs
+document.querySelectorAll('.quiz-tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.quiz-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.quiz-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+  };
+});
+
+function checkMC(n, correct){
+  const sel = document.querySelector('input[name="mc'+n+'"]:checked');
+  const fb = document.getElementById('fb-mc'+n);
+  fb.classList.remove('correct','wrong');
+  if(!sel){ fb.textContent='Hãy chọn một đáp án trước đã!'; fb.classList.add('wrong','show'); return; }
+  if(sel.value === correct){
+    fb.textContent='✅ Chính xác!'; fb.classList.add('correct','show');
+  } else {
+    fb.textContent='❌ Chưa đúng, đáp án đúng là '+correct.toUpperCase()+'. Xem lại phần 1-3 ở trên nhé.'; fb.classList.add('wrong','show');
+  }
+}
+
+function checkFill(inputId, fbId, answers){
+  const val = document.getElementById(inputId).value.trim().toLowerCase();
+  const fb = document.getElementById(fbId);
+  fb.classList.remove('correct','wrong');
+  const ok = answers.some(a => a.toLowerCase() === val);
+  if(ok){ fb.textContent='✅ Đúng rồi!'; fb.classList.add('correct','show'); }
+  else { fb.textContent='❌ Chưa đúng. Gợi ý: đọc lại phần định nghĩa và code ở trên.'; fb.classList.add('wrong','show'); }
+}
+
+// matching quiz
+const matchTerms = [
+  {term:'Thresholding', def:'Chuyển ảnh xám thành ảnh nhị phân (đen/trắng) dựa trên ngưỡng độ sáng'},
+  {term:'Affine Transformation', def:'Biến đổi hình học giữ các đường thẳng song song vẫn song song (xoay, co giãn, nghiêng)'},
+  {term:'Frame Differencing', def:'Trừ pixel giữa 2 khung hình liên tiếp để phát hiện vùng thay đổi/chuyển động'},
+  {term:'Optical Flow', def:'Ước lượng vector chuyển động của từng pixel hoặc điểm đặc trưng giữa các khung hình'},
+];
+const defs = matchTerms.map(m=>m.def);
+function shuffle(a){ return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]); }
+const shuffledDefs = shuffle(defs);
+const matchArea = document.getElementById('matchArea');
+matchTerms.forEach((m,i)=>{
+  const row = document.createElement('div');
+  row.className='match-row';
+  row.innerHTML = `<div class="term">${m.term}</div>
+    <select data-correct="${m.def.replace(/"/g,'&quot;')}" id="match${i}">
+      <option value="">-- chọn định nghĩa --</option>
+      ${shuffledDefs.map(d=>`<option value="${d.replace(/"/g,'&quot;')}">${d}</option>`).join('')}
+    </select>`;
+  matchArea.appendChild(row);
+});
+function checkMatch(){
+  let score=0;
+  matchTerms.forEach((m,i)=>{
+    const sel = document.getElementById('match'+i);
+    if(sel.value === m.def){ sel.style.borderColor='var(--good)'; score++; }
+    else { sel.style.borderColor='var(--bad)'; }
+  });
+  const box = document.getElementById('matchScore');
+  box.textContent = `Điểm: ${score}/${matchTerms.length} ${score===matchTerms.length ? '🎉 Hoàn hảo!' : '— thử lại các ô đỏ nhé.'}`;
+  box.style.color = score===matchTerms.length ? 'var(--good)' : 'var(--text)';
+}
+
+// pipeline flow diagram
+function playFlow(){
+  const cells = document.querySelectorAll('#flowDiagram .cell');
+  const arrows = document.querySelectorAll('#flowDiagram .arrow');
+  const notes = [
+    'Bước 1/5 — Ảnh gốc: chụp nghiêng, ánh sáng không đều, còn nhiễu hạt giấy.',
+    'Bước 2/5 — Resize: chuẩn hoá về cùng kích thước để pipeline xử lý nhất quán.',
+    'Bước 3/5 — Blur (GaussianBlur/medianBlur): làm mượt, giảm nhiễu hạt trước khi phân ngưỡng.',
+    'Bước 4/5 — Threshold: nhị phân hoá — chấm nổi Braille thành các chấm đen rõ ràng trên nền trắng.',
+    'Bước 5/5 — Đưa vào CNN: ảnh đã "sạch" giúp model phân loại từng ký tự chính xác hơn nhiều.'
+  ];
+  cells.forEach(c=>c.classList.remove('active'));
+  arrows.forEach(a=>a.classList.remove('active'));
+  let i=0;
+  const note = document.getElementById('flowNote');
+  const interval = setInterval(()=>{
+    cells.forEach(c=>c.classList.remove('active'));
+    arrows.forEach(a=>a.classList.remove('active'));
+    if(i < cells.length){
+      cells[i].classList.add('active');
+      if(i>0) arrows[i-1].classList.add('active');
+      note.textContent = notes[i];
+    }
+    i++;
+    if(i > cells.length){ clearInterval(interval); }
+  }, 900);
+}
+
+// frame difference pixel grid demo
+const frame1 = [
+  [40,42,38,41,39],
+  [39,43,40,38,42],
+  [41,40,39,43,41],
+  [38,41,40,39,42],
+  [42,39,41,40,38]
+];
+const frame2 = [
+  [40,42,38,41,39],
+  [39,43,205,210,42],
+  [41,40,208,215,41],
+  [38,41,40,39,42],
+  [42,39,41,40,38]
+];
+const threshSlider = document.getElementById('threshSlider');
+const threshValEl = document.getElementById('threshVal');
+let currentView = null;
+
+function shadeFor(v){
+  return `rgb(${v},${v},${v})`;
+}
+function textColorFor(v){
+  return v > 140 ? '#111' : '#eee';
+}
+
+function renderGrid(view){
+  currentView = view;
+  const grid = document.getElementById('pxGrid');
+  grid.innerHTML = '';
+  const note = document.getElementById('gridNote');
+  const threshold = parseInt(threshSlider.value);
+  let motionCount = 0;
+
+  for(let r=0; r<5; r++){
+    for(let c=0; c<5; c++){
+      const cell = document.createElement('div');
+      cell.className = 'pxcell';
+      if(view === 'f1'){
+        const v = frame1[r][c];
+        cell.style.background = shadeFor(v);
+        cell.style.color = textColorFor(v);
+        cell.textContent = v;
+      } else if(view === 'f2'){
+        const v = frame2[r][c];
+        cell.style.background = shadeFor(v);
+        cell.style.color = textColorFor(v);
+        cell.textContent = v;
+      } else {
+        const diff = Math.abs(frame2[r][c] - frame1[r][c]);
+        const isMotion = diff > threshold;
+        cell.style.background = isMotion ? 'var(--bad)' : shadeFor(Math.max(30, 255-diff));
+        cell.style.color = isMotion ? '#fff' : '#333';
+        cell.classList.add(isMotion ? 'motion' : 'still');
+        cell.textContent = (isMotion ? '✓ ' : '✗ ') + diff;
+        if(isMotion) motionCount++;
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  if(view === 'f1') note.textContent = 'Frame 1 (t) — khung nền tương đối đồng đều (~38-43).';
+  else if(view === 'f2') note.textContent = 'Frame 2 (t+1) — xuất hiện 1 khối sáng bất thường (~205-215): vật thể vừa di chuyển vào khung hình.';
+  else note.textContent = `Threshold = ${threshold} → phát hiện ${motionCount}/25 pixel có chuyển động (✓). Thử kéo threshold cao hơn 165 để xem vùng chuyển động biến mất!`;
+}
+threshSlider.addEventListener('input', ()=>{
+  threshValEl.textContent = threshSlider.value;
+  if(currentView === 'diff') renderGrid('diff');
+});
+renderGrid('f1');
+</script>
+</body>
+</html>
